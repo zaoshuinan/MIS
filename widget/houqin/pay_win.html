@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,headerHeight,payType;
+var payMoney,youhuiMoney,dingdanNum,dingdanData,dingdanId,dingdanIdStr;
+var frameNameArr = ['pay_by_huiyuanka','pay_by_cash','pay_by_other'];
+var titleArr = ['会员卡','现金','刷卡/网上支付'];
+function closeWin(){
+    api.confirm({
+        title: '确认信息',
+        msg: '你确定要返回重新选择其他收银方式吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.closeWin();
+            }
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    payType = api.pageParam.payType;
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleArr[payType] + '买单');
+    fixStatusBar(header);
+    payMoney = api.pageParam.payMoney;
+    youhuiMoney = api.pageParam.youhuiMoney;
+    dingdanIdStr = api.pageParam.dingdanIdStr;
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameHeight = api.winHeight - headerHeight;
+    var thisFrameName = frameNameArr[payType];
+    api.openFrame({
+        name: thisFrameName,
+        url: './'+thisFrameName+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            payMoney: payMoney,
+            youhuiMoney:youhuiMoney,
+            dingdanIdStr:dingdanIdStr
+        },
+        bounces: false
+    });
+};
+</script>
+</html>

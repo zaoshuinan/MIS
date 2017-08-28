@@ -1,0 +1,158 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-list-swipe.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view aui-in" id="viewBox">
+            
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/aui-list-swipe.js"></script>
+<script type="text/javascript">
+var swipe = new ListSwipe();
+var companyId = $api.getStorage('companyId');
+var dataJson;
+var getAction = 'huodongListByQiantai';
+var changeAction = 'cancelHuodong';
+var buttonIcon = 'redpacket';
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">加载数据中......</p>');
+    api.ajax({
+        url: appUrl+'Get/' + getAction,
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            if(ret.has == 0){
+                $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">没有找到数据</p>');
+            }else{
+                dataJson = ret.data;
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < dataJson.length;i++){
+        var thisJson = dataJson[i];
+        var dataId = thisJson.id;
+        var contentStr = '活动名称：' + thisJson.huodong_name + '，消费满'+thisJson.huodong_start_money+'元免'+thisJson.huodong_youhui_money+'元';
+
+        var tplStr = '<li  class="aui-list-view-cell"><div class="aui-swipe-right-btn aui-bg-danger" tapmode onclick="fnCancel('+dataId+')">删除<i class="aui-iconfont aui-icon-delete"></i></div><div class="aui-swipe-right-btn aui-bg-warning" tapmode onclick="fnEdit('+dataId+')">修改<i class="aui-iconfont aui-icon-edit"></i></div><div class="aui-swipe-handle"><i  class="aui-iconfont aui-icon-'+buttonIcon+' aui-bg-danger"></i>'+contentStr+'</div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+
+function fnEdit(dataId){
+    api.openWin({
+        name: 'edithuodong',
+        url: './add_huodong_win.html',
+        pageParam: {
+            dataId: dataId,
+            action:'edit'
+        }
+    });
+}
+
+function fnCancel(dataId){
+    api.confirm({
+        title: '确认取消',
+        msg: '你确认要删除吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.ajax({
+                    url: appUrl+'Change/' + changeAction,
+                    method: 'post',
+                    data: {
+                        values: {
+                            data_id:dataId
+                        },
+                        files: { 
+                            fileName: 'filePath'
+                        }
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        alert('删除成功');
+                        api.sendEvent({
+                            name: 'reFlashList',
+                            extra: {
+                                canFlash:1
+                            }
+                        });
+                    } else {
+                        api.toast({
+                            msg: '网络错误'
+                        });
+                    }
+                });
+            }
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+}
+
+apiready = function () {
+    api.parseTapmode();
+    buildPageByJson();
+    shuaxin();
+    api.addEventListener({
+        name: 'reFlashList'
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.value.canFlash == 1){
+                buildPageByJson();
+            }
+        } else {
+            
+        }
+    });
+}
+</script>
+</html>

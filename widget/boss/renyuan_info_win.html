@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <style type="text/css">
+        .aui-grid-sixteen:after {
+            border:none;
+        }
+        .aui-grid-sixteen li:after {
+            border:none;
+        }
+        .aui-grid-sixteen li .aui-iconfont {
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            line-height: 38px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,dingdanId,headerHeight,footHeight,frameHeight,buttonBoxHeight,startDate,endDate,showType;
+var groupIndex = 0;
+var hasGetBance = 0;
+var titleStr = '';
+
+function closeWin(){
+    api.closeWin();
+}
+function openFrame(){
+    var frameNameArr = ['jingli_list','jishi_list','huiyuan_list'];
+    var frameName = frameNameArr[showType];
+    var pageParamJson = {
+        gotoType: 4
+    }
+    frameHeight = api.winHeight - headerHeight;
+    api.openFrame({
+        name: frameName,
+        url: './'+frameName+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight  + 5,
+            w: 'auto',
+            h: frameHeight - 10
+        },
+        pageParam: pageParamJson,
+        bounces: false
+    });
+}
+
+apiready = function(){
+    api.parseTapmode();
+    showType = api.pageParam.showType;
+    if(showType == 0){
+        var renyuanStr = '经理';
+    }
+    if(showType == 1){
+        var renyuanStr = '技师';
+    }
+    if(showType == 2){
+        var renyuanStr = '会员';
+    }
+    var titleStr =  '查看' + renyuanStr + '信息';
+    
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleStr);
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    openFrame();
+};
+</script>
+</html>

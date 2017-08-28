@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder">       
+        <div id="chartBox" class="aui-col-xs-12"; style="height:220px;margin-top: 20px;">
+            
+        </div>
+        <div class="aui-content-padded icons" style="padding-top: 20px;">
+            <ul class="aui-grid-nine" id="viewBox1">
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openYuyue()"><img src="../image/yuyue.png" style="width:60px"><p>预约</p></li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openKaika()"><img src="../image/kaika.png" style="width:60px"><p>开卡</p></li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openChongzhi()"><img src="../image/chongzhi.png" style="width:60px"><p>充值</p></li>
+            </ul>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    var chartJson = {
+        title:{
+            text:'云里雾里本月业绩曲线',
+            left:'center'
+        },
+        legend:{
+            data:['业务量'],
+            right:'30px',
+            top:'24px'
+        },
+        xAxis:{
+            data:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+        },
+        yAxis:{
+
+        },
+        tooltip:{
+            show:true
+        },
+        series:[{
+            name:'业务量',
+            type:'line',
+            smooth:true,
+            data:[12,14,13,15,27,15,16,5,18,26,22,23,20,21,18,19,10,18,17,14]
+        }],
+        color:['red']
+    }
+    tongjiChart.setOption(chartJson);
+}
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildChart();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    buildChart();
+    shuaxin();
+}
+        
+</script>
+</html>

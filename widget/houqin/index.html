@@ -1,0 +1,737 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-btn-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="titleBox"></div>
+    </header>
+    <div class="aui-content-padded aui-hidden" id="buttonBox" style="padding-left:240px;margin-top: 5px;">
+        <div class="aui-tab aui-tab-danger">
+            <ul class="aui-tab-nav aui-tab-border">
+                <li tapmode onclick="showData(0)">当前</li>
+                <li tapmode onclick="showData(1)">历史</li>
+            </ul>
+        </div>
+    </div>
+    <div style="float:left;width:240px; text-align: center" class="aui-hidden"  id="diceng">
+        <img id="kaoqin-erweima" style="margin-top:100px; width:180px;" src="">
+        <p style="font-size: 20px; color: red">考勤二维码 <b id="daojishi"></b>秒</p>
+        <p style="font-size: 20px;">系统时间  <b id="systemTimeBox"></b></p>
+        <p><button tapmode onclick="reFlashErweima()">点击刷新</button></p>
+        <p><button class="aui-btn aui-btn-danger" tapmode onclick="fnOut()">退出系统</button></p>
+    </div>
+    <footer class="aui-nav" id="misFooter">
+        
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest-SHA1.js"></script>
+<script type="text/javascript" src="../script/SHA1.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var shebeiType,erweimaStr,loginType,shebeiTypeId;
+var checkChange = 1;
+var companyId,companyHaoma,companyName;
+var backBtn,titleBox,headerHeight,frameHeight,footerHeight,footer;
+var shebeiId,pushCode,configShebeiId;
+var timeBox,chaTime;
+var kaoqinObj,runTime;
+var appId = 'A6908494336341';
+var appKey = "54094443-FDD9-6436-DF54-B2C1EA5AAC7D";
+var frameNowName;
+var systemTimeStr,systemTimeNum,systemTimeObj;
+function fnOut(){
+    api.confirm({
+        title: '确认信息',
+        msg: '你确定要退出系统吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                $api.setStorage('hasLogin', 0);
+                $api.setStorage('hasSaoma', 0);
+                $api.setStorage('lanuchCheckStr', '');
+                $api.setStorage('shebeiType', '');
+                $api.setStorage('shebeiId', '');
+                $api.setStorage('userTouxiangUrl', '');
+                api.rebootApp();
+            }
+        }
+    }); 
+}
+function reFlashErweima(){
+    $api.html($api.byId('daojishi'), 30);
+    kaoqinStart()
+}
+function randomNum(min,max){
+    var num = parseInt(Math.random()*(max-min+1)+min,10);
+    return num;
+}
+function closeWin(){
+    api.closeWin();
+}
+function openAjPush(ajPushCode,fn){
+    ajpush = api.require('ajpush');
+    ajpush.init(function(ret) {
+        if (ret && ret.status){
+            //alert(ret.status)
+            //success
+        }
+    });
+    var param = {alias:ajPushCode,tags:['tag1','tag2']};
+    ajpush.bindAliasAndTags(param,function(ret) {
+            var statusCode = ret.statusCode;
+            //alert(statusCode)
+    });
+    //alert(ajpush);
+    ajpush.getRegistrationId(function(ret) {
+        var registrationId = ret.id;
+        //alert(registrationId);
+    });
+    ajpush.setListener(
+    function(ret) {
+         var id = ret.id;
+         var title = ret.title;
+         var content = ret.content;
+         var extra = ret.extra;
+         //alert(JSON.stringify(ret));
+         var index = ret.extra.index;
+         //toSee(index)
+         fn();
+    });
+}
+function bulidPageByConfig(){
+    $api.html(titleBox, '后勤配置界面');
+    $api.html(footer, '<div class="aui-col-xs-12" id="saveBtn"><button class="aui-btn aui-btn-default aui-btn-block" tapmode>请选择此设备对应的部门</button></div>');
+    api.openFrame({
+        name: 'shebeiConfig',
+        url: './shebei_config_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            company_id: companyId,
+            company_haoma: companyHaoma
+        },
+        bounces: false,
+        bgColor: 'rgba(0,0,0,0)',
+        vScrollBarEnabled: true,
+        hScrollBarEnabled: true
+    });
+}
+function openQiantai(index,type){
+    api.closeFrame({
+        name: frameNowName
+    });
+    if(index != 5){
+        var leftValue = 240;
+        $api.css($api.byId('buttonBox'), 'padding-left:240px;');
+        var bouncesStatus = true;
+    }else{
+        var leftValue = 0;
+        //$api.css($api.byId('buttonBox'), 'padding-left:0px;');
+        var bouncesStatus = false;
+    }
+    if(type == 0 || type == 1){
+        changeGroupButtonStyle(type);
+        $api.removeCls($api.byId('buttonBox'), 'aui-hidden');
+    }
+    var qiantaiTypeNameArr = ['收银','预约','买钟','开卡','充值','系统'];
+    var shebeiTypeUrlArr = ['qiantai_shouyin','qiantai_yuyue','qiantai_maizhong','qiantai_kaika','qiantai_chongzhi','qiantai_system'];
+    var qiantaiFrameNameArr = ['qiantai_shouyin','qiantai_yuyue','qiantai_maizhong','qiantai_kaika','qiantai_chongzhi','qiantai_system'];
+    headerHeight = $api.offset(header).h + 5;
+    footerHeight = $api.offset(footer).h;
+    if(index <= 2){
+        buttonHeight = $api.offset($api.byId('buttonBox')).h;
+        headerHeight = headerHeight + buttonHeight;
+    }
+    frameHeight = api.winHeight - headerHeight  - footerHeight - 5;
+    //alert(frameHeight)
+    //alert(qiantaiFrameNameArr[index] + './' + shebeiTypeUrlArr[index] + '_frame.html');
+    //alert(frameHeight + '-' + footerHeight)
+    //alert(frameHeight - footerHeight)
+    if(shebeiTypeUrlArr[index] == 'qiantai_system'){
+        bouncesValue = false;
+    }else{
+        bouncesValue = true;
+    }
+    if(type == 1){
+        if(index == 0){
+            shebeiTypeUrlArr[index] = qiantaiFrameNameArr[index] = 'shouyin_histroy'
+        }
+        if(index == 1){
+            shebeiTypeUrlArr[index] = qiantaiFrameNameArr[index] = 'yuyue_histroy'
+        }
+        if(index == 2){
+            shebeiTypeUrlArr[index] = qiantaiFrameNameArr[index] = 'maizhong_histroy'
+        }
+    }
+    frameNowName = qiantaiFrameNameArr[index];
+    api.openFrame({
+        name: qiantaiFrameNameArr[index],
+        url: './' + shebeiTypeUrlArr[index] + '_frame.html',
+        rect: {
+            x: leftValue,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            name: 'value'
+        },
+        bounces: bouncesStatus
+    });
+    changeFootButton(index);
+}
+function changeFootButton(index){
+    //alert(index)
+    var buttonsObj = $api.domAll(footer, 'ul li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active-danger');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active-danger');
+        }
+    }
+}
+Date.prototype.Format = function (fmt) { //author: meizz 
+    var o = {
+        "M+": this.getMonth() + 1, //月份 
+        "d+": this.getDate(), //日 
+        "h+": this.getHours(), //小时 
+        "m+": this.getMinutes(), //分 
+        "s+": this.getSeconds(), //秒 
+        "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+        "S": this.getMilliseconds() //毫秒 
+    };
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+}
+function systemTimeRun(){
+    var shichangNum = 1000;
+    var endTimeNum = systemTimeNum + shichangNum;
+    var endTime = new Date(endTimeNum);
+    var endTimeStr = new Date(endTimeNum).Format("yyyy-MM-dd hh:mm:ss"); 
+    $api.html($api.byId('systemTimeBox'), endTimeStr.substring(11));
+    systemTimeNum = endTimeNum;
+}
+function kaoqinRun(){
+    runTime--;
+
+    if(runTime == 0){
+        checkChange = 0;
+    }
+    //alert(runTime + '-' + checkChange);
+    var erweimaBox = $api.byId('kaoqin-erweima');
+    var miaobiaoBox = $api.byId('daojishi');
+    if(runTime == 0){
+        runTime = setTime.zhongfang;
+        var pngNum = randomNum(1,10);
+        //alert(companyId + '_' + pngNum)
+        api.ajax({
+            url: appUrl+'Change/erweimaNum',
+            method: 'post',
+            data: {
+                values: { 
+                    company_id: companyId,
+                    erweima_num: pngNum,
+                    shebei_type:shebeiType
+                }
+            }
+        },function(ret, err){
+            if (ret) {
+                $api.attr(erweimaBox, 'src', '../image/erweima/'+erweimaStr + pngNum+'.png');
+                $api.html(miaobiaoBox, '30');
+                checkChange = 1;
+            } else {
+                api.toast({
+                    msg: '网络错误',
+                    duration: 2000,
+                    location: 'bottom'
+                });
+            }
+        });
+    }else{
+        var timeStr;
+        if(runTime < 10){
+            timeStr = '0' + runTime;
+        }else{
+            timeStr = runTime;
+        }
+        if(checkChange == 1){
+            $api.html(miaobiaoBox, timeStr);
+        }
+    }   
+}
+function kaoqinStart(){
+    runTime = setTime.zhongfang;
+    var dicengBox = $api.byId('diceng');
+    var erweimaBox = $api.byId('kaoqin-erweima');
+    var pngNum = randomNum(1,10);
+    //alert(companyId + '-' + pngNum);
+    api.ajax({
+        url: appUrl+'Change/erweimaNum',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                erweima_num: pngNum,
+                shebei_type:shebeiType
+            }
+        }
+    },function(ret, err){
+        //alert(JSON.stringify(ret))
+        if (ret) {
+            systemTimeStr = ret.time;
+            systemTimeStr = systemTimeStr.replace(/-/g,"/");
+            var systemTime = new Date(systemTimeStr);
+            systemTimeNum = systemTime.getTime();
+            $api.attr(erweimaBox, 'src', '../image/erweima/'+erweimaStr+pngNum+'.png');
+            $api.removeCls(dicengBox, 'aui-hidden');
+            if(kaoqinObj){
+                clearInterval(kaoqinObj);
+            }
+            if(systemTimeObj){
+                clearInterval(systemTimeObj);
+            }
+            kaoqinObj = setInterval(kaoqinRun,1000);
+            systemTimeObj = setInterval(systemTimeRun,1000)
+        } else {
+            api.rebootApp();
+        }
+    });   
+}
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll($api.byId('buttonBox'), 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function showData(index){
+    if(shebeiType == 0){
+        if(index == 0){
+            api.closeFrame({
+                name: 'zhongfang_call'
+            });
+            changeGroupButtonStyle(0)
+            openZhongfang(0,0)
+        }
+        if(index == 1){
+            api.closeFrame({
+                name: 'zhongfang_histroy'
+            });
+            changeGroupButtonStyle(1);
+            openZhongfang(0,1)
+        }
+    }
+    if(shebeiType == 2){
+        if(frameNowName == 'chanpin_peisong'){
+            if(index == 0){
+                api.closeFrame({
+                    name: frameNowName
+                });
+                changeGroupButtonStyle(0)
+                openPeisong(0,0)
+            }else{
+                api.closeFrame({
+                    name: 'chanpin_histroy'
+                });
+                changeGroupButtonStyle(1);
+                openPeisong(0,1);
+            }
+        }
+        if(frameNowName == 'peitao_peisong'){
+            if(index == 0){
+                api.closeFrame({
+                    name: frameNowName
+                });
+                changeGroupButtonStyle(0)
+                openPeisong(1,0)
+            }else{
+                api.closeFrame({
+                    name: 'peitao_histroy'
+                });
+                changeGroupButtonStyle(1);
+                openPeisong(1,1);
+            }
+        }
+    }
+
+    if(shebeiType == 3){
+        //alert(frameNowName)
+        if(frameNowName == 'qiantai_shouyin' || frameNowName == 'shouyin_histroy'){
+           changeGroupButtonStyle(index)
+           openQiantai(0,index)
+        }
+        if(frameNowName == 'qiantai_yuyue' || frameNowName == 'yuyue_histroy'){
+           changeGroupButtonStyle(index)
+           openQiantai(1,index)
+        }
+        if(frameNowName == 'qiantai_maizhong' || frameNowName == 'maizhong_histroy'){
+           changeGroupButtonStyle(index)
+           openQiantai(2,index)
+        }
+    }
+}
+function openZhongfang(index,type){
+    var zhongfangTypeNameArr = ['上钟信息','技师信息','班次/人员管理'];
+    var shebeiTypeUrlArr = ['zhongfang_call','jishi_show','zhongfang_manager'];
+    var zhongfangFrameNameArr = ['zhongfang_call','jishi_show','zhongfang_manager'];
+    var bouncesValue = false;
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    var frameHeight1 = api.winHeight - headerHeight - footerHeight;
+    var pageParamJson = {};
+    if(index == 0){
+        var leftValue = 240;
+        $api.css($api.byId('buttonBox'), 'padding-left:240px;');
+        $api.removeCls($api.byId('buttonBox'), 'aui-hidden');
+        buttonHeight = $api.offset($api.byId('buttonBox')).h;
+        headerHeight = headerHeight + buttonHeight + 5;
+        frameHeight1 = api.winHeight - headerHeight - footerHeight  - 5;
+        api.closeFrame({
+            name: zhongfangFrameNameArr[1]
+        });
+        api.closeFrame({
+            name: zhongfangFrameNameArr[2]
+        });
+        if(type == 0|| type == 1){
+            changeGroupButtonStyle(type)
+            //alert(type)
+        }
+        if(type == 1){
+            shebeiTypeUrlArr[index] = 'zhongfang_histroy';
+        }
+    }else{
+        var leftValue = 0;
+        if(index == 2){
+            pageParamJson = {
+
+            };
+        }
+    }
+    api.openFrame({
+        name: zhongfangFrameNameArr[index],
+        url: './' + shebeiTypeUrlArr[index] + '_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight1,
+            marginLeft:leftValue,
+        },
+        pageParam: pageParamJson,
+        bounces: bouncesValue
+    });
+    changeFootButton(index);
+}
+function openPeisong(index,type){
+    changeGroupButtonStyle(type);
+    //$api.css($api.byId('buttonBox'), 'padding-left:0px;');
+    $api.removeCls($api.byId('buttonBox'), 'aui-hidden');
+    var peisongTypeNameArr = ['免费/收费产品','配套产品','产品管理'];
+    var shebeiTypeUrlArr = ['chanpin_peisong','peitao_peisong','peisong_manager'];
+    var peisongFrameNameArr = ['chanpin_peisong','peitao_peisong','peisong_manager'];
+    var bouncesValue = false;
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    buttonHeight = $api.offset($api.byId('buttonBox')).h;
+    //alert(buttonHeight)
+    if(index != 2){
+        var leftValue = 240;
+        $api.css($api.byId('buttonBox'), 'padding-left:240px;');
+        $api.removeCls($api.byId('buttonBox'), 'aui-hidden');
+        buttonHeight = $api.offset($api.byId('buttonBox')).h;
+        headerHeight = headerHeight + buttonHeight + 5;
+    }else{
+        var leftValue = 0;
+    }
+    frameHeight1 = api.winHeight - headerHeight - footerHeight ;
+    //var fram1 = frameHeight - footerHeight;
+    //alert(api.winHeight + '-' + frameHeight1 + '-' + headerHeight + '-'+ footerHeight)
+    frameNowName = peisongFrameNameArr[index];
+    api.closeFrame({
+        name: 'peisong_manager'
+    });
+    //alert(peisongFrameNameArr[index])
+    api.closeFrame({
+        name: peisongFrameNameArr[index]
+    });
+    if(type == 1){
+        if(index == 0){
+            peisongFrameNameArr[index] = 'chanpin_histroy'
+            shebeiTypeUrlArr[index] = 'chanpin_histroy';
+        }
+        if(index == 1){
+            peisongFrameNameArr[index] = 'peitao_histroy'
+            shebeiTypeUrlArr[index] = 'peitao_histroy';
+        }
+    }
+    //alert('./' + shebeiTypeUrlArr[index] + '_frame.html')
+    api.openFrame({
+        name: peisongFrameNameArr[index],
+        url: './' + shebeiTypeUrlArr[index] + '_frame.html',
+        rect: {
+            x: leftValue,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight1
+        },
+        pageParam: {
+            name: 'test'
+        },
+        bounces: bouncesValue,
+        bgColor: 'rgba(0,0,0,0)',
+        vScrollBarEnabled: true,
+        hScrollBarEnabled: true
+    });
+    changeFootButton(index);
+}
+function buildPageByType(shebeiType){
+    //alert(shebeiType)
+    checkSystem();
+    $api.html(backBtn, '');
+    var shebeiTypeNameArr = ['钟房值班','钟房配送','产品配送','前台收银'];
+    var shebeiTypeUrlArr = ['zhongfang_call','zhongfang_peisong','chanpin_peisong','qiantai'];
+    $api.html(titleBox, '新沐足('+shebeiTypeNameArr[shebeiType]+'端)');
+    //前台端
+    if(shebeiType == 3){
+        //设置横屏
+            api.setScreenOrientation({
+                orientation : 'landscape_left'
+            });
+        $api.html(footer, '<ul class="aui-bar-tab"><li class="active-danger" tapmode onclick="openQiantai(0,0)"><span class="aui-iconfont aui-icon-sponsor"></span><p>收银</p></li><li tapmode onclick="openQiantai(1,0)"><span class="aui-iconfont aui-icon-service"></span><p>预约</p></li><li tapmode onclick="openQiantai(2,0)"><span class="aui-iconfont aui-icon-pay"></span><p>买钟</p></li><li tapmode onclick="openQiantai(3)"><span class="aui-iconfont aui-icon-vipcard"></span><p>开卡</p></li><li tapmode onclick="openQiantai(4)"><span class="aui-iconfont aui-icon-refund"></span><p>充值</p></li><li tapmode onclick="openQiantai(5)"><span class="aui-iconfont aui-icon-repair"></span><p>系统</p></li></ul>');
+        setTimeout("openQiantai(0,0)",50);
+        kaoqinStart();
+    }else{
+        //钟房端
+        //alert(shebeiType)
+        if(shebeiType == 0){
+            //设置横屏
+            api.setScreenOrientation({
+                orientation : 'landscape_left'
+            });
+            $api.html(footer, '<ul class="aui-bar-tab"><li class="active-danger" tapmode onclick="openZhongfang(0,0)"><span class="aui-iconfont aui-icon-notice"></span><p>上钟信息</p></li><li tapmode onclick="openZhongfang(1)"><span class="aui-iconfont aui-icon-group"></span><p>技师信息</p></li><li tapmode onclick="openZhongfang(2)"><span class="aui-iconfont aui-icon-calendar"></span><p>系统管理</p></li></ul>');
+            //openZhongfang(0);
+            setTimeout("openZhongfang(0,0)",500)
+            kaoqinStart();
+        //配送端
+        }else{
+            //设置横屏
+            api.setScreenOrientation({
+                orientation : 'landscape_left'
+            });
+            //alert(1)
+            $api.html(footer, '<ul class="aui-bar-tab"><li class="active-danger" tapmode onclick="openPeisong(0,0)"><span class="aui-iconfont aui-icon-shop"></span><p>免费/收费产品</p></li><li tapmode onclick="openPeisong(1,0)"><span class="aui-iconfont aui-icon-present"></span><p>配套产品</p></li><li tapmode onclick="openPeisong(2,0)"><span class="aui-iconfont aui-icon-tag"></span><p>产品管理</p></li></ul>');
+            kaoqinStart();
+            setTimeout("openPeisong(1,0)",250);
+            setTimeout("openPeisong(0,0)",500);
+        }
+        
+    }
+}
+function checkSystem(){
+    var companyId = $api.getStorage('companyId');
+    api.ajax({
+        url: appUrl+'Get/checkSystemByShebei',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                shebei_type:shebeiType,
+                login_type:loginType
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            var shebeiPassword = ret.password;
+            //alert(shebeiPassword)
+            $api.setStorage('shebeiPassword', shebeiPassword);
+            if(ret.company_status == 1){
+                $api.setStorage('companyStatus', '1');
+                if($api.getStorage('hasLogin') == 1){
+                    var newCacheCheckStr = ret.cache_check_str;
+                    // alert('新的缓存字符串是'+newCacheCheckStr + '，旧的缓存字符串是' + $api.getStorage('cacheCheckStr'));
+                    // return false;
+                    // resetCache(newCacheCheckStr);
+                    if($api.getStorage('cacheCheckStr') != newCacheCheckStr){
+                        alert('检测到新的系统配置，正在为你更换');
+                        resetCache(newCacheCheckStr);
+                    }
+                }
+            }else{
+                $api.setStorage('companyStatus', '0');
+            }
+        } else {
+           api.toast({
+               msg: '网络错误',
+               duration: 2000,
+               location: 'bottom'
+           });
+        }
+    });
+}
+function resetCache(newCacheCheckStr){
+    api.ajax({
+        url: appUrl+'Get/cacheByHouqin',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            }
+        }
+    },function(ret, err){
+        // alert(JSON.stringify(ret));
+        // return false;
+        if (ret) {
+            var cacheData = ret.cache;
+            var cacheService = JSON.parse(cacheData.cache_service);
+            // var cacheJishi = JSON.parse(cacheData.cache_jishi);
+            // var cacheRoom = JSON.parse(cacheData.cache_room);
+            var cacheBanci = JSON.parse(cacheData.cache_banci);
+            var cacheCompany = JSON.parse(cacheData.cache_company);
+            // var cacheMianfei = JSON.parse(cacheData.cache_mianfei);
+            // var cacheShoufei = JSON.parse(cacheData.cache_shoufei);
+            $api.setStorage('cacheService', cacheService);
+            // $api.setStorage('cacheJishi', cacheJishi);
+            // $api.setStorage('cacheRoom', cacheRoom);
+            $api.setStorage('cacheBanci', cacheBanci);
+            $api.setStorage('cacheCompany', cacheCompany); 
+            // $api.setStorage('cacheMianfei', cacheMianfei);
+            // $api.setStorage('cacheShoufei', cacheShoufei);
+            $api.setStorage('cacheCheckStr', newCacheCheckStr);
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function openTestWin(){
+    winName = 'show_gongzi';
+    var type = 1;
+    if(type == 1){
+        var testPageParamJson = {
+            showType: 0
+        }
+    }
+    api.openWin({
+        name: winName,
+        url: './'+winName+'_win.html',
+        pageParam: testPageParamJson
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    shebeiId = api.deviceId;
+    loginType = api.pageParam.loginType;
+    shebeiTypeId = api.pageParam.shebeiTypeId;
+    shebeiType = parseInt($api.getStorage('shebeiType'));
+    if(shebeiType == 0){
+        erweimaStr = 'z';
+    }
+    if(shebeiType == 1 || shebeiType == 2){
+        erweimaStr = 'p';
+    }
+    if(shebeiType == 3){
+        erweimaStr = 'q';
+    }
+    configShebeiId = $api.getStorage('shebeiId');
+    backBtn = $api.byId('backBtn');
+    titleBox = $api.byId('titleBox');
+    header = $api.byId('misHeader');
+    footer = $api.byId('misFooter');
+    fixStatusBar(header);
+    api.setKeepScreenOn({
+        keepOn: true
+    });
+    api.setScreenSecure({
+        secure: true
+    });
+    api.setFullScreen({
+        fullScreen: true
+    });
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    frameHeight = api.winHeight - headerHeight;
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err){
+        
+    });
+    if(loginType == 1){
+        companyId = $api.getStorage('companyId');
+        companyHaoma = $api.getStorage('companyHaoma');
+        shebeiType = shebeiTypeId;
+        $api.setStorage('shebeiId', shebeiId);
+        $api.setStorage('shebeiType', shebeiType);
+        $api.setStorage('hasLogin', '1');
+        if(shebeiType == 0){
+            erweimaStr = 'z';
+        }
+        if(shebeiType == 1 || shebeiType == 2){
+            erweimaStr = 'p';
+        }
+        if(shebeiType == 3){
+            erweimaStr = 'q';
+        }
+        //alert(companyId)
+        api.ajax({
+            url: appUrl+'Change/shebeiId',
+            method: 'post',
+            data: {
+                values: { 
+                    company_id: $api.getStorage('companyId'),
+                    shebei_type:shebeiType,
+                    shebei_id:shebeiId
+                }
+            }
+        }, function(ret, err) {
+            if (ret) {
+                // alert(JSON.stringify(ret));
+                // return false;
+                var dataId = ret.data_id;
+                $api.setStorage('dataId', dataId);
+                buildPageByType(shebeiType);
+            } else {
+                api.toast({
+                    msg: '网络错误'
+                });
+            }
+        });
+    }else{
+        if(configShebeiId == shebeiId){
+            companyId = $api.getStorage('companyId');
+            companyHaoma = $api.getStorage('companyHaoma');
+            buildPageByType(shebeiType);
+        }else{
+            companyId = api.pageParam.company_id;
+            companyHaoma = api.pageParam.company_haoma;
+            bulidPageByConfig()
+        } 
+    }
+    setTimeout("openTestWin()",500);  
+}
+</script>
+</html>

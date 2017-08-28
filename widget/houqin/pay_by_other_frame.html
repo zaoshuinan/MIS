@@ -1,0 +1,164 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 60px;
+}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <div class="aui-form" style="margin-top:50px;margin-left: 50px;">
+            <div class="aui-input-row">
+                <p style="color:red;font-size: 80px">应收 <span id="yingshou"></span>元</p>
+            </div>
+        </div>
+        <div class="aui-content-padded icons" style="padding-top: 20px;">
+            <p style="font-size:20px; color: black">请选择客户支付方式</p>
+            <ul class="aui-grid-nine" id="payTypeBox">
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="selectPayType(0)"><img src="../image/zhifubao.png" style="width:60px"><p style="color:black">支付宝</p></li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="selectPayType(1)"><img src="../image/weixin1.png" style="width:60px"><p style="color:black">微信</p></li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="selectPayType(2)"><img src="../image/yinhangka.png" style="width:60px;"><p style="color:black">银行卡</p></li>
+            </ul>
+        </div>
+        <div class="aui-form" style="margin-top:20px;margin-left: 10px;">
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger" style="font-size: 20px;">备注</span>
+                <input type="text" class="aui-input" id="beizhu" style="color:blue;font-size: 20px;" placeholder="请填写备注，如票据后6位" value="" />
+            </div>
+        </div>
+    </div>
+    <footer class="aui-nav" id="footer">
+        <div class="aui-col-xs-12 aui-bg-danger" tapmode onclick="quedingShouyin()">收银确认</div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var dingdanIdStr,youhuiMoney,payMoney,shishouMoney,allMoney,beizhuStr;
+var payType,payTypeName;
+var canSend = 0;
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var payNameArr = ['支付宝','微信','银行卡'];
+function selectPayType(index){
+    var payTypeObjs = $api.domAll($api.byId('payTypeBox'), 'li');
+    payType = index;
+    payTypeName = payNameArr[index];
+    canSend = 1;
+    for(var i = 0;i < payTypeObjs.length;i++){
+        var thisObj = payTypeObjs[i];
+        $api.removeCls(thisObj, 'aui-bg-danger');
+        if(i == payType){
+            $api.addCls(thisObj, 'aui-bg-danger');
+        }
+    }
+}
+function quedingShouyin(){
+    if(canSend == 1){
+        api.confirm({
+            title: '确认信息',
+            msg: '确认客户已使用'+payTypeName+'方式付款'+payMoney+'元？',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    sendDingdanOver();
+                }
+            }
+        });
+    }else{
+        alert('请选择客户支付方式，最好填写备注');
+        return false;
+    }
+}
+
+function sendDingdanOver(){
+    beizhuStr = $api.val($api.byId('beizhu'));
+    var valueJson = { 
+        company_id: companyId,
+        dingdan_id_str:dingdanIdStr,
+        maidan_type:3,
+        all_money:allMoney,
+        youhui_money:youhuiMoney,
+        yingshou_money:payMoney,
+        mission_day:missionDay,
+        beizhu:beizhuStr,
+        pay_type:payType,
+        pay_type_name:payTypeName
+    }
+    // alert(JSON.stringify(valueJson));
+    // return false;
+    api.ajax({
+        url: appUrl+'Change/dingdanOverByOther',
+        method: 'post',
+        data: {
+            values: valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                api.sendEvent({
+                    name: 'reFlashShouyin',
+                    extra: {
+                        can: '1'
+                    }
+                });
+                alert('收银成功');
+                api.closeWin({
+                    name: 'fuwu_dingdan'
+                });
+                api.closeWin({
+                    name: 'pay'
+                });
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function showZhaoling(){
+    canSend = 0;
+    var shishou = $api.val($api.byId('shishou'));
+    if(shishou == ''){
+        alert('请输入正确的实收金额');
+        canSend = 0;
+        //$api.addAttr($api.byId('footer'), 'aui-hidden');
+        return false;
+    }
+    shishouMoney = parseInt(shishou);
+    if(shishouMoney < payMoney){
+        alert('实收金额小于应收金额，请再次确认');
+        canSend = 0;
+        //$api.addAttr($api.byId('footer'), 'aui-hidden');
+        return false;
+    }else{
+        zhaolingMoney = shishouMoney - payMoney;
+        $api.html($api.byId('zhaoling'), zhaolingMoney);
+        canSend = 1;
+        //$api.removeAttr($api.byId('footer'), 'aui-hidden');
+    }
+    //alert(parseInt(shishou))
+}
+
+apiready = function () {
+    api.parseTapmode();
+    payMoney = api.pageParam.payMoney;
+    youhuiMoney = api.pageParam.youhuiMoney;
+    dingdanIdStr = api.pageParam.dingdanIdStr;
+    allMoney = parseFloat(payMoney) + parseFloat(youhuiMoney);
+    $api.html($api.byId('yingshou'), payMoney);
+}
+</script>
+</html>

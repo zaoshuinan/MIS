@@ -1,0 +1,244 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+    
+</head>
+<body>
+    <div class="aui-card" id="viewBox" style="margin-top:5px;">
+        <div style="text-align: center;padding: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var shenpiType;
+var shenpiJson;
+var showNum = 15;
+var startNum = 0;
+var htmlStr = '';
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        htmlStr = '';
+        startNum = 0;
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function addData(){
+    startNum += 15;
+    buildPageByJson();
+}
+function buildPageByJson(){
+    api.ajax({
+        url: appUrl+'Get/shenpiHistroyByType',
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId,
+                shenpi_type: shenpiType,
+                start_num:startNum,
+                show_num:showNum
+            }
+        }
+    }, function(ret, err) {
+        shenpiJson = new Array();
+        if (ret) {
+            if(ret.has == 1){
+                shenpiJson = ret.data;
+                buildPage()
+            }else{
+                if(startNum == 0){
+                    $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+                }else{
+                    alert('已显示所有数据');
+                } 
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function buildPage(){
+    for(var i = 0;i < shenpiJson.length;i++){
+        var thisJson = shenpiJson[i];
+        var thisId = thisJson.id;
+        var sendUserId = thisJson.send_user_id;
+        var sendUserName = thisJson.send_user_name;
+        var content = thisJson.content;
+        var guanlianId = thisJson.guanlian_id;
+        var shenpiStatus = thisJson.status;
+        var shuoming = thisJson.shuoming;
+        var shengchengTime = thisJson.shengcheng_time.substring(11);
+        if(shenpiType == 0){
+            var shuomingArr = shuoming.split(',');
+            var moneyStr = shuomingArr[1];
+            var gongziTypeStr = shuomingArr[0];
+            var moneyArr = moneyStr.split(':');
+            var gongziTypeArr = gongziTypeStr.split(':');
+            var gongziType = gongziTypeArr[1];
+            var allMoney = moneyArr[1];
+            var gongziTypeName;
+            if(gongziType == 0){
+                gongziTypeName = '日结算';
+            }
+            if(gongziType == 1){
+                gongziTypeName = '周结算';
+            }
+            if(gongziType == 2){
+                gongziTypeName = '月结算';
+            }
+            if(gongziType == 3){
+                gongziTypeName = '自定义结算';
+            }
+            if(gongziType == 4){
+                gongziTypeName = '奖金';
+            }
+            if(shenpiStatus == 2){
+                var statusStr = '<b style="color:red">派发中</b>';
+            }
+            if(shenpiStatus == 3){
+                var statusStr = '<b style="color:green">派发完成</b>';
+            }
+            var tplStr = '<li class="aui-list-view-cell aui-img"  id="gongzi'+thisId+'" onclick="showDetail('+thisId+','+guanlianId+')"><div class="aui-img-body">性质：<b style="color:red">'+gongziTypeName+'</b>，<b style="color:blue">'+content+'</b>，共<b style="color:red">'+allMoney+'</b>元<br>统计：'+sendUserName+'，时间：'+shengchengTime+'，'+statusStr+'</div></li>';
+        }
+        if(shenpiType == 1){
+            var contentStr,seeStatus,clickStr,guanlianStr;
+            var shuomingArr = shuoming.split(',');
+            var userTypeStr = shuomingArr[0];
+            var userTypeArr = userTypeStr.split(':');
+            var userTypeName = userTypeArr[1];
+           if(userTypeName == 'jingli' || userTypeName == 'other'){
+                var seeStr = ''
+                seeStatus = 1;
+                if(shenpiStatus == 0){
+                    contentStr = content+'，请批复！'
+                }else{
+                    contentStr = content+'，已同意！'
+                }
+                guanlianStr = shuomingArr[1].split(':')[1];
+           }else{
+                if(shenpiStatus == 0){
+                    var seeStatus = 0;
+                    var seeStr = '，<b style="color:red">未查看</b>';
+                }
+                if(shenpiStatus == 1){
+                    var seeStatus = 1;
+                    var seeStr = '，<b style="color:green">已查看</b>';
+                }
+           }
+            var tplStr = '<li class="aui-list-view-cell aui-img" hasSee="'+seeStatus+'" id="xinzi'+thisId+'"><div class="aui-img-body">'+contentStr+'<br>申请人：'+sendUserName+'，时间：'+shengchengTime+seeStr+'</div></li>';
+        }
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+function showDetail(shenpiId,guanlianId){
+    var thisObj = $api.byId('gongzi'+shenpiId);
+    if(shenpiType == 0){
+        api.actionSheet({
+            destructiveTitle: '查看工资清单'
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    var hasSee = parseInt($api.attr(thisObj, 'hasSee'));
+                    if(hasSee == 0){
+                        api.toast({
+                            msg: '获取中......'
+                        });
+                        api.ajax({
+                            url: appUrl+'Change/shenpiStatus',
+                            method: 'post',
+                            data: {
+                                values: { 
+                                    shenpi_id:shenpiId,
+                                    guanlian_id:guanlianId,
+                                    shenpi_type:shenpiType
+                                }
+                            }
+                        }, function(ret, err) {
+                            if (ret) {
+                                api.openWin({
+                                    name: 'gongziShenpiList',
+                                    url: './gongzi_shenpi_list_win.html',
+                                    pageParam: {
+                                        gongziId: guanlianId
+                                    }
+                                });
+                                api.sendEvent({
+                                    name: 'reBuildShenpiList',
+                                    extra: {
+                                        gongziId: guanlianId
+                                    }
+                                });
+                            } else {
+                                api.toast({
+                                    msg: '网络错误'
+                                });
+                            }
+                        });  
+                    }else{
+                        api.openWin({
+                            name: 'gongziShenpiList',
+                            url: './gongzi_shenpi_list_win.html',
+                            pageParam: {
+                                gongziId: guanlianId
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+}
+function addEvent(){
+    api.addEventListener({
+        name: 'reBuildShenpiList'
+    }, function(ret, err) {
+        if (ret) {
+            buildPageByJson();
+        }
+    });
+    api.addEventListener({
+        name:'scrolltobottom',
+        extra:{
+            threshold:0            //设置距离底部多少距离时触发，默认值为0，数字类型
+        }
+    },function(ret,err){
+        addData()
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    shenpiType = api.pageParam.shenpiType;
+    buildPageByJson();
+    shuaxin();
+    addEvent();
+}
+</script>
+</html>

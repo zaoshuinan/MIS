@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav" id="misHeader">
+        <a class="aui-btn aui-pull-left" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div class="aui-tab aui-tab-danger">
+        <ul class="aui-tab-nav" id="frameGroupButtonBox">
+            <li class="active" tapmod onclick="changeFrameGroup(0)">未审核</li>
+            <li tapmod onclick="changeFrameGroup(1)">已审核</li>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,headerHeight,frameHeight,frameGroupButtonBoxHeight,frameGroupButtonBox;
+var groupIndex = 0;
+function closeWin(){
+    api.closeWin();
+}
+function changeFrameGroup(index){
+    api.setFrameGroupIndex({
+        name: 'qingjiaPizhun',
+        index: index,
+        scroll: true
+    });
+    changeGroupButtonStyle(index);
+    groupIndex = index;
+}
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll(frameGroupButtonBox, 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function addEvent(){
+    api.addEventListener({
+        name: 'reFlashQingjiaList'
+    }, function(ret, err) {
+        if (ret) {
+            openFrameGroup();
+        }
+    });
+}
+function openFrameGroup(){
+    api.closeFrameGroup({
+        name: 'qingjiaPizhun'
+    });
+    api.openFrameGroup({
+        name: 'qingjiaPizhun',
+        rect: {
+             x: 0, 
+             y: headerHeight + frameGroupButtonBoxHeight,
+             w: 'auto',
+             h: frameHeight
+        },
+        scrollEnabled: false,
+        frames: [{
+            name: 'qingjiaPizhun0', 
+            url: './qingjia_pizhun_frame.html',
+            pageParam: {
+                showStatus: 0
+            }
+        },{
+            name: 'qingjiaPizhun1', 
+            url: './qingjia_pizhun_frame.html',
+            pageParam: {
+                showStatus: 1
+            }
+        }]
+    }, function(ret, err) {
+        if (ret) {
+            //alert(JSON.stringify(ret));
+        } else {
+            //alert(JSON.stringify(err));
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    addEvent();
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), '请假批准');
+    frameGroupButtonBox = $api.byId('frameGroupButtonBox');
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameGroupButtonBoxHeight = $api.offset(frameGroupButtonBox).h;
+    frameHeight = api.winHeight - headerHeight - frameGroupButtonBoxHeight;
+    var url = './';
+    openFrameGroup();
+};
+</script>
+</html>

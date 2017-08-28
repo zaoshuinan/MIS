@@ -1,0 +1,129 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <div id="chartBox" class="aui-col-xs-12"; style="height:380px; padding-top: 10px;">
+            <div style="text-align: center;padding-top: 80px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p style="color:black">读取数据中</p>
+            </div>
+    </div>
+    
+    <div class="aui-content-padded icons">
+        <ul class="aui-grid-nine" id="viewBox1">
+            <li class="aui-col-xs-3 aui-text-center" tapmode onclick="openWin(0)"><img src="../image/yingye.png" style="width:60px"><p>营业</p></li>
+            <li class="aui-col-xs-3 aui-text-center" tapmode onclick="openWin(1)"><img src="../image/kaoqin.png" style="width:60px"><p>考勤</p></li>
+            <li class="aui-col-xs-3 aui-text-center" tapmode onclick="openWin(2)"><img src="../image/jingli1.png" style="width:60px"><p>经理</p></li>
+            <li class="aui-col-xs-3 aui-text-center" tapmode onclick="openWin(3)"><img src="../image/jishi1.png" style="width:60px"><p>技师</p></li>
+        </ul>
+    </div>
+    
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var serviceJson = $api.getStorage('cacheService');
+var nowMoney = 0;
+var dingdanNum = 0;
+var missionDay = $api.getStorage('missionDay');
+var companyId = $api.getStorage('companyId');
+
+function openWin(index){
+    var openWinNameArr = ['yewuliang_company_single','tongji_kaoqin_single','tongji_jingli_single','tongji_jishi_single'];
+    //var openWinNameArr = ['yewuliang_company_duan','tongji_kaoqin_duan','tongji_jingli','tongji_jishi'];
+    api.openWin({
+        name: openWinNameArr[index],
+        url: './'+openWinNameArr[index]+'_win.html',
+        pageParam: {
+            isToday: 1
+        }
+    });
+}
+
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    var option = {
+            tooltip : {
+                formatter: missionDay + '<br>共有'+dingdanNum + "单业务<br>营业额为"+nowMoney+"元"
+            },
+            series: [
+                {
+                    name: '营业实况',
+                    type: 'gauge',
+                    min:0,
+                    max:50000,
+                    axisLine:{
+                      lineStyle:{
+                          color:[[0.3, '#91c7ae'], [0.6, '#63869e'], [0.9, '#e97712'],[1, '#c23531']]
+                      }  
+                    },
+                    radius:'95%',
+                    detail: {formatter:nowMoney+'元'},
+                    data: [{value: nowMoney, name: '接待'+dingdanNum+'位客人'}]
+                }
+            ]
+        };
+    tongjiChart.setOption(option, true);
+}
+
+function getChartData(){
+    api.ajax({
+        url: appUrl+'Get/dingdanPriceByBoss',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                mission_day: missionDay
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            //alert(JSON.stringify(ret));
+            if(ret.has == 0){
+                setTimeout("buildChart()",100);
+            }else{
+                //alert(ret.data.length);
+                var dingdanJson = ret.data;
+                dingdanNum = dingdanJson.length;
+                for(var i = 0;i < dingdanNum;i ++){
+                    var thisMoney = 0;
+                    var thisDingdanJson = dingdanJson[i];
+                    var thisServicePrice = thisDingdanJson.service_price;
+                    var thisAllMoney = thisDingdanJson.all_money;
+                    if(thisAllMoney == 0){
+                        thisMoney = parseFloat(thisServicePrice);
+                    }else{
+                        thisMoney = parseFloat(thisAllMoney);
+                    }
+                    nowMoney += thisMoney;
+                }
+                setTimeout("buildChart()",100);
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    getChartData();
+}
+    
+</script>
+</html>

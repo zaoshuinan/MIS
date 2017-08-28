@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-btn-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div class="aui-tab aui-tab-danger">
+        <ul class="aui-tab-nav" id="frameGroupButtonBox">
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,dingdanId,jishiIdStr,jishiTichengStr,headerHeight,frameGroupButtonBoxHeight;
+var groupIndex = 0;
+function closeWin(){
+    api.closeWin();
+}
+function showJishi(index){
+    changeButtonsClass(index);
+    var frameName,frameUrl;
+    frameName = 'JishiShow';
+    frameUrl  = './jishi_show.html';
+    api.closeFrame({
+        name: frameName
+    });
+    api.openFrame({
+        name: frameName,
+        url: frameUrl,
+        rect: {
+            x: 0,
+            y:headerHeight + frameGroupButtonBoxHeight,
+           w:'auto',
+           h:frameGroupHeight
+        },
+        pageParam: {
+            jishiType: index
+        },
+        bounces: true
+    });
+}
+function changeButtonsClass(index){
+    var frameGroupButtonBox = $api.byId('frameGroupButtonBox');
+    var buttonsObj = $api.domAll(frameGroupButtonBox, 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+
+function buildButton(){
+    var cacheCompany = $api.getStorage('cacheCompany');
+    //alert(JSON.stringify(cacheCompany))
+    var companyFanweiStr = cacheCompany.company_fanwei;
+    var companyFanweiArr = companyFanweiStr.split(',');
+    var buttonStr = '';
+    for(var i = 0; i <companyFanweiArr.length;i++){
+        var leiName,leiId;
+        var classStr = '';
+        if(i == 0){
+            classStr = ' class="active"';
+            leiName = '沐足类';
+        }
+        if(i == 1){
+            leiName = '按摩类';
+        }
+        if(i == 2){
+            leiName = '桑拿类';
+        }
+        leiId = i;
+        var thisStr = '<li '+classStr+'tapmod onclick="showJishi('+leiId+')">'+leiName+'</li>';
+        buttonStr += thisStr;
+    }
+    $api.html($api.byId('frameGroupButtonBox'), buttonStr);
+}
+apiready = function(){
+    api.parseTapmode();
+    var className1 = 'aui-bar-info';
+    var className2 = 'aui-btn-info';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), '查看技师');
+    fixStatusBar(header);
+    buildButton();
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameGroupButtonBoxHeight = $api.offset($api.byId('frameGroupButtonBox')).h;
+    frameGroupHeight = api.winHeight - headerHeight - frameGroupButtonBoxHeight;
+    showJishi(0);
+};
+</script>
+</html>

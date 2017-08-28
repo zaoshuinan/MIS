@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 60px;
+}
+</style>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <footer class="aui-nav" id="footer">
+        <div class="aui-col-xs-12 aui-bg-danger" tapmode onclick="querenHebing()">确认合并订单</div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,headerHeight,footerHeight,selectDingdanIdStr;
+function closeWin(){
+    api.closeWin();
+}
+function querenHebing(){
+    var dingdanArr = selectDingdanIdStr.split(',');
+    var dingdanNum = dingdanArr.length;
+    if(selectDingdanIdStr == ''){
+        alert('还没有选择订单');
+        return false;
+    }
+    if(dingdanNum == 1){
+        alert('你只选择了1个订单，无法合并');
+        return false;
+    }
+    api.confirm({
+        msg: '确认要合并这'+dingdanNum+'个订单吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                var openWinName = 'fuwu_dingdan';
+                api.openWin({
+                    name: openWinName,
+                    url: './'+openWinName+'_win.html',
+                    pageParam: {
+                        dingdanIdStr:selectDingdanIdStr,
+                        hasHebing:1
+                    }
+                });
+                setTimeout("closeWin()",1000)
+            }
+        }
+    });
+}
+function closeWin(){
+    api.closeWin({
+        name: 'hebing_dingdan'
+    });
+}
+function addEvent(){
+    api.addEventListener({
+        name: 'selectDingdan'
+    }, function(ret, err) {
+        if (ret) {
+            selectDingdanIdStr = ret.value.dingdanIdStr;
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), '合并订单');
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    footerHeight = $api.offset($api.byId('footer')).h;
+    frameHeight = api.winHeight - headerHeight - footerHeight;
+    addEvent();
+    api.openFrame({
+        name: 'dingdanSelect',
+        url: './dingdan_select_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        bounces: false
+    });
+};
+</script>
+</html>

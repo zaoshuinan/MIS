@@ -1,0 +1,343 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+<meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+<link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+.my-header {
+background-color: #e74c3c;
+position: relative;
+margin-bottom: 0;
+}
+.my-info {
+position: relative;
+padding: 20px 0;
+width: 100%;
+bottom: 0;
+text-align: center;
+vertical-align: center;
+}
+.my-info img {
+width: 100px;
+height: 100px;
+border-radius: 50%;
+}
+.my-info p.nickname {
+margin-top: 5px;
+color: #ffffff;
+font-size: 18px;
+}
+.aui-list-view-cell {
+line-height: 26px;
+}
+.amount-info {
+background-color: #ffffff;
+overflow: hidden;
+}
+.amount-info p {
+font-size: 0.75em;
+}
+.amount-info p strong {
+font-size: 18px;
+}
+.aui-list-view-cell {
+line-height: 26px;
+}
+.amount-info .aui-col-xs-4 {
+padding: 15px 0;
+position: relative;
+height: 80px;
+}
+.amount-info .aui-col-xs-4:after {
+border-left: 1px solid #ddd;
+display: block;
+content: '';
+position: absolute;
+top: 0;
+right: 0;
+bottom: 0;
+left: 0;
+-webkit-transform-origin: 0 0;
+-webkit-transform: scale(1);
+pointer-events: none;
+}
+.amount-info .aui-col-xs-4:first-child:after {
+border:none;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+.amount-info .aui-col-xs-4:after {
+    right: -100%;
+    bottom: -100%;
+    -webkit-transform: scale(0.5);
+}
+}
+</style>
+<body>
+<div class="aui-content my-header" id="misHeader">
+    <div class="my-info" tapmode onclick="fnOpenWin(7)">
+        <img id="touxiang" src="" />
+        <p id="userName" class="nickname"></p>
+    </div>
+</div>
+<div class="aui-content aui-text-center amount-info">
+    <div class="aui-col-xs-4" tapmode onclick="openRenyuan(0)">
+        <strong class="aui-text-warning" id="jingliNum">0</strong>
+        <p>经理人数</p>
+    </div>
+    <div class="aui-col-xs-4" tapmode onclick="openRenyuan(1)">
+        <strong class="aui-text-danger" id="jishiNum">0</strong>
+        <p>技师人数</p>
+    </div>
+    <div class="aui-col-xs-4" tapmode onclick="openRenyuan(2)">
+        <strong class="aui-text-info" id="huiyuanNum">0</strong>
+        <p>会员人数</p>
+    </div>
+</div>
+<div class="aui-content">
+    <div class="aui-content aui-card">
+        <ul class="aui-list-view aui-in">
+            <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(0)">
+                <i class="aui-iconfont aui-icon-profile aui-bg-primary"></i>个人资料
+            </li>
+            <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(1)">
+                <i class="aui-iconfont aui-icon-focus aui-bg-info"></i>公司信息
+            </li>
+            <li class="aui-list-view-cell" tapmode onclick="openShenpi()">
+                <i class="aui-iconfont aui-icon-roundcheck aui-bg-danger"></i>各项审批
+                <span class="aui-badge aui-badge-danger aui-hidden" id="shenpiMsgBox">0</span>
+            </li>
+
+            <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(2)">
+                <i class="aui-iconfont aui-icon-info aui-bg-success"></i>规则说明
+            </li>
+            <li class="aui-list-view-cell" tapmode onclick="clearHuancun()">
+                <i class="aui-iconfont aui-icon-magic aui-bg-warning"></i>清除缓存
+            </li>
+            <li class="aui-list-view-cell" tapmode onclick="fnOut()">
+                <i class="aui-iconfont aui-icon-pullleft aui-bg-danger"></i>退出系统
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var banciJson = $api.getStorage('cacheBanci')[$api.getStorage('userBanciId')];
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var workerNum,jishiNum,huiyuanNum;
+var yuyueTichengPrice = 15;
+var checkNum=0;
+var canOpenRenyuan = 0;
+var kaoqinType;
+var touxiangUrl;
+var winNameArr = ['geren','company_info','guize'];
+var timeNow;
+var timeNow,startTimeStr,showStartTime,endTimeStr,showEndTime,showSystemTime,kaoqinStartTimeNum,kaoqinOneHourTimeNum,nowTimeNum,zhengchangNum;
+function showShenpiMsg(num){
+    $api.html($api.byId('shenpiMsgBox'), num);
+    $api.removeCls($api.byId('shenpiMsgBox'), 'aui-hidden');
+}
+function closeShenpiMsg(){
+    $api.html($api.byId('shenpiMsgBox'), 0);
+    $api.addCls($api.byId('shenpiMsgBox'), 'aui-hidden');
+}
+function openShenpi(){
+    api.actionSheet({
+        destructiveTitle: '新的审批',
+        buttons: ['审批历史']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'shenpiNew',
+                    url: './shenpi_new_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'shenpiHistroy',
+                    url: './shenpi_histroy_win.html'
+                });
+            }
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+    
+}
+function openRenyuan(index){
+    if(canOpenRenyuan == 0){
+        alert('还没有加载完人员');
+        return false;
+    }else{
+        if(index == 2){
+            alert('暂时无法查看会员数据')
+        }else{
+            var renyuanWinName = 'renyuan_info'
+            api.openWin({
+                name: renyuanWinName,
+                url: './'+renyuanWinName+'_win.html',
+                pageParam: {
+                    showType: index
+                }
+            });
+        }
+    }
+}
+function clearHuancun(){
+    //异步返回结果：
+    api.getCacheSize(function(ret) {
+        var size = ret.size;
+        alert(size)
+    });
+    // api.clearCache(function() {
+    //     api.toast({
+    //         msg: '清除完成'
+    //     });
+    // });
+
+}
+function fnOut(){
+    api.confirm({
+        title: '确认信息',
+        msg: '你确定要退出系统吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                $api.setStorage('hasLogin', 0);
+                $api.setStorage('hasSaoma', 0);
+                $api.setStorage('lanuchCheckStr', '');
+                $api.setStorage('shebeiType', '');
+                $api.setStorage('shebeiId', '');
+                $api.setStorage('userTouxiangUrl', '');
+                api.rebootApp();
+            }
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+}
+function fnOpenWin(id){
+    var winName = winNameArr[id];
+    api.openWin({
+        name: winName,
+        url: './' + winName + '_win.html',
+        bounces: false,
+        slidBackEnabled:false
+    });
+}
+function GetRandomNum(Min,Max){
+    var Range = Max - Min;
+    var Rand = Math.random();
+    return(Min + Math.round(Rand * Range));
+}
+function getCacheImgUrl(realImgUrl,fn){
+    api.imageCache({
+        url: touxiangUrl
+    }, function(ret, err){
+        if( ret ){
+             cacheUrl = ret.url;
+             fn(cacheUrl);
+        }else{
+             cacheUrl = realImgUrl;
+             fn(cacheUrl);
+        }
+    });
+}
+function showTouxiang(cacheImgUrl){
+    $api.attr($api.byId('touxiang'), 'src', cacheImgUrl);
+}
+function getShenpiNew(){
+    api.ajax({
+        url: appUrl+'Get/shenpiNew',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            }
+        }
+    }, function(ret, err) {
+        //alert(JSON.stringify(ret))
+        if (ret) {
+            if(ret.has == 1){
+                var shenpiNum = ret.data.length;
+                if(shenpiNum != 0){
+                    showShenpiMsg(shenpiNum);
+                    api.notification({
+                        notify: {
+                            content: '你有'+shenpiNum+'条新的审批，请查看并审阅！',
+                            extra:shenpiNum
+                        }
+                    }, function(ret, err) {
+                        //alert(JSON.stringify(ret))
+                        var id = ret.id;
+                    });
+                }
+            }
+            if(ret.has == 0){
+                var shenpiNew = 0;
+                closeShenpiMsg();
+            }
+            canOpenRenyuan = 1;
+            jingliNum = ret.jingli_num;
+            jishiNum = ret.jishi_num;
+            huiyuanNum = ret.huiyuan_num;
+            $api.html($api.byId('jingliNum'), jingliNum);
+            $api.html($api.byId('jishiNum'), jishiNum);
+            $api.html($api.byId('huiyuanNum'), huiyuanNum);
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function () {
+    //alert(JSON.stringify(cacheCompany))
+    var header = $api.byId('misHeader');
+    if(!$api.getStorage('userTouxiangUrl')){
+        touxiangUrl = '../image/jingli.png';
+    }else{
+        touxiangUrl = ipUrl + $api.getStorage('userTouxiangUrl');
+    }
+    if(!$api.getStorage('allNum')){
+        $api.setStorage('allNum', 0);
+    }
+    if(!$api.getStorage('todayNum')){
+        $api.setStorage('todayNum', 0);
+    }
+    $api.fixStatusBar(header);
+    api.parseTapmode();
+    api.addEventListener({
+        name: 'changeTouxiang'
+    }, function(ret, err){
+        if( ret ){
+             touxiangUrl = ipUrl + ret.value.imgPath;
+             $api.setStorage('userTouxiangUrl', touxiangUrl);
+             getCacheImgUrl(touxiangUrl,showTouxiang);
+        }else{
+             //alert( JSON.stringify( err ) );
+        }
+    });
+    api.addEventListener({
+        name: 'reFlashShenpi'
+    }, function(ret, err) {
+        if (ret) {
+            getShenpiNew();
+        }
+    });
+    getCacheImgUrl(touxiangUrl,showTouxiang);
+    getShenpiNew();
+    setInterval("getShenpiNew()",300000);
+}
+</script>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-accordion.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-slide.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <div id="chartBox" class="aui-col-xs-12"; style="height:460px;">
+        <div style="text-align: center;padding-top: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript" src="../script/aui-accordion.js"></script>
+<script type="text/javascript" src="../script/aui-tap.js" ></script>
+<script type="text/javascript" src="../script/aui-slide.js"></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var headerHeight,frameHeight,buttonBoxHeight,jishiData,tongjiData;
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var companyCache = $api.getStorage('cacheCompany');
+var yuyueTicheng = parseFloat(companyCache.jishi_yuyue_ticheng);
+var showDate,isToday;
+var allTicheng = 0;
+var yuyueArr = new Array();
+var yuyueNum = 0;
+var shoufeiArr = new Array();
+var shoufeiNum = 0;
+var yewuArr = new Array();
+var yewuNum = 0;
+var showArr = new Array();
+var showNameArr = new Array();
+var showNumArr = new Array();
+var showName = '提成额';
+var showColor = '#e74c3c';
+var getAction = 'jishiTichengHengbiByBoss';
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    var option = {
+        title: {
+            text: '技师'+showName+'横比(共'+allTicheng+'元)'
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            }
+        },
+        legend: {
+            data: [showName],
+            left: 'right'
+        },
+        //color:['#e74c3c','#f1c40f','#2ecc71'],
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'value',
+            boundaryGap: [0, 0.01]
+        },
+        yAxis: {
+            type: 'category',
+            data: showNameArr
+        },
+        color:[showColor],
+        series: [
+            {
+                name: showName,
+                type: 'bar',
+                data: showNumArr,
+                markPoint: {
+                    data: [
+                        {type: 'max', name: '最大值'},
+                        {type: 'min', name: '最小值'}
+                    ]
+                },
+                markLine: {
+                    data: [
+                        {type: 'average', name: '平均值'}
+                    ]
+                }
+            }
+        ]
+    };
+    tongjiChart.setOption(option, true);
+}
+function reBuildData(){
+    var canBuildChart = 0;
+    for(var i = 0;i < nameNum;i++){
+        var newJishiArr = new Array();
+        var thisJishi = nameArr[i];
+        var thisJishiId = thisJishi['jishi_id'];
+        var thisUserId = thisJishi['id'];
+        var thisJishiName = thisJishi['jishi_paihao'] + '号';
+        newJishiArr['name'] = thisJishiName;
+        newJishiArr['id'] = thisJishiId;
+        //计算单个技师业务提成总额
+        var jishiYewuTicheng = 0;
+        for(var j = 0;j < yewuNum;j++){
+            var thisYewu = yewuArr[j];
+            var thisYewuId = thisYewu['jishi_id'];
+            var thisYewuTicheng = parseFloat(thisYewu['ticheng']);
+            var thisYewuJiazhongTicheng = parseFloat(thisYewu['jiazhong_ticheng']);
+            if(thisYewuId == thisJishiId){
+                jishiYewuTicheng += thisYewuTicheng + thisYewuJiazhongTicheng;
+            }
+        }
+        //计算单个技师预约提成总额
+        var jishiYuyueTicheng = 0;
+        for(var k = 0;k < yuyueNum;k++){
+            var thisYuyue = yuyueArr[k];
+            var thisYuyueId = thisYuyue['yewu_id'];
+            if(thisYuyueId == thisUserId){
+                jishiYuyueTicheng += yuyueTicheng;
+            }
+        }
+        //计算单个技师收费提成总额
+        var jishiShoufeiTicheng = 0;
+        for(var m = 0;m < shoufeiNum;m++){
+            var thisShoufei = shoufeiArr[m];
+            var thisShoufeiId = thisShoufei['yewu_id'];
+            var thisShoufeiTicheng = parseFloat(thisShoufei['chanpin_ticheng']);
+            if(thisShoufeiId == thisJishiId){
+                jishiShoufeiTicheng += thisShoufeiTicheng;
+            }
+        }
+       //alert('业务提成：' + jishiYewuTicheng + '元，预约提成：'+jishiYuyueTicheng+'元，收费提成：'+jishiShoufeiTicheng+'元');
+        var jishiTichengAll = jishiYewuTicheng + jishiYuyueTicheng  + jishiShoufeiTicheng;
+        newJishiArr['ticheng'] = jishiTichengAll;
+        showArr[i] = newJishiArr;
+    }
+    for(var n = 0;n < showArr.length;n++){
+        var thisId = showArr[n]['id'];
+        var thisTicheng = parseFloat(showArr[n]['ticheng']);
+        if(n != 0){
+            var checkNum = n 
+            for(var o = checkNum;o > 0;o--){
+                var lastKey = o;
+                var lastJishiId = showArr[lastKey]['id'];
+                var lastJishiName = showArr[lastKey]['name'];
+                var lastJishiTicheng = showArr[lastKey]['ticheng'];
+                var preKey = o - 1;
+                var preJishiId = showArr[preKey]['id'];
+                var preJishiName = showArr[preKey]['name'];
+                var preJishiTicheng = showArr[preKey]['ticheng'];
+                if(lastJishiTicheng <= preJishiTicheng){
+                    showArr[preKey]['id'] = lastJishiId;
+                    showArr[lastKey]['id'] = preJishiId;
+                    showArr[preKey]['name'] = lastJishiName;
+                    showArr[lastKey]['name'] = preJishiName;
+                    showArr[preKey]['ticheng'] = lastJishiTicheng;
+                    showArr[lastKey]['ticheng'] = preJishiTicheng;
+                }
+            } 
+        }
+    }
+    for(var p = 0; p < showArr.length;p++){
+        showNameArr[p] = showArr[p]['name'];
+        showNumArr[p] = showArr[p]['ticheng'];
+        allTicheng += parseFloat(showArr[p]['ticheng']);
+    }
+    canBuildChart = 1;
+    if(canBuildChart == 1){
+        setTimeout("buildChart()",50);
+    }
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/'+getAction,
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                mission_day:showDate
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            // alert(JSON.stringify(ret));
+            // return false;
+            if(ret.has_jishi == 1){
+                nameArr = ret.jishi_data;
+                nameNum = nameArr.length;
+            }
+            if(ret.has_yewu == 1){
+                yewuArr = ret.yewu_data;
+                yewuNum = yewuArr.length;
+            }
+            if(ret.has_yuyue == 1){
+                yuyueArr = ret.yuyue_data;
+                yuyueNum = yuyueArr.length;
+            }
+            if(ret.has_shoufei == 1){
+                shoufeiArr = ret.shoufei_data;
+                shoufeiNum = shoufeiArr.length;
+            }
+            reBuildData();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    isToday = api.pageParam.isToday;
+    if(isToday == 1){
+        showDate = missionDay;
+    }else{
+        showDate = api.pageParam.showDate;
+    }
+   getData();
+}  
+</script>
+</html>

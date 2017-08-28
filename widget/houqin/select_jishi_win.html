@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav" id="misHeader">
+        <a class="aui-btn aui-pull-left" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div class="aui-content-padded icons">
+        <ul class="aui-grid-nine" id="viewBox">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,headerHeight,frameHeight,dingdanId,jingliLiushuiId,roomId,roomName,serviceType,serviceName,serviceId,jishiIdStr,tichengStr;
+var jishiArr;
+var tichengArr = new Array();
+function closeWin(){
+    api.closeWin();
+}
+function openFrame(){
+    api.openFrame({
+        name: 'selectJishi',
+        url: './select_jishi_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            dingdanId:dingdanId,
+            jingliLiushuiId:jingliLiushuiId,
+            roomId:roomId,
+            roomName:roomName,
+            serviceType:thisServiceType,
+            serviceName:selectServiceName,
+            serviceId:selectServiceId,
+            jishiArr: jishiArr,
+            tichengArr:tichengArr
+        },
+        bounces: true
+    });
+}
+function getJishiTicheng(){
+    var tichengAllArr = tichengStr.split(',');
+    for(var j = 0;j < tichengAllArr.length;j++){
+        var thisStr = tichengAllArr[j];
+        var thisArr = thisStr.split(':');
+        var thisJishiId = thisArr[0];
+        var thisJishiTicheng = thisArr[1];
+        tichengArr[thisJishiId] = thisJishiTicheng;
+    }
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/selectJishiByJingli',
+        method: 'post',
+        data: {
+            values: { 
+                jishi_id_str: jishiIdStr
+            }
+        }
+    }, function(ret, err) {
+        alert(JSON.stringify(ret));
+        if (ret) {
+            if(ret.has == 1){
+                jishiArr = ret.data;
+                openFrame();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    jingliLiushuiId = api.pageParam.jingliLiushuiId;
+    roomId = api.pageParam.roomId;
+    roomName = api.pageParam.roomName;
+    serviceType = api.pageParam.serviceType;
+    serviceName = api.pageParam.serviceName;
+    serviceId = api.pageParam.serviceId;
+    jishiIdStr = api.pageParam.jishiIdStr;
+    tichengStr = api.pageParam.tichengStr;
+    getJishiTicheng();
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), '选择技师');
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameHeight = api.winHeight - headerHeight;
+    getData();
+};
+</script>
+</html>

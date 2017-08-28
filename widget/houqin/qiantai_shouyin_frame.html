@@ -1,0 +1,159 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var dingdanJson,companyId,missionDay,jingliTel;
+var listData;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    var url = appUrl+'Get/qiantaiDingdanList';
+    api.ajax({
+        url: url,
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId,
+                mission_day:missionDay,
+                show_type:0
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            if(ret.has == 0){
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }else{
+                listData = ret.data;
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function buildPage(){
+    var innerStr = '';
+    for(var i = 0;i < listData.length;i++){
+        //alert(i);
+        var thisDingdanJson = listData[i];
+        var dingdanId = thisDingdanJson.id;
+        var dingdanRoomHaoma = thisDingdanJson.dingdan_room_name;
+        var dingdanJishiPaihao = thisDingdanJson.dingdan_jishi_paihao;
+        var dingdanStartTime = thisDingdanJson.xiadan_time;
+        var dingdanPrice = thisDingdanJson.service_price;
+        var dingdanEndTime = thisDingdanJson.wanzhong_time;
+        var allMoney = thisDingdanJson.all_money;
+        dingdanEndTime = dingdanEndTime.substring(11);
+        //alert(dingdanEndTime)
+        var fuwuName = thisDingdanJson.service_name;
+        var fuwuType = thisDingdanJson.dingdan_type;
+        var fuwuId = thisDingdanJson.service_id;
+        var dingdanStatus = thisDingdanJson.dingdan_status;
+        var showJishiStr = '<span class="aui-text-danger">'+dingdanJishiPaihao+'号</span>';
+        var tplStr = '<li class="aui-list-view-cell aui-img" tapmode onclick="gotoDingdan('+dingdanId+')"><div class="aui-img-body">经理：<span class="aui-text-danger">'+thisDingdanJson.dingdan_jingli_name+'</span>，技师：'+showJishiStr+'，总收费：<span class="aui-text-danger">'+allMoney+'</span>元<p class="aui-ellipsis-2">房间：'+dingdanRoomHaoma+'，服务：'+fuwuName+'，下钟时间：'+dingdanEndTime+'</p></div></li>';
+        innerStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), innerStr);
+}
+function gotoDingdan(dingdanId){
+    api.actionSheet({
+        destructiveTitle: '单个买单',
+        buttons: ['合并买单']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'fuwu_dingdan',
+                    url: './fuwu_dingdan_win.html',
+                    bounces: false,
+                    slidBackEnabled:false,
+                    pageParam: {
+                        dingdanIdStr:dingdanId,
+                        hasHebing:0
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.confirm({
+                    msg: '确认要合并买单吗？',
+                    buttons: ['确定', '取消']
+                }, function(ret, err) {
+                    if (ret) {
+                        if(ret.buttonIndex == 1){
+                            api.openWin({
+                                name: 'hebing_dingdan',
+                                url: './hebing_dingdan_win.html',
+                                bounces: false,
+                                slidBackEnabled:false
+                            });
+                        }
+                    } 
+                });
+            }
+        }
+    }); 
+}
+apiready = function () {
+    companyId = $api.getStorage('companyId');
+    missionDay = $api.getStorage('missionDay');
+    jingliTel = $api.getStorage('userTel');
+    api.parseTapmode();
+    api.addEventListener({
+        name: 'reFlashShouyin'
+    }, function(ret, err) {
+        if (ret) {
+            buildPageByJson();
+        } else {
+            
+        }
+    });
+    buildPageByJson();
+    shuaxin();
+}
+</script>
+</html>

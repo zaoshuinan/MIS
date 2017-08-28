@@ -1,0 +1,144 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-accordion.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-slide.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <div id="chartBox" class="aui-col-xs-12"; style="height:500px;">
+        <div style="text-align: center;padding-top: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript" src="../script/aui-accordion.js"></script>
+<script type="text/javascript" src="../script/aui-tap.js" ></script>
+<script type="text/javascript" src="../script/aui-slide.js"></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var headerHeight,frameHeight,buttonBoxHeight,startDate,endDate;
+var companyId = $api.getStorage('companyId');
+var kaoqinNum = 0;
+var kaoqinData;
+var dayArr = new Array();
+var qingjiaArr = new Array();
+var chidaoArr = new Array();
+var zaotuiArr = new Array();
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    var option = {
+        title: {
+            text: '技师考勤纪录（共'+kaoqinNum+'天）',
+            x:'left'
+        },
+        tooltip : {
+            trigger: 'axis',
+            axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+            }
+        },
+        legend: {
+            data:['请假人数','迟到人数','早退人数'],
+            x:'center',
+            y:'bottom'
+        },
+        xAxis:  {
+            type: 'category',
+            boundaryGap: false,
+            data : dayArr
+        },
+        yAxis: {
+            type: 'value',
+            position:'left'
+        },
+        series: [
+            {
+                name:'请假人数',
+                type:'line',
+                data:qingjiaArr
+            },{
+                name:'迟到人数',
+                type:'line',
+                data:chidaoArr
+            },{
+                name:'早退人数',
+                type:'line',
+                data:zaotuiArr
+            }
+        ]
+    };
+    tongjiChart.setOption(option, true);
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/companyTongjiDuanByBoss',
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId,
+                start_day:startDate,
+                end_day:endDate,
+                type:7
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has){
+                kaoqinData = ret.data;
+            }
+            reBuildData();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function reBuildData(){
+    var tongjiNum = kaoqinData.length;
+    kaoqinNum = tongjiNum;
+    var canBuildChart = 0;
+    for(var i = 0;i < tongjiNum;i++){
+        var thisKaoqin = kaoqinData[i];
+        var thisJishiKaoqinStr = thisKaoqin['jishi_kaoqin'];
+        var thisJishiKaoqinArr = thisJishiKaoqinStr.split('-');
+        var thisJishiNum = thisJishiKaoqinArr[0];
+        var thisQingjiaNum = thisJishiKaoqinArr[1];
+        var thisChidaoNum = thisJishiKaoqinArr[2];
+        var thisZaotuiNum = thisJishiKaoqinArr[3];
+        var thisDay = thisKaoqin['tongji_day'].substring(8);
+        dayArr[i] = thisDay;
+        qingjiaArr[i] = thisQingjiaNum;
+        chidaoArr[i] = thisChidaoNum;
+        zaotuiArr[i] = thisZaotuiNum;
+    }
+    canBuildChart = 1;
+    if(canBuildChart == 1){
+        setTimeout("buildChart()",500);
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+    startDate = api.pageParam.startDate;
+    endDate = api.pageParam.endDate;
+    getData();
+}
+    
+</script>
+</html>

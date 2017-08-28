@@ -1,0 +1,357 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons">
+        <ul class="aui-user-view">
+            <li class="aui-user-view-cell aui-img" id="fuwuShowBox">
+                <img id="serviceImg" class="aui-img-object aui-pull-left" src="../image/fuwu.png"><div class="aui-img-body"><span>开启房间：<b id="roomName"></b><em id="dingdanHaoma">#123243243454567</em></span><p class="aui-ellipsis-1">项目：<b id="serviceName">未选</b>，价格：<b id="servicePrice">0</b>元，时长：<b id="serviceShichang">0</b>分钟</p></div>
+            </li>
+        </ul>
+        <ul class="aui-grid-nine" id="viewBox">
+            <li class="aui-col-xs-6 aui-text-center" tapmode onclick="selectService()"><img src="../image/fuwu.png" style="width:60px"><p id="serviceText"><b style="color:black">选择服务</b></p></li>
+            <li class="aui-col-xs-6 aui-text-center" tapmode onclick="selectJishi()"><img src="../image/jishi.png" style="width:60px"><p id="jishiText"><b style="color:black">选择技师</b></p></li>
+            <li class="aui-col-xs-6 aui-text-center" tapmode onclick="selectShoufei()"><img src="../image/shoufei.png" style="width:60px"><p><b style="color:black">收费产品</b></p></li>
+            <li class="aui-col-xs-6 aui-text-center" tapmode onclick="selectMianfei()"><img src="../image/mianfei.png" style="width:60px"><p><b style="color:black">免费产品</b></p></li>
+        </ul>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn" tapmode onclick="checkDingdan()"></div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var dingdanId,jingliLiushuiId,dingdanStatus,dingdanArr,thisServiceType;
+var roomId,roomName;
+var stepNum = 0;
+var ticheng = $api.getStorage('cacheCompany').jingli_yewu_ticheng;
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var userId = $api.getStorage('userId');
+var userName = $api.getStorage('userName');
+var userTel = $api.getStorage('userTel');
+var cacheService = $api.getStorage('cacheService');
+var serviceArr = new Array();
+var serviceBtnShowArr = new Array();
+var selectServiceId = 0;
+var selectServiceShichang = 0;
+var selectServiceName = selectServiceTichengStr = selectServiceJishiIdStr =  '';
+//alert(JSON.stringify(cacheService));
+var serviceTypeNameArr = ['muzu','anmo','sangna'];
+var dingdanStatusArr = ['','','开启订单','选择服务','选择技师','服务中','已下钟','已买单'];
+function selectJishi(){
+    if(stepNum == 2){
+        alert('请先选择服务项目');
+        return false;
+    }
+    if(stepNum > 2){
+        if(stepNum == 3){
+            openSelectJishiWin();
+        }else{
+            alert('不允许修改技师');
+            return false;
+        }
+    }
+}
+function selectShoufei(){
+    if(stepNum > 3){
+        alert('此阶段你无法操作该命令');
+        return false;
+    }
+    api.actionSheet({
+        destructiveTitle: '选择付费产品',
+        buttons: [ '查看已选列表']
+    },function(ret,err){
+        var winName,winUrl;
+        if(ret.buttonIndex == 1){
+            winName = 'selectShoufei';
+            winUrl = './select_shoufei_win.html';
+        }
+        if(ret.buttonIndex == 2){
+            winName = 'showShoufei';
+            winUrl = './show_shoufei_win.html';
+        }
+        api.openWin({
+            name: winName,
+            url: winUrl,
+            bounces: false,
+            slidBackEnabled:false,
+            pageParam: {
+                'dingdanId':dingdanId,
+                'roomHaoma':roomName,
+                'myId':userId,
+                'myName':userName,
+                'myTel':userTel
+            }
+        });
+    });
+}
+function selectMianfei(){
+    if(stepNum > 3){
+        alert('此阶段你无法操作该命令');
+        return false;
+    }
+    api.actionSheet({
+        destructiveTitle: '选择免费产品',
+        buttons: ['查看已选列表']
+    },function(ret,err){
+        var winName,winUrl;
+        if(ret.buttonIndex == 1){
+            winName = 'selectMianfei';
+            winUrl = './select_mianfei_win.html';
+        }
+        if(ret.buttonIndex == 2){
+            winName = 'showMianfei';
+            winUrl = './show_mianfei_win.html';
+        }
+        //alert(winName + winUrl + dingdanId);
+        api.openWin({
+            name: winName,
+            url: winUrl,
+            bounces: false,
+            slidBackEnabled:false,
+            pageParam: {
+                'dingdanId':dingdanId,
+                'roomHaoma':roomName,
+                'myId':userId,
+                'myName':userName,
+                'myTel':userTel
+            }
+        });
+    });
+}
+function addJishiEvent(){
+    api.addEventListener({
+        name: 'selectJishi'
+    }, function(ret, err) {
+        if (ret) {
+            //alert(JSON.stringify(ret));
+            stepNum = 4;
+            var jishiText ='<b style="color:red">'+ ret.value.jishiPaihao+'号</b>';
+            $api.html($api.byId('jishiText'), jishiText);
+        }
+    });
+}
+function openSelectJishiWin(){
+    addJishiEvent();
+    var pagePargmJson =  {
+        dingdanId:dingdanId,
+        jingliLiushuiId:jingliLiushuiId,
+        roomId:roomId,
+        roomName:roomName,
+        serviceType:thisServiceType,
+        serviceName:selectServiceName,
+        serviceId:selectServiceId,
+        serviceShichang:selectServiceShichang,
+        jishiIdStr: selectServiceJishiIdStr,
+        tichengStr:selectServiceTichengStr
+    }
+    // alert(JSON.stringify(pagePargmJson));
+    // return false;
+    api.openWin({
+        name: 'selectJishiByJingli',
+        url: './select_jishi_win.html',
+        pageParam:pagePargmJson
+    });
+}
+function selectService(){
+    if(stepNum > 2){
+        if(stepNum == 3){
+            api.confirm({
+                msg: '已经选择了服务，需要更改服务吗？',
+                buttons: ['确定', '取消']
+            }, function(ret, err) {
+                if (ret) {
+                    if(ret.buttonIndex == 1){
+                        showService();
+                    }
+                }
+            });
+        }else{
+            alert('目前状态不允许修改服务');
+            return false;
+        }
+    }
+    if(stepNum == 2){
+        showService()
+    }
+}
+function showService(){
+    api.actionSheet({
+        buttons: serviceBtnShowArr
+    }, function(ret, err) {
+        if (ret) {
+            var buttonNum = serviceBtnShowArr.length;
+            if(ret.buttonIndex >=1 && ret.buttonIndex <= buttonNum){
+                if(thisServiceType == 0){
+                    var thisServiceTypeJson = cacheService.muzu;
+                }
+                if(thisServiceType == 1){
+                    var thisServiceTypeJson = cacheService.anmo;
+                }
+                if(thisServiceType == 2){
+                    var thisServiceTypeJson = cacheService.sangna;
+                }
+                selectId = parseInt(ret.buttonIndex) - 1;
+                var thisServiceJson = thisServiceTypeJson[selectId];
+                var serviceId = thisServiceJson.id;
+                var serviceName = thisServiceJson.service_name;
+                var servicePrice = thisServiceJson.service_price;
+                var serviceShichang = thisServiceJson.service_shichang;
+                selectServiceId = serviceId;
+                selectServiceName = serviceName;
+                selectServiceShichang = serviceShichang;
+                selectServiceTichengStr = thisServiceJson.service_jishi_ticheng_str;
+                selectServiceJishiIdStr = thisServiceJson.jishi_real_id_str;
+                //alert(selectId + serviceName)
+                saveService(serviceId,serviceName,servicePrice,serviceShichang);
+            }
+        }
+    });
+}
+function saveService(serviceId,serviceName,servicePrice,serviceShichang){
+    var valueJson = { 
+        jingli_liushui_id:jingliLiushuiId,
+        ticheng:ticheng,
+        dingdan_id:dingdanId,
+        service_id:serviceId,
+        service_name:serviceName,
+        service_price:servicePrice,
+        service_shichang:serviceShichang
+    }
+    api.ajax({
+        url: appUrl+'Change/addServiceByJingli',
+        method: 'post',
+        data: {
+            values: valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                stepNum = 3;
+                $api.html($api.byId('serviceText'), '<b style="color:red">'+serviceName+'</b>');
+                $api.html($api.byId('serviceName'), serviceName);
+                $api.html($api.byId('servicePrice'), servicePrice);
+                $api.html($api.byId('serviceShichang'), serviceShichang);
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function reSetServiceArr(index){
+    if(thisServiceType == 0){
+        var thisServiceTypeJson = cacheService.muzu;
+    }
+    if(thisServiceType == 1){
+        var thisServiceTypeJson = cacheService.anmo;
+    }
+    if(thisServiceType == 2){
+        var thisServiceTypeJson = cacheService.sangna;
+    }
+    for(var i = 0;i < thisServiceTypeJson.length;i++){
+        var thisServiceJson = thisServiceTypeJson[i];
+        serviceBtnShowArr[i] = thisServiceJson.service_name+'('+thisServiceJson.service_price+'元)，'+thisServiceJson.service_shichang+'分钟';
+        if(index == 1){
+            //alert(thisServiceJson.id + '-' + selectServiceId);
+            if(thisServiceJson.id == selectServiceId){
+                selectServiceTichengStr = thisServiceJson.service_jishi_ticheng_str;
+                selectServiceJishiIdStr = thisServiceJson.jishi_real_id_str;
+            }
+        }
+    }
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/dingdanDetailByJingli',
+        method: 'post',
+        data: {
+            values: { 
+                dingdan_id: dingdanId,
+                jingli_liushui_id:jingliLiushuiId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                dingdanArr = ret.data;
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络出错'
+            });
+        }
+    });
+}
+function buildPage(){
+    var dingdanStatus = dingdanArr.dingdan_status;
+    stepNum = dingdanStatus;
+    thisServiceType = dingdanArr.service_type;
+    $api.attr($api.byId('serviceImg'), 'src','../image/'+serviceTypeNameArr[thisServiceType]+'.png');
+    roomName = dingdanArr.dingdan_room_name;
+    roomId = dingdanArr.dingdan_room_id;
+    $api.html($api.byId('roomName'), roomName);
+    $api.html($api.byId('dingdanHaoma'), '#'+dingdanArr.dingdan_haoma);
+    var thisServiceName = dingdanArr.service_name;
+    if(thisServiceName == ''){
+        var serviceText = '<b style="color:black">选择服务</b>';
+    }else{
+        var serviceText = '<b style="color:red">'+thisServiceName+'</b>';
+    }
+    $api.html($api.byId('serviceText'), serviceText);
+    var thisServicePrice = dingdanArr.service_price;
+    var thisServiceShichang = dingdanArr.service_shichang;
+    if(thisServiceName != ''){
+        selectServiceId = dingdanArr.service_id;
+        selectServiceName = dingdanArr.service_name;
+        selectServiceShichang = dingdanArr.service_shichang;
+        //alert(selectServiceId)
+        reSetServiceArr(1);
+        $api.html($api.byId('serviceName'), thisServiceName);
+        $api.html($api.byId('servicePrice'), thisServicePrice);
+        $api.html($api.byId('serviceShichang'), thisServiceShichang);
+    }else{
+        reSetServiceArr(0);
+    }
+    var thisServiceJishiPaihao = dingdanArr.dingdan_jishi_paihao;
+    if(thisServiceJishiPaihao == ''){
+        var jishiText = '<b style="color:black">选择技师</b>';
+    }else{
+        var jishiText ='<b style="color:red">'+ thisServiceJishiPaihao+'号</b>';
+    }
+    $api.html($api.byId('jishiText'), jishiText);
+}
+function checkDingdan(){
+
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    jingliLiushuiId = api.pageParam.jingliLiushuiId;
+    getData();
+}
+        
+</script>
+</html>

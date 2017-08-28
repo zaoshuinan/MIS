@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div class="aui-content-padded" id="buttonBox" style="margin-top: 5px;">
+        <div class="aui-tab aui-tab-danger">
+            <ul class="aui-tab-nav aui-tab-border" id="buttons">
+                
+            </ul>
+        </div>
+    </div>
+    <div class="aui-content-padded icons">
+        <ul class="aui-grid-nine" id="viewBox">
+            <p style="margin: 20px;color: black;font-size: 20px;text-align: center;">点击按钮查看数据</p>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var roomTypeName,roomConfigId,roomTypeHang,roomTypeLie;
+function closeWin(){
+    api.closeWin();
+}
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll($api.byId('buttonBox'), 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function openFrame(){
+    api.openFrame({
+        name: 'show_room_frame',
+        url: 'show_room_frame.html',
+        bounces: false,
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            roomTypeName: roomTypeName,
+            roomConfigId:roomConfigId,
+            roomTypeHang:roomTypeHang,
+            roomTypeLie:roomTypeLie
+        }
+    })
+}
+apiready = function(){
+    api.parseTapmode();
+    roomTypeName = api.pageParam.roomTypeName;
+    roomTypeHang = api.pageParam.roomTypeHang;
+    roomTypeLie = api.pageParam.roomTypeLie;
+    roomConfigId = api.pageParam.roomConfigId;
+    var header = $api.byId('misHeader');
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), '查看'+roomTypeName+'房间情况');
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    buttonBoxHeight = $api.offset($api.byId('buttonBox')).h;
+    frameHeight = api.winHeight - headerHeight;
+    openFrame()
+};
+</script>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 60px;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons">
+        <div class="aui-grid-nine"  id="viewBox" style="padding-bottom: 60px;">
+
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12 aui-bg-danger" tapmode onclick="saveCheck()">选择技师</div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var listJson,selectNameStr,selectIdStr,selectIdArr,selectNameArr,jishiRealIdStr,jishiRealIdArr;
+var imgArr = new Array();
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">加载数据中......</p>');
+    api.ajax({
+        url: appUrl+'Get/jishiListByQiantai',
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            if(ret.has == 0){
+                $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">没有找到数据</p>');
+            }else{
+                listJson = ret.data;
+                listJson = listJson.sort(downByTypeAsc);
+                checkArr()
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function downByTypeAsc(x,y){
+    var xTemp =  x.jishi_type;
+    var yTemp =  y.jishi_type;
+    return (xTemp > yTemp) ? 1 : -1
+}
+function buildPage(){
+    var innerStr = '';
+    if(listJson.has == 0){
+        innerStr = '<p style="margin-top:10px;" class="aui-text-center">没有找到数据</p>';
+    }else{
+        //alert(JSON.stringify(listJson))
+        for(var i = 0;i < listJson.length;i++){
+            var thisJson = listJson[i];
+            var jishiId = thisJson.id;
+            var jishiName = thisJson.user_name;
+            var jishiRealId = thisJson.jishi_id;
+            var jishiPaihao = thisJson.jishi_paihao;
+            var jishiType = thisJson.jishi_type;
+            var imgUrl;
+            var typeStr;
+            if(jishiType == 0){
+                typeStr = '沐足'
+            }
+            if(jishiType == 1){
+                typeStr = '按摩'
+            }
+            if(jishiType == 2){
+                typeStr = '桑拿'
+            }
+            if(thisJson.user_img_url == ''){
+                imgUrl = '../image/jishi.png';
+            }else{
+                imgUrl = ipUrl + thisJson.user_img_url;
+            }
+            
+            imgArr[i] = imgUrl;
+            //alert(imgArr[i])
+            var thisStr = '<li id="selectBox'+jishiId+'" hasSelect="0" class="aui-col-xs-2 aui-text-center" tapmode onclick="fnSelect('+jishiId+','+jishiRealId+',\''+jishiPaihao+'\')"><img id="img'+i+'" style="width:80px;height:80px;border-radius: 50%;" src=""><p style="color:blue">'+jishiPaihao+'号（'+typeStr+'）</p></li>';
+            innerStr += thisStr;
+        }
+    }
+    var viewBox = $api.byId('viewBox');
+    $api.html(viewBox, innerStr);
+    //闭包处理
+    for(var l = 0;l<imgArr.length;l++){
+        (function(l) {
+            var objIdName = 'img' + l;
+            var realImgUrl = imgArr[l];
+            //alert('1-'+objIdName + ':' + realImgUrl)
+            //alert(realImgUrl)
+            api.imageCache({
+                url: realImgUrl
+            }, function(ret, err){
+                if( ret ){
+                     var cacheUrl = ret.url;
+                     $api.attr($api.byId(objIdName), 'src', cacheUrl);
+                }
+            });
+        })(l);
+    }
+    if(selectIdStr != ''){
+        setSelectObj();
+    }
+}
+function fnSelect(selectId,jishiRealId,selectName){
+    var thisObj = $api.byId('selectBox'+selectId);
+    var thisStatus = $api.attr(thisObj, 'hasSelect');
+    if(thisStatus == 0){
+        $api.attr(thisObj, 'hasSelect', '1');
+        $api.addCls(thisObj, 'aui-bg-danger');
+        selectIdArr.splice(0,0,selectId);
+        selectNameArr.splice(0,0,selectName);
+        jishiRealIdArr.splice(0,0,jishiRealId);
+    }else{
+        $api.attr(thisObj, 'hasSelect', '0');
+        $api.removeCls(thisObj, 'aui-bg-danger');
+        arrayRemoveByValue(selectIdArr,selectId);
+        arrayRemoveByValue(selectNameArr,selectName);
+        arrayRemoveByValue(jishiRealIdArr,jishiRealId);
+    }
+}
+function arrayRemoveByValue(arr, val) {
+  for(var i=0; i<arr.length; i++) {
+        if(arr[i] == val) {
+          arr.splice(i, 1);
+          break;
+        }
+  }
+}
+function arrToStr(arr){
+    var str;
+    for(var i=0; i<arr.length; i++) {
+          if(i == 0) {
+                str = arr[i];
+          }else{
+                str += ',' + arr[i];
+          }
+    }
+    return str;
+}
+function checkArr(){
+    if(selectIdArr.length >= 1){
+        var clearIdArr = new Array();
+        var clearNameArr = new Array();
+        var clearKeyNum = 0
+        for(var i = 0; i< selectIdArr.length;i++){
+            var has = 0;
+            var tempId = selectIdArr[i];
+            var tempName = selectNameArr[i];
+
+            for(var j = 0; j < listJson.length;j++){
+                var listId = listJson[j].id;
+                
+                if(listId == tempId){
+                    has = 1;
+                }
+            }
+            if(has == 0){
+                clearIdArr[clearKeyNum] = tempId;
+                clearNameArr[clearKeyNum] = tempName;
+                clearKeyNum++;
+            }
+        }
+        for(var k = 0;k<clearIdArr.length;k++){
+            var clearId = clearIdArr[k];
+            var clearName = clearNameArr[k];
+            arrayRemoveByValue(selectIdArr,clearId);
+            arrayRemoveByValue(selectNameArr,clearName);
+        }       
+    }
+}
+function setSelectObj(){
+    for(var i = 0;i < selectIdArr.length;i++){
+        var thisId = selectIdArr[i];
+        var thisObj = $api.byId('selectBox'+thisId);
+        $api.attr(thisObj, 'hasSelect', '1');
+        $api.addCls(thisObj, 'aui-bg-danger');
+    }
+}
+function saveCheck(){
+    if(selectIdArr.length == 0){
+        alert('你还没选择呢！');
+        return false;
+    }else{
+        selectIdStr = arrToStr(selectIdArr);
+        selectNameStr = arrToStr(selectNameArr);
+        jishiRealIdStr = arrToStr(jishiRealIdArr);
+        api.sendEvent({
+            name: 'backSelect',
+            extra: {
+                type:'jishi',
+                selectIdStr: selectIdStr, 
+                selectNameStr: selectNameStr,
+                jishiRealIdStr:jishiRealIdStr
+            }
+        });
+        api.closeWin();
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+    selectIdStr = api.pageParam.selectIdStr
+    selectNameStr = api.pageParam.selectNameStr;
+    jishiRealIdStr = api.pageParam.jishiRealIdStr;
+    if(selectIdStr == ''){
+        selectIdArr = new Array();
+        jishiRealIdArr = new Array();
+        selectNameArr = new Array();
+    }else{
+        selectIdArr = selectIdStr.split(',');
+        selectNameArr = selectNameStr.split(',');
+        //alert(jishiRealIdStr)
+        if(jishiRealIdStr != ''){
+            jishiRealIdArr = jishiRealIdStr.split(',');
+        }
+    }
+    buildPageByJson();
+    shuaxin();
+}
+        
+</script>
+</html>

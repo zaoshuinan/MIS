@@ -1,0 +1,243 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style type="text/css">
+.aui-content {
+    background: #ffffff;
+    overflow: hidden;
+    padding: 15px;
+}
+</style>
+<body>
+    <div class="aui-content" id="viewBox">
+        <p style="font-size: 16px; margin-left:16px;">这是你过去<b id="overDayNum" class="aui-text-danger">0</b>天的数据(下拉刷新)</p>
+        <div id="chartBox" class="aui-col-xs-12"; style="height:400px;margin-top: 10px;">
+                <div style="text-align: center;padding: 50px;">
+                    <div class="loading-2">
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                        <i></i>
+                    </div>
+                    <p>读取数据中....</p>
+                </div>
+        </div>
+        <div class="aui-card">
+            <ul class="aui-grid-sixteen">
+                <li class="aui-col-xs-6 aui-text-center" id="yewuBox" tapmode onclick="reBuildJson(0)">
+                    <span class="aui-iconfont aui-icon-sort aui-text-warning"></span>
+                    <p><p style="color:black">业务历史数据</p></p>
+                </li>
+                <li class="aui-col-xs-6 aui-text-center" id="tichengBox" tapmode onclick="reBuildJson(1)">
+                    <span class="aui-iconfont aui-icon-sponsor aui-text-warning"></span>
+                    <p><p style="color:black">提成历史数据</p></p>
+                </li>
+            </ul>
+        </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var userId = $api.getStorage('userId');
+var jishiId = $api.getStorage('jishiId');
+var userName = $api.getStorage('userName');
+var userTel = $api.getStorage('userTel');
+var viewBox = $api.byId('viewBox');
+var overDayNum = 15;
+var endDay = $api.getStorage('missionDay');
+var startDay;
+var pageJson;
+var chartJson = {
+    title: {
+        text: ''
+    },
+    tooltip : {
+        trigger: 'axis'
+    },
+    legend: {
+        data:['业务量']
+    },
+    grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+    },
+    xAxis : [
+        {
+            type : 'category',
+            boundaryGap : false,
+            data : []
+        }
+    ],
+    yAxis : [
+        {
+            type : 'value'
+        }
+    ],
+    series : [
+        {
+            name:'',
+            type:'line',
+            stack: '总量',
+            areaStyle: {normal: {}},
+            data:[]
+        }
+    ]
+};
+function addDate(date, days) {
+    if (days == undefined || days == '') {
+        days = 1;
+    }
+    var date = new Date(date);
+    date.setDate(date.getDate() + days);
+    var month = date.getMonth() + 1;
+    if(month < 10){
+        month = '0' + month;
+    }
+    var day = date.getDate();
+    if(day < 10){
+        day = '0' + day;
+    }
+    return date.getFullYear() + '-' + month + '-' + day;
+}
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        getJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+
+function getJson(){
+    api.ajax({
+        url: appUrl+'Get/jishiHistroy',
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId,
+                user_id:userId,
+                jishi_id:jishiId,
+                start_day:startDay,
+                end_day:endDay
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                //alert(JSON.stringify(ret))
+                pageJson = ret.data;
+                reBuildJson(0);
+            }else{
+                buildEmptyPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+
+function downByYewuTichengAsc(x,y){
+    var xTemp =  x.ticheng_all ;
+    var yTemp =  y.ticheng_all;
+    return (xTemp < yTemp) ? 1 : -1
+}
+
+function downByYewuNumAsc(x,y){
+    var xTemp =  x.yewu_num ;
+    var yTemp =  y.yewu_num;
+    return (xTemp < yTemp) ? 1 : -1
+}
+function downByDayAsc(x,y){
+    var xTemp =  x.tongji_day ;
+    var yTemp =  y.tongji_day;
+    return (xTemp > yTemp) ? 1 : -1
+}
+function reBuildJson(type){
+    overDayNum = pageJson.length;
+    $api.removeCls($api.byId('yewuBox'), 'aui-bg-danger');
+    $api.removeCls($api.byId('tichengBox'), 'aui-bg-danger');
+    if(type == 0){
+        $api.addCls($api.byId('yewuBox'), 'aui-bg-danger');
+        //pageJson = pageJson.sort(downByDayAsc);
+        var dayArr = new Array();
+        var yewuNumArr = new Array();
+        for(var i = 0;i < overDayNum;i ++){
+            var thisYewuNum = pageJson[i].yewu_num;
+            var thisDay = pageJson[i].tongji_day.substr(8)+'号';
+            dayArr[i] = thisDay;
+            yewuNumArr[i] = thisYewuNum;
+        }
+        chartJson.title.text = userName + ' 业务历史数据（近'+overDayNum+'天）';
+        chartJson.legend.data = ['业务量'];
+        chartJson.series[0].name = '';
+        chartJson.xAxis[0].data = dayArr;
+        chartJson.series[0].data = yewuNumArr;
+    }
+    if(type == 1){
+        $api.addCls($api.byId('tichengBox'), 'aui-bg-danger');
+        //pageJson = pageJson.sort(downByDayAsc);
+        var dayArr = new Array();
+        var tichengArr = new Array();
+        for(var i = 0;i < overDayNum;i ++){
+            var thisDay = pageJson[i].tongji_day.substr(8)+'号';
+            var thisTicheng = pageJson[i].ticheng_all;
+            dayArr[i] = thisDay;
+            tichengArr[i] = thisTicheng;
+        }
+        chartJson.title.text = userName + ' 提成历史数据（近'+overDayNum+'天）';
+        chartJson.legend.data = ['提成总额'];
+        chartJson.series[0].name = '';
+        chartJson.xAxis[0].data = dayArr;
+        chartJson.series[0].data = tichengArr;
+    }
+   buildPageByPageJson();
+}
+
+function buildPageByPageJson(){
+    $api.html($api.byId('overDayNum'), overDayNum);
+    setTimeout("buildChart()",100);
+    $api.removeCls(viewBox, 'aui-hidden');
+}
+
+function buildEmptyPage(){
+    $api.html(viewBox, '<p class="aui-text-center">暂时还没有关于你的统计数据！</p>');
+    $api.removeCls(viewBox, 'aui-hidden');
+}
+
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var randChart = echarts.init(chartBox);
+    randChart.setOption(chartJson);
+}
+
+apiready = function () {
+    api.parseTapmode();
+    var jianDay = -1*overDayNum;
+    startDay = addDate(endDay,jianDay)
+    getJson();
+    //alert(startDay + '至' + endDay)
+    shuaxin();
+}
+</script>
+</html>

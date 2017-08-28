@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-btn-danger aui-pull-left">
+        </a>
+        <div class="aui-title">新沐足(老板端)</div>
+    </header>
+
+    <div class="aui-col-xs-12";>
+        <div style="text-align: center;padding-top: 200px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p style="color:black">加载页面中</p>
+        </div>
+    </div>
+    <footer class="aui-nav" id="misFooter">
+        <ul class="aui-bar-tab">
+            <li class="active-danger" id="tabbar0" tapmode onclick="fnOpen(0)">
+                <span class="aui-iconfont aui-icon-attention"></span>
+                <p>今日情况</p>
+            </li>
+            <li id="tabbar1" tapmode onclick="fnOpen(1)">
+                <span class="aui-iconfont aui-icon-rank"></span>
+                <p>数据统计</p>
+            </li>
+            <li id="tabbar2" tapmode onclick="fnOpen(2)">
+                <span class="aui-iconfont aui-icon-home"></span>
+                <p>我的公司</p>
+            </li>
+        </ul>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest-SHA1.js"></script>
+<script type="text/javascript" src="../script/SHA1.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var frameStart,frameHeight,frameGroupStart,frameGroupHeight,frameGroupButtonBoxHeight,headerHeight,headerHeight1,frameHeight,frameHeight1,footerHeight;
+var companyId = $api.getStorage('companyId');
+var dingdanIndex = 0;
+var shebeiId = '';
+var pushCode = '';
+var appId = 'A6908494336341';
+var appKey = "54094443-FDD9-6436-DF54-B2C1EA5AAC7D";
+//$api.setStorage('missionDay', '2017-10-10');
+var framesJson = [
+    {
+        'id':0,
+        'type':'frame',
+        'frameName':'today'
+    },{
+        'id':1,
+        'type':'frame',
+        'frameName':'tongji'
+    },{
+        'id':2,
+        'type':'frame',
+        'frameName':'my'
+    }
+]
+function changeFrameGroup(index){
+    api.setFrameGroupIndex({
+        name: 'dingdan',
+        index: index,
+        scroll: true
+    });
+    changeGroupButtonStyle(index);
+    groupIndex = index;
+}
+function fnOpen(index){
+    var thisDate = new Date();
+    var thisTime = thisDate.getTime();
+    if(index == 2){
+        headerHeight1 = 0;
+        frameHeight1 = api.winHeight - footerHeight;
+        api.openFrame({
+            name: framesJson[index].frameName,
+            url: './' + framesJson[index].frameName + '_frame.html',
+            bounces: false,
+            slidBackEnabled:false,
+            rect: {
+                x: 0,
+                y: headerHeight1,
+                w: 'auto',
+                h: frameHeight1
+            }
+        });
+    }else{
+        api.closeFrame({
+            name: framesJson[index].frameName
+        });
+        api.openFrame({
+            name: framesJson[index].frameName,
+            url: './' + framesJson[index].frameName + '_frame.html',
+            bounces: false,
+            slidBackEnabled:false,
+            rect: {
+                x: 0,
+                y: headerHeight,
+                w: 'auto',
+                h: frameHeight
+            }
+        });
+    }
+    hideOther(index);
+    changeFootButton(index);
+}
+function changeFootButton(index){
+    var buttonsObj = $api.domAll(footer, 'ul li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active-danger');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active-danger');
+        }
+    }
+}
+function hideOther(index){
+    for(var i in framesJson){
+        if(i != index){
+            if(framesJson[i].type == 'frame'){
+                api.setFrameAttr({
+                    name: framesJson[i].frameName,
+                    hidden: true
+                });
+            }
+            if(framesJson[i].type == 'frameGroup'){
+                api.setFrameGroupAttr({
+                    name: framesJson[i].frameGroupName,
+                    hidden: true
+                });
+            }
+        }
+    }
+}
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll(frameGroupButtonBox, 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function checkCache(){
+    api.ajax({
+        url: appUrl+'Get/cacheCheckStr',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            var systemCacheCheckStr = ret.str;
+            if(systemCacheCheckStr != $api.getStorage('cacheCheckStr')){
+                alert( '检测到新的系统配置，正在为你更换')
+                reBuildCache();
+            }else{
+                fnOpen(2);
+                fnOpen(0);
+            }
+        } else {
+            api.toast({
+                msg: '网络出错'
+            });
+        }
+    });
+}
+function reBuildCache(){
+    api.ajax({
+        url: appUrl+'Get/cacheJson',
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret){
+                var cacheData = ret.cache;
+                var cacheJishi = JSON.parse(cacheData.cache_jishi);
+                var cacheRoom = JSON.parse(cacheData.cache_room);
+                var cacheService = JSON.parse(cacheData.cache_service);
+                var cacheBanci = JSON.parse(cacheData.cache_banci);
+                var cacheCompany = JSON.parse(cacheData.cache_company);
+                var cacheCheckStr = cacheData.cache_check_str;
+                $api.setStorage('cacheCheckStr', cacheCheckStr);
+                $api.setStorage('cacheJishi', cacheJishi);
+                $api.setStorage('cacheRoom', cacheRoom);
+                $api.setStorage('cacheService', cacheService);
+                $api.setStorage('cacheBanci', cacheBanci);
+                $api.setStorage('cacheCompany', cacheCompany);
+                fnOpen(2);
+                fnOpen(0);
+            }
+        } else {
+            api.toast({
+                msg: '网络出错'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    shebeiId = api.deviceId;
+    pushCode = $api.getStorage('userTel') + $api.getStorage('companyHaoma');
+    header = $api.byId('misHeader');
+    footer = $api.byId('misFooter');
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    frameStart = headerHeight;
+    frameHeight = api.winHeight - headerHeight - footerHeight;
+    checkCache();
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err){
+
+    });
+    api.setKeepScreenOn({
+        keepOn: true
+    });
+}
+</script>
+</html>

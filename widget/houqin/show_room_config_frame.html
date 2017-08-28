@@ -1,0 +1,167 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var configArr = new Array();
+var companyFanweiNameArr = ['沐足','按摩','桑拿'];
+var companyFanweiDataNameArr = ['muzu','anmo','sangna'];
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/roomConfig',
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert(JSON.stringify(ret))
+            if(ret.has == 1){
+                configArr = ret.data;
+                buildPage()
+            }else{
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function buildPage(){
+    var innerStr = '';
+    for(var i = 0;i < configArr.length;i++){
+        var configId = configArr[i]['id'];
+        var typeName = configArr[i]['type_name'];
+        var fanweiId = configArr[i]['room_type'];
+        var typeHang = configArr[i]['type_hang'];
+        var typeLie = configArr[i]['type_lie'];
+        var thisStr = '<li class="aui-list-view-cell" tapmode onclick="changeType(\''+fanweiId+'\',\''+configId+'\',\''+typeName+'\',\''+typeHang+'\',\''+typeLie+'\')"><i  class="aui-iconfont aui-icon-apps aui-bg-danger"></i>（'+companyFanweiNameArr[fanweiId]+'类）'+typeName+'：'+typeHang+'行'+typeLie+'列</li>';
+        innerStr += thisStr;
+    }
+    $api.html($api.byId('viewBox'), innerStr);
+}
+function changeType(fanweiId,configId,typeName,typeHang,typeLie){
+    api.actionSheet({
+        destructiveTitle: typeName+'房间命名',
+        buttons: ['修改房间类型','删除房间类型']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'set_room_name',
+                    url: './set_room_name_win.html',
+                    pageParam: {
+                        fanweiId:fanweiId,
+                        configId: configId,
+                        typeName:typeName,
+                        typeHang:typeHang,
+                        typeLie:typeLie
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                fnEdit(fanweiId,configId);
+            }
+            if(ret.buttonIndex == 3){
+                api.confirm({
+                    msg: '确定要删除该房间类型吗？此操作会删除该类型下所有房间数据，确定吗？',
+                    buttons: ['确定', '取消']
+                }, function(ret, err) {
+                    if (ret) {
+                        if(ret.buttonIndex == 1){
+                            fnCancel(configId)
+                        }
+                    }
+                });
+            }
+        }
+    });
+}
+function fnEdit(fanweiId,configId){
+    api.openWin({
+        name: 'add_room_config',
+        url: './add_room_config_win.html',
+        pageParam: {
+            fanweiId: fanweiId,
+            showType:1,
+            configId:configId
+        }
+    });
+}
+function fnCancel(configId){
+    api.ajax({
+        url: appUrl+'Change/delRoomType',
+        method: 'post',
+        data: {
+            values: {
+                config_id:configId,
+                company_id:companyId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            api.sendEvent({
+                name: 'reFlashRoomTypeList',
+                extra: {
+                    canFlash:1
+                }
+            });
+            alert('删除成功');
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function addEvent(){
+    api.addEventListener({
+        name: 'reFlashRoomTypeList'
+    }, function(ret, err) {
+        if (ret) {
+            getData()
+        } else {
+            //alert(JSON.stringify(err));
+        }
+    });
+}
+apiready = function () {
+    api.parseTapmode();
+    getData();
+    addEvent();
+}
+</script>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view aui-in" id="viewBox" style="margin-top: 10px;">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var maizhongJson,companyId,missionDay,jingliTel;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    var url = '';
+    api.ajax({
+        url: appUrl+'Get/maizhongListByQiantai',
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data: {
+            values: { 
+                company_id:companyId,
+                mission_day:missionDay,
+                show_type:0
+            }
+        },
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            if(ret.has ==0){
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }else{
+                maizhongJson = ret.data;
+                buildPage(); 
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        };
+    });
+}
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < maizhongJson.length;i++){
+        var thisJson = maizhongJson[i];
+        var maizhongId = thisJson.id;
+        var maizhongType = thisJson.maizhong_type;
+        var userId = thisJson.user_id;
+        var userTel = thisJson.user_tel;
+        var userName = thisJson.user_name;
+        var jishiId = thisJson.jishiPaihao;
+        var shichang = thisJson.shichang;
+        var allMoney = thisJson.all_money;
+        var startTime = thisJson.start_time;
+        var endTime = thisJson.end_time;
+        var maizhongTime = thisJson.time;
+        var maizhongStatus = thisJson.status;
+        if(maizhongType == 1){
+            userName = userName + '号技师';
+        }
+        if(maizhongStatus == 2){
+            var typeClass = 'aui-icon-time aui-bg-warning';
+        }
+        if(maizhongStatus == 1){
+            var typeClass = 'aui-icon-activity aui-bg-success';
+        }
+        if(maizhongStatus == 0){
+            var typeClass = 'aui-icon-deletefill aui-bg-danger';
+        }
+        var tplStr = '<li  class="aui-list-view-cell" tapmode onclick="checkMaizhong('+thisJson.id+','+maizhongStatus+')"><div class="aui-swipe-handle"><i id="notice-icon' + thisJson.id+'" class="aui-iconfont '+typeClass+'"></i>买钟人：<span class="aui-text-danger">'+userName+'</span>，购买'+shichang+'个钟，从'+startTime+'到'+endTime+'，共<span class="aui-text-success">'+allMoney+'</span>元</div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+function checkMaizhong(maizhongId,maizhongStatus){
+    if(maizhongStatus != 2){
+        alert('该单已经买钟成功');
+        return false;
+    }else{
+        api.actionSheet({
+            destructiveTitle: '确认买钟',
+            buttons: ['取消买钟']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    fnSend(maizhongId);
+                }
+                if(ret.buttonIndex == 2){
+                    fnCancel(maizhongId);
+                }
+            } 
+        });
+    }
+}
+function fnCancel(maizhongId){
+    var changeObj1 = $api.byId('notice-icon' + maizhongId);
+    api.confirm({
+        title: '确认取消',
+        msg: '你确认取消本次买钟吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.ajax({
+                    url: appUrl+'Change/cancelmaizhong',
+                    method: 'post',
+                    data: {
+                        values: {
+                            maizhong_id:maizhongId
+                        }
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        $api.removeCls(changeObj1, 'aui-icon-countdown');
+                        $api.removeCls(changeObj1, 'aui-bg-warning');
+                        $api.removeCls(changeObj1, 'aui-icon-activity');
+                        $api.removeCls(changeObj1, 'aui-bg-success');
+                        $api.addCls(changeObj1, 'aui-icon-deletefill');
+                        $api.addCls(changeObj1, 'aui-bg-danger');
+                    } else {
+                        api.toast({
+                            msg: '网络错误'
+                        });
+                    }
+                });
+            }
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+}
+
+function fnSend(maizhongId){
+    var changeObj1 = $api.byId('notice-icon' + maizhongId);
+    api.confirm({
+        title: '确认信息',
+        msg: '确认买钟并已收钱了吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.ajax({
+                    url: appUrl+'Change/querenmaizhong',
+                    method: 'post',
+                    data: {
+                        values: { 
+                            maizhong_id:maizhongId
+                        }
+                    }
+                }, function(ret, err) {
+                    //alert(JSON.stringify(ret));
+                    if (ret) {
+                        api.toast({
+                            msg: '标记买钟'
+                        });
+                        $api.removeCls(changeObj1, 'aui-icon-countdown');
+                        $api.removeCls(changeObj1, 'aui-bg-warning');
+                        $api.addCls(changeObj1, 'aui-icon-activity');
+                        $api.addCls(changeObj1, 'aui-bg-success');
+                    } else {
+                        api.toast({
+                            msg: '网络错误'
+                        });
+                    }
+                });
+            }
+        }
+    });
+}
+
+apiready = function () {
+    companyId = $api.getStorage('companyId');
+    missionDay = $api.getStorage('missionDay');
+    api.parseTapmode();
+    buildPageByJson();
+    shuaxin();
+}
+</script>
+</html>

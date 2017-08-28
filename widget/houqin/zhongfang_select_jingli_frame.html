@@ -1,0 +1,236 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons">
+        <div class="aui-grid-nine"  id="viewBox" style="padding-bottom: 80px;">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="saveCheck()" id="saveButton">选择经理</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var banciId,banciName;
+var userArr,selectUserNameStr,selectUserIdStr,selectIdArr,selectNameArr;
+var cacheBanci = $api.getStorage('cacheBanci');
+var imgArr = new Array();
+var doingImgNum = 0;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        getJingli();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function getJingli(){
+    api.ajax({
+        url: appUrl+'Get/jingliListByQiantai',
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            if(ret.has == 0){
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }else{
+                userArr = ret.data;
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function buildPage(){
+    var innerStr = '';
+    for(var i = 0;i < userArr.length;i++){
+        var thisUser = userArr[i];
+        var userId = thisUser.id;
+        var userName = thisUser.user_name;
+        var imgUrl;
+        if(thisUser.user_img_url == ''){
+            imgUrl = '../image/jingli.png';
+        }else{
+            imgUrl = ipUrl + thisUser.user_img_url;
+        }
+        imgArr[i] = imgUrl;
+        var userBanciId = thisUser.user_banci_id;
+        if(userBanciId == 0){
+            var banciStr = '<p style="color:blue">没安排班次</p>';
+            var selectStatus = 0;
+            var oldStatus = 0;
+            var rightBanciStatus = 0;
+            var bgStyle = '';
+        }else{
+            if(userBanciId == banciId){
+                var selectStatus = 1;
+                var oldStatus = 1;
+                var bgStyle = ' aui-bg-danger';
+            }else{
+                var selectStatus = 0;
+                var oldStatus = 0;
+                var bgStyle = '';
+            }
+            var banciStr = '<p style="color:black">'+cacheBanci[userBanciId].banci_name+'</p>';
+        }
+        var thisStr = '<li id="selectBox'+userId+'" userId="'+userId+'" userName="'+userName+'" jishiId="" hasSelect="'+selectStatus+'" oldSelect="'+oldStatus+'" class="aui-col-xs-3 aui-text-center'+bgStyle+'" tapmode onclick="fnSelect('+userId+')"><img  id="img'+i+'" style="width:80px;height:80px;border-radius: 50%;" src="../image/jingli.png"><p>'+userName+'</p>'+banciStr+'</li>';
+        innerStr += thisStr;
+    }
+    //alert(innerStr)
+    var viewBox = $api.byId('viewBox');
+    $api.html(viewBox, innerStr);
+    //闭包处理
+    for(var l = 0;l<imgArr.length;l++){
+        (function(l) {
+            var objIdName = 'img' + l;
+            var realImgUrl = imgArr[l];
+            api.imageCache({
+                url: realImgUrl
+            }, function(ret, err){
+                if( ret ){
+                     var cacheUrl = ret.url;
+                     $api.attr($api.byId(objIdName), 'src', cacheUrl);
+                }
+            });
+        })(l);
+    }
+}
+function fnSelect(selectId){
+    var thisObj = $api.byId('selectBox'+selectId);
+    var thisStatus = $api.attr(thisObj, 'hasSelect');
+    if(thisStatus == 0){
+        $api.attr(thisObj, 'hasSelect', '1');
+        $api.addCls(thisObj, 'aui-bg-danger');
+    }else{
+        $api.attr(thisObj, 'hasSelect', '0');
+        $api.removeCls(thisObj, 'aui-bg-danger');
+    }
+}
+function saveCheck(){
+    var liObjs = $api.domAll($api.byId('viewBox'), 'li');
+    var selectUserIdStr = '';
+    var oldSelectIdStr = '';
+    var selectUserNameStr = '';
+    for(var i = 0;i < liObjs.length;i++){
+        var thisLi = liObjs[i];
+        var thisHasSelect = $api.attr(thisLi, 'hasSelect');
+        var thisUserId = $api.attr(thisLi, 'userId');
+        var thisUserName = $api.attr(thisLi, 'userName');
+        var thisOldSelect = $api.attr(thisLi, 'oldSelect');
+        if(thisOldSelect == 1){
+            if(oldSelectIdStr == ''){
+                oldSelectIdStr = thisUserId;
+            }else{
+                oldSelectIdStr += ',' + thisUserId;
+            }
+        }
+        if(thisHasSelect == 1){
+            if(selectUserIdStr == ''){
+                selectUserIdStr = thisUserId;
+                selectUserNameStr = thisUserName;
+            }else{
+                selectUserIdStr += ',' + thisUserId;
+                selectUserNameStr += ',' + thisUserName;
+            }
+        }
+    }
+    if(selectUserIdStr == ''){
+        alert('你还没选择呢！');
+        return false;
+    }else{
+        
+        //return false;
+        saveUserBanci(oldSelectIdStr,selectUserIdStr,selectUserNameStr,'');
+    }
+}
+function saveUserBanci(oldSelectIdStr,selectUserIdStr,selectUserNameStr,selectJishiIdStr){
+    //alert('原先选择的是'+oldSelectIdStr+'，现在选择的是' + selectUserIdStr+selectUserNameStr)
+    api.ajax({
+        url: appUrl+'Change/userBanci',
+        method: 'post',
+        data: {
+            values: {
+                banci_id:banciId,
+                old_select_id_str:oldSelectIdStr,
+                user_id_str:selectUserIdStr,
+                jishi_id_str:selectJishiIdStr
+            }
+        }
+    }, function(ret, err) {
+        //alert(JSON.stringify(ret))
+        if (ret) {
+            api.sendEvent({
+                name: 'backSelect',
+                extra: {
+                    type:'jingli',
+                    selectUserIdStr: selectUserIdStr, 
+                    selectUserNameStr: selectUserNameStr
+                }
+            });
+            api.closeWin();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    banciId = api.pageParam.banciId;
+    banciName = api.pageParam.banciName;
+    getJingli();
+    shuaxin();
+}
+        
+</script>
+</html>

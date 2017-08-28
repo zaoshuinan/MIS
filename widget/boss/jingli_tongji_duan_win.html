@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+    <style type="text/css">
+        .aui-grid-sixteen:after {
+            border:none;
+        }
+        .aui-grid-sixteen li:after {
+            border:none;
+        }
+        .aui-grid-sixteen li .aui-iconfont {
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            line-height: 38px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div id="chartBox" class="aui-col-xs-12"; style="margin-top:10px;height:540px;">
+        <div style="text-align: center;padding-top: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var header,dingdanId,headerHeight,frameHeight,buttonBoxHeight,isToday,startDate,endDate;
+var companyId = $api.getStorage('companyId');
+var jingliId,jingliName;
+var tongjiArr = new Array();
+var yewuNumArr = new Array();
+var shoufeiNumArr = new Array();
+var yuyueNumArr = new Array();
+var chongzhiNumArr = new Array();
+var dayArr = new Array();
+var titleStr = '';
+var startDateStr,endDateStr;
+function closeWin(){
+    api.closeWin();
+}
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    var option = {
+        title: {
+            text: jingliName + startDateStr+'到'+endDateStr+'统计数据',
+            x:'left'
+        },
+        tooltip : {
+            trigger: 'axis',
+            axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+            }
+        },
+        legend: {
+            data:['业务','预约','充值','销售'],
+            x:'center',
+            y:'bottom'
+        },
+        xAxis:  {
+            type: 'category',
+            boundaryGap: false,
+            data : dayArr
+        },
+        yAxis: {
+            type: 'value',
+            position:'left'
+        },
+        series: [
+            {
+                name:'业务',
+                type:'line',
+                data:yewuNumArr,
+                markPoint: {
+                    data: [
+                        {type: 'max', name: '最大值'},
+                        {type: 'min', name: '最小值'}
+                    ]
+                },
+                markLine: {
+                    data: [
+                        {type: 'average', name: '平均值'}
+                    ]
+                }
+            },{
+                name:'预约',
+                type:'line',
+                data:yuyueNumArr
+            },{
+                name:'充值',
+                type:'line',
+                data:chongzhiNumArr
+            },{
+                name:'销售',
+                type:'line',
+                data:shoufeiNumArr
+            }
+        ]
+    };
+    tongjiChart.setOption(option, true);
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/jingliTongjiByBoss',
+        method: 'post',
+        data: {
+            values: { 
+                start_day:startDate,
+                end_day:endDate,
+                company_id:companyId,
+                jingli_id:jingliId
+            },
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                tongjiArr = ret.tongji_data;
+                reBuildData();
+            }else{
+                canClick = 2;
+                $api.html($api.byId('chartBox'), '<p style="text-align:center;margin:10px;">没有获取到任何数据</p>');
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function reBuildData(){
+    var tongjiNum = tongjiArr.length;
+    var canBuildChart = 0;
+    for(var i = 0;i < tongjiNum;i++){
+        var thisTongji = tongjiArr[i];
+        var thisYewuNum = parseFloat(thisTongji['yewu_num']);
+        var thisYuyueNum = parseFloat(thisTongji['yuyue_num']);
+        var thisChongzhiNum = parseFloat(thisTongji['chongzhi_num']);
+        var thisShoufeiNum = parseFloat(thisTongji['shoufei_num']);
+        var thisDay = thisTongji['tongji_day'].substring(8);
+        dayArr[i] = thisDay;
+        yuyueNumArr[i] = thisYuyueNum;
+        yewuNumArr[i] = thisYewuNum;
+        chongzhiNumArr[i] = thisChongzhiNum;
+        shoufeiNumArr[i] = thisShoufeiNum;
+    }
+    setTimeout("buildChart()",300);
+}
+apiready = function(){
+    api.parseTapmode();
+    jingliId = api.pageParam.jingliId;
+    jingliName = api.pageParam.jingliName;
+    startDate = api.pageParam.startDate;
+    endDate = api.pageParam.endDate;
+    startDateStr = startDate.substring(5);
+    endDateStr = endDate.substring(5);
+    var titleStr = startDateStr + '至' + endDateStr + '经理业绩';
+    $api.html($api.byId('msgBox'), '正在获取'+startDateStr + '至' + endDateStr + '的数据');
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleStr);
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameHeight = api.winHeight - headerHeight;
+    getData();
+};
+</script>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder" style="margin-top:10px;">
+        <ul class="aui-list-view aui-in" id="viewBox">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var myId,myName,myTel,dingdanId,companyId,missionDay;
+var chanpinJson;
+var addTime = 30000;
+var peisongJson; 
+function bofangtongzhi(){
+    api.toast({
+        msg: '你有新通知'
+    });
+}
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        clearInterval(addNewData);
+        addNewData = setInterval("buildPageByJson()",addTime);
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    var url = '';
+    api.ajax({
+        url: appUrl+'Get/chanpinPeisong',
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data: {
+            values: { 
+                company_id:companyId,
+                mission_day:missionDay
+            }
+        },
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            //alert(JSON.stringify(ret))
+            chanpinJson = new Array();
+            if(ret.mianfei_has ==0 && ret.shoufei_has == 0){
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }else{
+                if(ret.shoufei_has == 1){
+                    var shoufeiData = ret.shoufei_data;
+                    for(var i = 0;i < shoufeiData.length;i++){
+                        if(i == 0){
+                            shoufeiBigId = shoufeiData[i].id;
+                        }
+                        shoufeiData[i].type = 'shoufei';
+                        chanpinJson.push(shoufeiData[i]);
+                    }
+                }
+                if(ret.mianfei_has == 1){
+                    var mianfeiData = ret.mianfei_data;
+                    for(var i = 0;i < mianfeiData.length;i++){
+                        if(i == 0){
+                            mianfeiBigId = mianfeiData[i].id;
+                        }
+                        mianfeiData[i].type = 'mianfei';
+                        chanpinJson.push(mianfeiData[i]);
+                    }
+                }
+                chanpinJson.sort(downByTypeAndTimeDesc);
+                buildPage(); 
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        };
+    });
+}
+function downByTypeAndTimeDesc(x,y){
+    var xTemp =  x.date_time;
+    var yTemp =  y.date_time;
+    return (xTemp > yTemp) ? 1 : -1
+}
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < chanpinJson.length;i++){
+        var thisJson = chanpinJson[i];
+        var chanpinId = thisJson.id;
+        var chanpinType = thisJson.type;
+        var chanpinRoom = thisJson.peisong_room;
+        var chanpinName = thisJson.chanpin_name;
+        var chanpinPrice = thisJson.chanpin_price;
+        var chanpinTicheng = thisJson.chanpin_ticheng;
+        if(chanpinType == 'shoufei'){
+            var chanpinTypeStr = '<span class="aui-text-danger">收费产品</span>，';
+            var typeNum = 1;
+            var shoufeiStr = '（￥'+chanpinPrice+'元）,';
+        }else{
+            var chanpinTypeStr = '<span class="aui-text-info">免费产品</span>，';
+             var typeNum = 0;
+            var shoufeiStr = '';
+        }
+        var xiadanTime = thisJson.date_time.substr(11,5);
+        var chanpinStatus = thisJson.peisong_status;
+        var tplStr = '<li  class="aui-list-view-cell" onclick="biaoji('+typeNum+','+chanpinId+')"><div class="aui-swipe-handle"><i id="notice-icon'+typeNum + '-' + chanpinId+'" class="aui-iconfont aui-icon-deliver aui-bg-warning"></i>'+chanpinTypeStr+'<span class="aui-text-danger">'+chanpinRoom+'</span>房，<span class="aui-text-success">'+chanpinName+'</span>1份，'+shoufeiStr+xiadanTime+'</div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+    bofangtongzhi();
+}
+function biaoji(typeNum,chanpinId){
+    api.actionSheet({
+        destructiveTitle: '确定配送',
+        buttons: ['删除产品']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                sendPeisong(typeNum,chanpinId)
+            }
+            if(ret.buttonIndex == 2){
+                api.confirm({
+                    msg: '确定要删除此配送信息吗？',
+                    buttons: ['确定', '取消']
+                }, function(ret, err) {
+                    if (ret) {
+                        if(ret.buttonIndex == 1){
+                            delPeisong(typeNum,chanpinId)
+                        }
+                    }
+                });
+            }
+        }
+    });
+}
+function sendPeisong(typeNum,chanpinId){
+    if(typeNum == 1){
+        var dataName = 'shoufei_liushui'
+    }
+    if(typeNum == 0){
+        var dataName = 'mianfei_liushui'
+    }
+    api.ajax({
+        url: appUrl+'Change/querenPeisong',
+        method: 'post',
+        data: {
+            values: { 
+                data_name: dataName,
+                liushui_id:chanpinId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            api.toast({
+                msg: '标记配送'
+            });
+            changeStatus(typeNum,chanpinId,1);
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function changeStatus(typeNum,chanpinId,index){
+    var iconBox = $api.byId('notice-icon'+typeNum + '-' + chanpinId);
+    $api.removeCls(iconBox, 'aui-bg-warning');
+    $api.removeCls(iconBox, 'aui-icon-deliver');
+    if(index == 1){
+        $api.addCls(iconBox, 'aui-icon-activity');
+        $api.addCls(iconBox, 'aui-bg-success');
+    }
+    if(index == 0){
+        $api.addCls(iconBox, 'aui-icon-delete');
+        $api.addCls(iconBox, 'aui-bg-danger');
+    }
+    $api.removeAttr(iconBox, 'onclick');
+}
+function delPeisong(typeNum,chanpinId){
+    if(typeNum == 1){
+        var dataName = 'shoufei_liushui';
+    }else{
+        var dataName = 'mianfei_liushui';
+    }
+    api.ajax({
+        url: appUrl+'Change/cancelPeisong',
+        method: 'post',
+        data: {
+            values: { 
+                data_name: dataName,
+                liushui_id:chanpinId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            api.toast({
+                msg: '删除成功'
+            });
+            changeStatus(typeNum,chanpinId,0);
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    companyId = $api.getStorage('companyId');
+    missionDay = $api.getStorage('missionDay');
+    //alert(companyId + missionDay)
+    //buildPage();
+    buildPageByJson();
+    addNewData = setInterval("buildPageByJson()",addTime);
+    shuaxin()
+}
+    
+</script>
+</html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <style type="text/css">
+        .aui-grid-sixteen:after {
+            border:none;
+        }
+        .aui-grid-sixteen li:after {
+            border:none;
+        }
+        .aui-grid-sixteen li .aui-iconfont {
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            line-height: 38px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div class="aui-content-padded icons" style="padding-top: 4px;" id="buttonBox">
+        <ul class="aui-grid-sixteen">
+            <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openFrame(0)">
+                <span class="aui-iconfont aui-icon-message aui-bg-success"></span>
+                <p>预约量</p>
+            </li>
+            <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openFrame(1)">
+                <span class="aui-iconfont aui-icon-friendadd aui-bg-info"></span>
+                <p>业务量</p>
+            </li>
+            <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openFrame(2)">
+                <span class="aui-iconfont aui-icon-sponsor aui-bg-danger"></span>
+                <p>提成额</p>
+            </li>
+        </ul>
+    </div>
+    <div class="aui-card" id="showBox">
+        <p style="text-align: center;font-size: 16px;padding-bottom: 30px;padding-top: 30px;">点击按钮查看本日技师横向对比数据</p>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,dingdanId,jishiIdStr,jishiTichengStr,headerHeight,frameHeight,buttonBoxHeight;
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var isToday,showDate;
+function closeWin(){
+    api.closeWin();
+}
+
+function openFrame(index){
+    var frameNameArr = ['jishi_yuyue','jishi_yewu','jishi_ticheng'];
+    api.closeFrame({
+        name: frameNameArr[index]
+    });
+    api.openFrame({
+        name: frameNameArr[index],
+        url: './'+frameNameArr[index]+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight + buttonBoxHeight + 5,
+            w: 'auto',
+            h: frameHeight - 10
+        },
+        pageParam: {
+            isToday: isToday,
+            showDate:showDate
+        },
+        bounces: false
+    });
+}
+
+apiready = function(){
+    api.parseTapmode();
+    isToday = api.pageParam.isToday;
+    if(isToday == 1){
+        showDate = missionDay;
+    }else{
+        showDate = api.pageParam.showDate;
+    }
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), showDate+'日技师情况');
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    buttonBoxHeight = $api.offset($api.byId('buttonBox')).h;
+    frameHeight = api.winHeight - headerHeight - buttonBoxHeight;
+};
+</script>
+</html>

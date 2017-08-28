@@ -1,0 +1,993 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder">
+        <div class="aui-card" style="margin-top:10px;" id="loadBox">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </div>       
+        <div class="aui-form aui-hidden" style="margin-top:10px;" id="showBox">
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">工资发放名称</span>
+                <input type="text" class="aui-input" style="font-size: 18px;color: blue" id="gongziName" placeholder="系统自动生成" value="" readonly />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">工资发放类型</span>
+                <div class="aui-pull-left">
+                    <input class="aui-radio aui-radio-danger" type="radio" name="jobType" id="gongziType0" onclick="changeType(0)"> <span class="aui-radio-name">日结算工资</span>
+                    <input class="aui-radio aui-radio-success" type="radio" name="jobType" id="gongziType1" onclick="changeType(1)"> <span class="aui-radio-name">周结算工资</span>
+                    <input class="aui-radio aui-radio-warning" type="radio" name="jobType" id="gongziType2"  onclick="changeType(2)"> <span class="aui-radio-name">月结算工资</span>
+                    <input class="aui-radio aui-radio-info" type="radio" name="jobType" id="gongziType3"  onclick="changeType(3)"> <span class="aui-radio-name">自定义（31天-90天）</span>
+                    <input class="aui-radio aui-radio-danger" type="radio" name="jobType" id="gongziType4"  onclick="changeType(4)"> <span class="aui-radio-name">额外奖金</span>
+                </div>
+            </div>
+            <div class="aui-input-row aui-hidden" id="jiangjinInfoBox"> 
+                <span class="aui-input-addon  aui-text-danger">奖金名称</span>
+                <input type="text" class="aui-input" style="font-size: 18px;color: blue" id="jiangjinInfo" placeholder="输入奖金备注信息" value="" />
+            </div>
+            <div class="aui-input-row aui-hidden" id="jiangjinBox">
+                <span class="aui-input-addon  aui-text-danger">发放奖金</span>
+                <input type="number" class="aui-input" style="font-size: 20px;color: red" id="jiangjin" placeholder="请输入奖金金额，单位：元" value="" />
+            </div>
+            <div class="aui-content-padded icons" id="timeBox">
+                <ul class="aui-grid-nine" id="selectTimeBox">
+                    <p style="text-align: center;margin-top: 20px;margin-bottom: 20px; font-size: 20px;">请选择工资类型</p>
+                </ul>
+            </div>
+            <div class="aui-input-row" id="renyuanTypeBox">
+                <span class="aui-input-addon  aui-text-danger">工资发放人员</span>
+                <div class="aui-pull-left" id="renyuanBox">
+                    <input class="aui-checkbox aui-checkbox-danger" id="renyuan0" hasSelect="0" onclick="showRenyuan(0)" type="checkbox">
+                    <div class="aui-checkbox-name" id="renyuanName0">技师</div>
+                    <input class="aui-checkbox aui-checkbox-success" id="renyuan1" hasSelect="0" onclick="showRenyuan(1)" type="checkbox">
+                    <div class="aui-checkbox-name" id="renyuanName1">经理</div>
+                    <input class="aui-checkbox aui-checkbox-warning" id="renyuan2" hasSelect="0" onclick="showRenyuan(2)" type="checkbox">
+                    <div class="aui-checkbox-name" id="renyuanName2">员工</div>
+                </div>
+            </div>
+            <div class="aui-input-row" id="jishiBox" onclick="selectJishi()">
+                <span class="aui-input-addon  aui-text-danger">选择技师</span>
+                <input type="text" class="aui-input" id="selectJishiName" placeholder="点击选择技师" readonly />
+                <input type="hidden" class="aui-input" id="selectJishiId" readonly />
+                <input type="hidden" class="aui-input" id="jishiRealId" readonly />
+            </div>
+            <div class="aui-input-row" id="jingliBox" onclick="selectJingli()">
+                <span class="aui-input-addon  aui-text-danger">选择经理</span>
+                <input type="text" class="aui-input" id="selectJingliName" placeholder="点击选择经理" readonly />
+                <input type="hidden" class="aui-input" id="selectJingliId" readonly />
+            </div>
+            <div class="aui-input-row" id="otherBox" onclick="selectOther()">
+                <span class="aui-input-addon  aui-text-danger">选择工作人员</span>
+                <input type="text" class="aui-input" id="selectOtherName" placeholder="点击选择工作人员" readonly />
+                <input type="hidden" class="aui-input" id="selectOtherId" readonly />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">选择操作人员</span>
+                <div class="aui-pull-left" id="qiantaiRenyuan">
+                    
+                </div>
+            </div>
+            <p class="aui-padded-10  aui-text-danger" id="statusBox">
+                生成工资后需要老板确认才可发放哦！
+            </p>
+        </div>
+    </div>
+    <div class="aui-card aui-hidden" id="jinduBox" style="margin-top: 4px;text-align: center;padding: 4px;">
+        <div id="openProgressBox" style="height: 40px;">
+            <div class="aui-progress aui-progress aui-clearfix">
+                <div class="aui-progress-bar" id="openProgress" style="width: 60%;">正在生成</div>
+            </div>
+            <p id="openMsg">正在生成</p>
+        </div>
+    </div>
+    <footer class="aui-nav" style="padding:0px" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" status="0" gongziId="0" tapmode onclick="saveCheck()" id="saveButton">生成工资</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var showType;
+var hasSelectStartDate = 0;
+var jiangjinMoney = 0;
+var gongziStep = 0;
+var firstBuild = 0;
+var companyId = $api.getStorage('companyId');
+var userId = $api.getStorage('userId');
+var userName = $api.getStorage('userName');
+var userType = $api.getStorage('userType');
+var userTel = $api.getStorage('userTel');
+var missionDay = $api.getStorage('missionDay');
+var missionDayArr = missionDay.split('-');
+var thisYear = missionDayArr[0];
+var thisMonth = parseInt(missionDayArr[1]);
+var thisDay = parseInt(missionDayArr[2]);
+var gongziId = 0;
+var gongziJson;
+var gongziName = '';
+var selectRenyuanId = 0;
+var selectRenyuanName = '';
+var jiangjinInfo = '';
+var gongziType = 9;
+var hasGetDate = 0;
+var hasSelectJishi = hasSelectJingli = hasSelectOther = 0;
+var selectStartDate = selectEndDate = selectSingleDate = '';
+var selectJingliIdStr = selectJingliNameStr = selectJishiIdStr = selectJishiRealIdStr =  selectJishiNameStr = selectOtherIdStr = selectOtherNameStr = '';
+var jindu = 0;
+var doingStep = nextStep = 1;
+var stepObj;
+var jinduObj1,jinduObj2,jinduObj3,jinduObj4;
+var checkObj;
+var msgArr = ['生成准备','生成工资','保存工资','生成完毕'];
+function changeRenyuan(renyuanId,renyuanName){
+    selectRenyuanId = renyuanId;
+    selectRenyuanName = renyuanName;
+}
+function GetRandomNum(Min,Max){   
+    var Range = Max - Min;   
+    var Rand = Math.random();   
+    var num = Min + Math.round(Rand * Range);
+    return num;
+} 
+function addJindu(stopNum){
+    var addNum = GetRandomNum(1,5);
+    if(jindu < stopNum){
+        jindu = jindu + addNum;
+    }
+}
+function addDoingStep(){
+    doingStep ++;
+}
+function sendDoing(){
+    api.sendEvent({
+        name: 'checkDoing',
+        extra: {
+            doing: 1
+        }
+    });
+}
+function checkStep(){
+    if(nextStep == doingStep){
+        buildByStep(doingStep);
+    }
+}
+function buildZhunbei(){
+    nextStep ++;
+    jinduObj1 = setInterval("addJindu(20)",100);
+    setTimeout("addDoingStep()",300);
+}
+function gongziLiushui(){
+    nextStep++;
+    jinduObj2 = setInterval("addJindu(80)",200);
+    if(gongziType == 0){
+        var startDay = selectSingleDate;
+        var endDay = selectSingleDate;
+    }else{
+        if(gongziType == 4){
+            var startDay = '0000-00-00';
+            var endDay = '0000-00-00';
+        }else{
+            var startDay = selectStartDate;
+            var endDay = selectEndDate;
+            jiangjinMoney = 0;
+        }
+    }
+    if(gongziId == 0){
+        var saveType = 0;
+    }else{
+        var saveType = 1;
+    }
+    var valueJson = { 
+        company_id:companyId,
+        yewu_id:selectRenyuanId,
+        yewu_name:selectRenyuanName,
+        gongzi_name:gongziName,
+        gongzi_type:gongziType,
+        start_day:startDay,
+        end_day:endDay,
+        jiangjin:jiangjinMoney,
+        jingli_id_str:selectJingliIdStr,
+        jingli_name_str:selectJingliNameStr,
+        jishi_id_str:selectJishiIdStr,
+        jishi_name_str:selectJishiNameStr,
+        other_id_str:selectOtherIdStr,
+        other_name_str:selectOtherNameStr,
+        status:0,
+        gongzi_id:gongziId,
+        save_type:saveType
+    }
+    //setTimeout("addDoingStep()",3000);
+    // alert(JSON.stringify(valueJson));
+    // return false;
+    api.ajax({
+        url: appUrl+'Add/gongzi',
+        method: 'post',
+        data: {
+            values:valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            //alert(JSON.stringify(ret))
+            if(ret.has == 1){
+                $api.html($api.byId('moneyBox'), ret.all_money);
+                setTimeout("addDoingStep()",2000);
+            }
+            if(ret.has == 0){
+                alert('正在审核，不能修改！');
+                return false;
+            }
+        } else {
+            //alert(JSON.stringify(err))
+            api.toast({
+                msg: '网络出错'
+            });
+        }
+    });
+}
+function saveGongzi1(){
+    nextStep++;
+    jinduObj3 = setInterval("addJindu(90)",300);
+    setTimeout("addDoingStep()",300);
+}
+function showGongziList(gongziId){
+    api.openWin({
+        name: 'showGongziList',
+        url: './show_gongzi_list_win.html',
+        pageParam: {
+            gongziId: gongziId,
+            showType:0
+        }
+    });
+}
+function buildEnd(){
+    $api.html($api.byId('saveBtn'), '<button class="aui-btn aui-btn-danger aui-btn-block" status="0" gongziId="'+gongziId+'" tapmode onclick="showGongziList('+gongziId+')" id="showButton">点击查看工资列表</button>');
+    api.sendEvent({
+        name: 'reFlashGongziList',
+        extra: {
+            gongziType: gongziType
+        }
+    });
+}
+function buildByStep(){
+    if(doingStep == 1){
+        buildZhunbei();
+    }
+    if(doingStep == 2){
+        gongziLiushui();
+        clearInterval(jinduObj1);
+        jindu = 20;
+    }
+    if(doingStep == 3){
+        saveGongzi1();
+        clearInterval(jinduObj2);
+        jindu = 70;
+    }
+    if(doingStep == 4){
+        jindu = 100;
+        clearInterval(jinduObj3);
+    }
+}
+function buildGongzi(){
+    sendDoing();
+    $api.removeCls($api.byId('jinduBox'), 'aui-hidden');
+    var btnObj = $api.byId('saveButton');
+    var btnStatus = $api.attr(btnObj, 'status');
+    if(btnStatus == 0){
+        $api.attr(btnObj, 'status',1);
+        $api.html($api.byId('openProgressBox'), '<div class="aui-progress aui-progress aui-clearfix"><div class="aui-progress-bar" id="openProgress" style="width: 60%;"></div></div><p id="openMsg"></p>');
+        $api.css($api.byId('openProgress'), 'width: 0%');
+        $api.removeCls(btnObj, 'aui-btn-danger');
+        $api.addCls(btnObj, 'aui-btn-default');
+        if(gongziId == 0){
+            $api.html(btnObj, '正在生成工资，请勿进行其他操作');
+            stepObj = setInterval("checkStep()",1);
+            checkObj = setInterval("checkLoading()",1);
+            buildByStep();
+        }else{
+            $api.html(btnObj, '正在修改工资，请勿进行其他操作');
+            stepObj = setInterval("checkStep()",1);
+            checkObj = setInterval("checkLoading()",1);
+            buildByStep();
+        }
+    }
+}
+function checkLoading(){
+    if(jindu <20){
+        var colorStr = '#e74c3c';
+        var msgStr = msgArr[0];
+    }
+    if(jindu >= 20 && jindu < 70){
+        var colorStr = '#f1c40f';
+        var msgStr = msgArr[1];
+    }
+    if(jindu >=70 && jindu < 90){
+        var colorStr = '#1abc9c';
+        var msgStr = msgArr[2];
+    }
+    if(jindu >= 90){
+        var colorStr = '#2ecc71';
+        var msgStr = msgArr[2];
+    }
+    if(jindu >= 100){
+        var colorStr = '#2ecc71';
+        var msgStr = msgArr[3];
+        clearInterval(checkObj)
+        setTimeout("buildEnd()",200);
+    }
+    var msgStr1 = msgStr + ' '+jindu+'%';
+    var msgStr2 = msgStr;
+    $api.html($api.byId('openMsg'), msgStr1);
+    $api.html($api.byId('openSystemBtn'), msgStr2);
+    $api.css($api.byId('openProgress'), 'width: '+jindu+'%;background-color: '+colorStr);
+}
+function saveCheck(){
+    var status = $api.attr($api.byId('saveButton'), 'status');
+    //alert(status)
+    if(status == 1){
+        alert('正在进行操作');
+        return false;
+    }
+    gongziName = $api.val($api.byId('gongziName'));
+    if(gongziType == 9){
+        alert('请选择工资发放类型');
+        return false;
+    }
+    if(gongziType == 4){
+        jiangjinMoney = $api.val($api.byId('jiangjin'));
+        jiangjinInfo = $api.val($api.byId('jiangjinInfo'));
+        //alert($api.val($api.byId('jiangjin')) + '=' + parseInt(jiangjinMoney));
+        if(jiangjinInfo == ''){
+            alert('请输入奖金信息（名称）');
+            return false;
+        }
+        if(jiangjinMoney == ''){
+            alert('还没有输入奖金金额或输入格式错误！');
+            return false;
+        }
+        if(jiangjinMoney.substring(0,1) == 0){
+            alert('奖金金额首位不能为“0”');
+            return false;
+        }
+    }else{
+        if(gongziType == 0){
+            if(selectSingleDate == ''){
+                alert('你还没有选择日期呢！');
+                return false;
+            }
+        }else{
+            if(selectStartDate == '' || selectEndDate == ''){
+                alert('你还没有完整选择时间段呢！');
+                return false;
+            }
+        }
+    }
+    if(hasSelectJishi == 0 && hasSelectJingli == 0 && hasSelectOther == 0){
+        alert('你还没有选择人员类型呢！');
+        return false;
+    }
+    if(hasSelectJishi == 1){
+        if(selectJishiIdStr == ''){
+            alert('你还没有选择技师呢！');
+            return false;
+        }
+    }
+    if(hasSelectJingli == 1){
+        if(selectJingliIdStr == ''){
+            alert('你还没有选择经理呢！');
+            return false;
+        }
+    }
+    if(hasSelectOther == 1){
+        if(selectOtherIdStr == ''){
+            alert('你还没有选择工作人员呢！');
+            return false;
+        }
+    }
+    if(selectRenyuanId == 0){
+        alert('请选择操作人员');
+        return false;
+    }
+    getGongziName();
+    if(gongziName == ''){
+        alert('务必输入工资发放名称');
+        return false;
+    }
+    if(gongziId != 0){
+        api.confirm({
+            msg: '是否修改'+gongziName+'吗？',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    buildGongzi();
+                }
+            }
+        });
+    }else{
+        api.confirm({
+            msg: '确认生成'+gongziName+'吗？',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    buildGongzi();
+                }
+            }
+        });
+    }
+}
+function selectJingli(){
+    $api.val($api.byId('gongziName'), '');
+    api.addEventListener({
+        name: 'selectJingliByGongzi'
+    }, function(ret, err) {
+        if (ret) {
+            selectJingliIdStr = ret.value.selectIdStr;
+            selectJingliNameStr = ret.value.selectNameStr;
+            $api.val($api.byId('selectJingliId'), selectJingliIdStr);
+            $api.val($api.byId('selectJingliName'), selectJingliNameStr);
+        }
+    });
+    api.openWin({
+        name: 'qiantaiSelectJingli',
+        url: './qiantai_select_jingli_win.html',
+        pageParam: {
+            selectIdStr:selectJingliIdStr,
+            selectNameStr:selectJingliNameStr
+        }
+    });
+}
+function selectOther(){
+    $api.val($api.byId('gongziName'), '');
+    api.addEventListener({
+        name: 'selectOtherByGongzi'
+    }, function(ret, err) {
+        if (ret) {
+            selectOtherIdStr = ret.value.selectIdStr;
+            selectOtherNameStr = ret.value.selectNameStr;
+            $api.val($api.byId('selectOtherId'), selectOtherIdStr);
+            $api.val($api.byId('selectOtherName'), selectOtherNameStr);
+        }
+    });
+    api.openWin({
+        name: 'qiantaiSelectOther',
+        url: './qiantai_select_other_win.html',
+        pageParam: {
+            selectIdStr:selectOtherIdStr,
+            selectNameStr:selectOtherNameStr
+        }
+    });
+}
+function selectJishi(){
+    $api.val($api.byId('gongziName'), '');
+    api.addEventListener({
+        name: 'selectJishiByGongzi'
+    }, function(ret, err) {
+        if (ret) {
+            selectJishiIdStr = ret.value.selectIdStr;
+            selectJishiNameStr = ret.value.selectNameStr;
+            $api.val($api.byId('selectJishiId'), selectJishiIdStr);
+            $api.val($api.byId('selectJishiName'), selectJishiNameStr);
+        }
+    });
+    api.openWin({
+        name: 'qiantaiSelectJishi1',
+        url: './qiantai_select_jishi1_win.html',
+        pageParam: {
+            selectIdStr:selectJishiIdStr,
+            selectNameStr:selectJishiNameStr
+        }
+    });
+}
+function showRenyuan(index){
+    var obj = $api.byId('renyuan'+index);
+    var nowStatus = $api.attr(obj, 'hasSelect');
+    var showBoxName,nameIdName,idIdName;
+    if(index == 0){
+        showBoxName = 'jishiBox';
+        idIdName = 'selectJishiId';
+        nameIdName = 'selectJishiName';
+    }
+    if(index == 1){
+        showBoxName = 'jingliBox';
+        idIdName = 'selectJingliId';
+        nameIdName = 'selectJingliName';
+    }
+    if(index == 2){
+        showBoxName = 'otherBox';
+        idIdName = 'selectOtherId';
+        nameIdName = 'selectOtherName';
+    }
+    if(nowStatus == 0){
+        $api.attr(obj, 'hasSelect',1);
+        switchObj(showBoxName,1);
+        if(index == 0){
+            hasSelectJishi = 1;
+        }
+        if(index == 1){
+            hasSelectJingli = 1;
+        }
+        if(index == 2){
+            hasSelectOther = 1;
+        }
+    }
+    if(nowStatus == 1){
+        $api.attr(obj, 'hasSelect',0);
+        if(index == 0){
+            selectJishiIdStr = '';
+            selectJishiNameStr = '';
+            hasSelectJishi = 0;
+        }
+        if(index == 1){
+            selectJingliIdStr = '';
+            selectJingliNameStr = '';
+            hasSelectJingli= 0;
+        }
+        if(index == 2){
+            selectOtherIdStr = '';
+            selectOtherNameStr = '';
+            hasSelectOther= 0;
+        }
+        $api.val($api.byId(idIdName), '');
+        $api.val($api.byId(nameIdName), '');
+        switchObj(showBoxName,0);
+    }
+}
+function switchObj(objName,index){
+    var obj = $api.byId(objName);
+    if(index == 0){
+        $api.addCls(obj, 'aui-hidden');
+    }
+    if(index == 1){
+        $api.removeCls(obj, 'aui-hidden');
+    }
+}
+function hideAll(){
+    switchObj('timeBox',0);
+    switchObj('renyuanTypeBox',0);
+    switchObj('jingliBox',0);
+    switchObj('jishiBox',0);
+    switchObj('otherBox',0);
+}
+function cleanAll(){
+    selectJingliIdStr = selectJingliNameStr = selectJishiIdStr = selectJishiRealIdStr =  selectJishiNameStr = selectOtherIdStr = selectOtherNameStr = '';
+    hasSelectJishi = hasSelectJingli = hasSelectOther = 0;
+    $api.val($api.byId('selectJingliId'), '');
+    $api.val($api.byId('selectJishiiId'), '');
+    $api.val($api.byId('selectOtheriId'), '');
+    $api.val($api.byId('selectJingliName'), '');
+    $api.val($api.byId('selectJishiName'), '');
+    $api.val($api.byId('selectOtherName'), '');
+    $api.val($api.byId('gongziName'), '');
+    $api.html($api.byId('renyuanBox'), '<input class="aui-checkbox aui-checkbox-danger" id="renyuan0" hasSelect="0" onclick="showRenyuan(0)" type="checkbox"><div class="aui-checkbox-name">技师</div><input class="aui-checkbox aui-checkbox-success" id="renyuan1" hasSelect="0" onclick="showRenyuan(1)" type="checkbox"><div class="aui-checkbox-name">经理</div><input class="aui-checkbox aui-checkbox-warning" id="renyuan2" hasSelect="0" onclick="showRenyuan(2)" type="checkbox"><div class="aui-checkbox-name" id="renyuanName2">员工</div>');
+}
+function getGongziName(){
+    var hasSelectRenyuanStr = ''
+    if(hasSelectJishi == 1){
+        if(hasSelectRenyuanStr == ''){
+            hasSelectRenyuanStr = '技师';
+        }else{
+            hasSelectRenyuanStr += '、'+'技师';
+        } 
+    }
+    if(hasSelectJingli == 1){
+        if(hasSelectRenyuanStr == ''){
+            hasSelectRenyuanStr = '经理';
+        }else{
+            hasSelectRenyuanStr += '、'+'经理';
+        } 
+    }
+    if(hasSelectOther == 1){
+        if(hasSelectRenyuanStr == ''){
+            hasSelectRenyuanStr = '员工';
+        }else{
+            hasSelectRenyuanStr += '、'+'员工';
+        } 
+    }
+    if(gongziType == 0){
+        gongziName = '日结算：' + selectSingleDate +'日'+ hasSelectRenyuanStr +'工资'
+    }
+    if(gongziType == 1){
+        gongziName = '周结算：' + selectStartDate +'日至' + selectEndDate +'日'+ hasSelectRenyuanStr +'工资'
+    }
+    if(gongziType == 2){
+        gongziName = '月结算：' + selectStartDate +'日至'+ selectEndDate+'日' + hasSelectRenyuanStr +'工资'
+    }
+    if(gongziType == 3){
+        gongziName = '自定义结算：' + selectStartDate +'日至'+ selectEndDate+'日' + hasSelectRenyuanStr +'工资'
+    }
+    if(gongziType == 4){
+        gongziName = jiangjinInfo + '(金额：'+jiangjinMoney+'元，发放范围：' + hasSelectRenyuanStr+')奖金'
+    }
+    $api.val($api.byId('gongziName'), gongziName);
+}
+function changeType(index){
+    gongziType = index;
+    if(index != 2 || index != 4 || index!=3){
+        $api.addCls($api.byId('renyuan2'), 'aui-hidden');
+        $api.addCls($api.byId('renyuanName2'), 'aui-hidden');
+    }else{
+        $api.removeCls($api.byId('renyuan2'), 'aui-hidden');
+        $api.removeCls($api.byId('renyuanName2'), 'aui-hidden');
+    }
+    $api.html($api.byId('statusBox'), '生成工资后需要老板确认才可发放哦！');
+    hideAll();
+    if(firstBuild == 0){
+        cleanAll();
+    }
+    buildTimeBox(index);
+}
+function buildTimeBox(index){
+    if(index == 4){
+        $api.removeCls($api.byId('jiangjinBox'), 'aui-hidden');
+        $api.removeCls($api.byId('jiangjinInfoBox'), 'aui-hidden');
+        $api.removeCls($api.byId('renyuanTypeBox'), 'aui-hidden');
+        $api.addCls($api.byId('timeBox'), 'aui-hidden');
+        if(firstBuild == 0){
+            $api.val($api.byId('jiangjin'), '');
+        }
+        if(firstBuild == 1){
+            $api.val($api.byId('jiangjin'), jiangjinMoney);
+        }
+    }else{
+        $api.removeCls($api.byId('timeBox'), 'aui-hidden');
+        $api.addCls($api.byId('jiangjinBox'), 'aui-hidden');
+        $api.addCls($api.byId('jiangjinInfoBox'), 'aui-hidden');
+        if(firstBuild == 0){
+            if(gongziType == 0){
+                var innerStr = '<li class="aui-col-xs-12 aui-text-center" onclick="selectSingleDay()" id="riqiBox"><img src="../image/riqi4.png" style="width:60px"><p>点击选择日期</p></li>';
+            }else{
+                var innerStr = '<li class="aui-col-xs-6 aui-text-center" onclick="selectStartDay()" id="riqiStartBox"><img src="../image/riqi4.png" style="width:60px"><p>选择开始日期</p></li><li class="aui-col-xs-6 aui-text-center" onclick="selectEndDay()" id="riqiEndBox"><img src="../image/riqi4.png" style="width:60px"><p>选择结束日期</p></li>';
+            }
+        }
+        if(firstBuild == 1){
+            if(gongziType == 0){
+                var innerStr = '<li class="aui-col-xs-12 aui-text-center" id="riqiBox"><img src="../image/riqi0.png" style="width:60px"><p style="color:red">'+selectSingleDate+'</p></li>';
+            }else{
+                var innerStr = '<li class="aui-col-xs-6 aui-text-center" id="riqiStartBox"><img src="../image/riqi0.png" style="width:60px"><p style="color:red">'+selectStartDate+'</p></li><li class="aui-col-xs-6 aui-text-center" id="riqiEndBox"><img src="../image/riqi0.png" style="width:60px"><p style="color:red">'+selectEndDate+'</p></li>';
+            }
+            showRenyuanType();
+        }
+        $api.html($api.byId('selectTimeBox'), innerStr);
+        switchObj('timeBox',1);
+    }
+}
+function showRenyuanType(){
+    switchObj('renyuanTypeBox',1);
+    if(selectJishiIdStr != ''){
+        $api.attr($api.byId('renyuan0'), 'checked','checked');
+        $api.attr($api.byId('renyuan0'), 'hasSelect','1');
+        $api.val($api.byId('selectJishiId'), selectJishiIdStr);
+        $api.val($api.byId('selectJishiName'), selectJishiNameStr);
+        switchObj('jishiBox',1);
+    }
+    if(selectJingliIdStr != ''){
+        $api.attr($api.byId('renyuan1'), 'checked','checked');
+        $api.attr($api.byId('renyuan1'), 'hasSelect','1');
+        $api.val($api.byId('selectJingliId'), selectJingliIdStr);
+        $api.val($api.byId('selectJingliName'), selectJingliNameStr);
+        switchObj('jingliBox',1);
+    }
+    if(selectOtherIdStr != ''){
+        $api.attr($api.byId('renyuan2'), 'checked','checked');
+        $api.attr($api.byId('renyuan2'), 'hasSelect','1');
+        $api.val($api.byId('selectOtherId'), selectOtherIdStr);
+        $api.val($api.byId('selectOtherName'), selectOtherNameStr);
+        switchObj('otherBox',1);
+    }
+}
+function selectSingleDay(){
+    $api.val($api.byId('gongziName'), '');
+    api.openPicker({
+        type: 'date',
+        date: '',
+        title: '选择统计日期'
+    }, function(ret, err) {
+        if (ret) {
+            var selectYear = ret.year;
+            var selectMonth = ret.month;
+            var selectDay = ret.day;
+            selectDateStr = String(selectYear).substring(2) + '年' + selectMonth + '月' + selectDay + '日';
+            if(selectMonth < 10){
+                selectMonth = '0' + selectMonth;
+            }
+            if(selectDay < 10){
+                selectDay = '0' + selectDay;
+            }
+            selectSingleDate = selectYear + '-' + selectMonth + '-' + selectDay;
+            var d1 = new Date(missionDay.replace(/\-/g, "\/"));  
+            var d2 = new Date(selectSingleDate.replace(/\-/g, "\/")); 
+            if(d1 <= d2){
+                alert('选择时间需小于今天');
+                return false;
+            }
+            $api.html($api.byId('riqiBox'), '<img src="../image/riqi0.png" style="width:60px"><p style="color:red">'+selectDateStr+'</p>');
+            switchObj('renyuanTypeBox',1);
+            if(gongziType != 2 || gongziType != 4){
+                $api.addCls($api.byId('renyuan2'), 'aui-hidden');
+                $api.addCls($api.byId('renyuanName2'), 'aui-hidden');
+            }else{
+                $api.removeCls($api.byId('renyuan2'), 'aui-hidden');
+                $api.removeCls($api.byId('renyuanName2'), 'aui-hidden');
+            }
+        }
+    });
+}
+function selectStartDay(){
+    $api.val($api.byId('gongziName'), '');
+    selectEndDate = '';
+    $api.html($api.byId('riqiEndBox'), '<img src="../image/riqi4.png" style="width:60px"><p>选择结束日期</p>');
+    api.openPicker({
+        type: 'date',
+        date: '',
+        title: '选择开始日期'
+    }, function(ret, err) {
+        if (ret) {
+            var selectStartYear = ret.year;
+            var selectStartMonth = ret.month;
+            var selectStartDay = ret.day;
+            selectStartDateStr = String(selectStartYear).substring(2) + '年' + selectStartMonth + '月' + selectStartDay + '日';
+            if(selectStartMonth < 10){
+                selectStartMonth = '0' + selectStartMonth;
+            }
+            if(selectStartDay < 10){
+                selectStartDay = '0' + selectStartDay;
+            }
+            hasSelectStartDate = 1;
+            selectStartDate = selectStartYear + '-' + selectStartMonth + '-' + selectStartDay;
+            var d1 = new Date(missionDay.replace(/\-/g, "\/"));  
+            var d2 = new Date(selectStartDate.replace(/\-/g, "\/")); 
+            if(d1 <= d2){
+                alert('选择时间需小于今天');
+                return false;
+            }
+            $api.html($api.byId('riqiStartBox'), '<img src="../image/riqi0.png" style="width:60px"><p style="color:red">'+selectStartDateStr+'</p>');
+        }
+    });
+}
+function selectEndDay(){
+    $api.val($api.byId('gongziName'), '');
+    if(hasSelectStartDate == 0){
+        alert('请先选择开始日期');
+        return false;
+    }
+    api.openPicker({
+        type: 'date',
+        date: '',
+        title: '选择结束日期'
+    }, function(ret, err) {
+        if (ret) {
+            var selectEndYear = ret.year;
+            var selectEndMonth = ret.month;
+            var selectEndDay = ret.day;
+            selectEndDateStr = String(selectEndYear).substring(2) + '年' + selectEndMonth + '月' + selectEndDay + '日';
+            if(selectEndMonth < 10){
+                selectEndMonth = '0' + selectEndMonth;
+            }
+            if(selectEndDay < 10){
+                selectEndDay = '0' + selectEndDay;
+            }
+            selectEndDate = selectEndYear + '-' + selectEndMonth + '-' + selectEndDay;
+            var d3 = new Date(missionDay.replace(/\-/g, "\/"));  
+            var d4 = new Date(selectEndDate.replace(/\-/g, "\/")); 
+            if(d3 <= d4){
+                alert('选择时间需小于今天');
+                return false;
+            }
+            var d1 = new Date(selectStartDate.replace(/\-/g, "\/"));  
+            var d2 = new Date(selectEndDate.replace(/\-/g, "\/")); 
+            if(d1 >=d2){
+                alert('开始时间不能等于或小于结束时间');
+                return false;
+            }else{
+                var cha = d2 - d1;
+                var chaDay = cha / (60*60*24*1000);
+                if(chaDay > 31){
+                    if(chaDay > 90){
+                        alert('统计时间大于90天，不能执行操作，如有此需求，请联系软件服务商！');
+                        return false;
+                    }else{
+                        if(gongziType != 3){
+                            alert('时间段相隔大于1个月，请选择"自定义（31天-90天）"！');
+                            return false;
+                        }else{
+                            $api.html($api.byId('riqiEndBox'), '<img src="../image/riqi0.png" style="width:60px"><p style="color:red">'+selectEndDateStr+'</p>');
+                            switchObj('renyuanTypeBox',1);
+                            if(gongziType == 2 || gongziType == 4 || gongziType == 3){
+                                $api.removeCls($api.byId('renyuan2'), 'aui-hidden');
+                                $api.removeCls($api.byId('renyuanName2'), 'aui-hidden');
+                            }else{
+                                $api.addCls($api.byId('renyuan2'), 'aui-hidden');
+                                $api.addCls($api.byId('renyuanName2'), 'aui-hidden');
+                            }
+                        }
+                    }  
+                }else{
+                    if(gongziType == 3){
+                        alert('时间在一个月内，请选择“周结算”或“月结算”类型');
+                        return false;
+                    }else{
+                        $api.html($api.byId('riqiEndBox'), '<img src="../image/riqi0.png" style="width:60px"><p style="color:red">'+selectEndDateStr+'</p>');
+                        switchObj('renyuanTypeBox',1);
+                        //alert(gongziType)
+                        if(gongziType == 2 || gongziType == 4){
+                            $api.removeCls($api.byId('renyuan2'), 'aui-hidden');
+                            $api.removeCls($api.byId('renyuanName2'), 'aui-hidden');
+                        }else{
+                            $api.addCls($api.byId('renyuan2'), 'aui-hidden');
+                            $api.addCls($api.byId('renyuanName2'), 'aui-hidden');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+function buildPage(){
+    gongziName = gongziJson.gongzi_name;
+    gongziType = gongziJson.gongzi_type;
+    //alert(gongziName)
+    if(gongziType == 0){
+        selectSingleDate = gongziJson.start_day
+    }else{
+        selectStartDate = gongziJson.start_day;
+        selectEndDate = gongziJson.end_day;
+    }
+    selectRenyuanId = gongziJson.yewu_id;
+    selectRenyuanName = gongziJson.yewu_name;
+    selectJingliIdStr = gongziJson.jingli_id_str;
+    selectJingliNameStr = gongziJson.jingli_name_str;
+    selectJishiIdStr = gongziJson.jishi_id_str;
+    selectJishiNameStr = gongziJson.jishi_name_str;
+    selectOtherIdStr = gongziJson.other_id_str;
+    selectOtherNameStr = gongziJson.other_name_str;
+    jiangjinMoney = gongziJson.jiangjin;
+    if(selectJingliIdStr == ''){
+        hasSelectJingli = 0;
+    }else{
+        hasSelectJingli = 1;
+    }
+    if(selectJishiIdStr == ''){
+        hasSelectJishi = 0;
+    }else{
+        hasSelectJishi = 1;
+    }
+    if(selectOtherIdStr == ''){
+        hasSelectOther = 0;
+    }else{
+        hasSelectOther = 1;
+    }
+    allMoney = gongziJson.all_money;
+    var gongziStatus = gongziJson.status;
+    //alert(gongziName)
+    $api.val($api.byId('gongziName'), gongziName);
+    $api.attr($api.byId('gongziType'+gongziType), 'checked','checked');
+    changeType(gongziType);
+    $api.attr($api.byId('qiantai'+selectRenyuanId), 'checked','checked');
+    $api.html($api.byId('saveButton'), '修改工资');
+    $api.attr($api.byId('saveButton'), 'gongziId',gongziId);
+    if(gongziStatus == 0){
+        $api.html($api.byId('statusBox'), '<b style="font-size:20px;">本次工资总额：<span id="moneyBox">'+allMoney+'</span>元</b>');
+    }
+    if(gongziStatus == 1){
+        $api.html($api.byId('statusBox'), '审核中');
+    }
+    if(gongziStatus == 2){
+        $api.html($api.byId('statusBox'), '审核通过，请组织员工领取工资！');
+    }
+    if(gongziStatus == 3){
+        $api.html($api.byId('statusBox'), '工资已发放完成');
+    }
+    $api.attr($api.byId('saveButton'), 'status',0);
+    firstBuild = 0;
+}
+function getQiantaiRenyuan(){
+    $api.attr($api.byId('saveButton'), 'status',1);
+    api.ajax({
+        url: appUrl+'Get/qiantaiRenyuan',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                var renyuanArr = ret.data;
+                var renyuanStr = '';
+                for(var i = 0;i < renyuanArr.length;i++){
+                    var renyuanId = renyuanArr[i].id;
+                    var renyuanName = renyuanArr[i].user_name;
+                    var thisRenyuanStr = '<input class="aui-radio aui-radio-danger" type="radio" name="qiantaiRen" id="qiantai'+renyuanId+'" onclick="changeRenyuan('+renyuanId+',\''+renyuanName+'\')"> <span class="aui-radio-name">'+renyuanName+'</span>';
+                    renyuanStr += thisRenyuanStr;
+                }
+                //alert(renyuanStr)
+                $api.html($api.byId('qiantaiRenyuan'), renyuanStr);
+                $api.attr($api.byId('saveButton'), 'status',0);
+                if(showType == 0){
+                    firstBuild = 0;
+                    $api.addCls($api.byId('loadBox'), 'aui-hidden');
+                    hideAll();
+                    $api.removeCls($api.byId('showBox'), 'aui-hidden');
+                }
+                if(showType == 1){
+                    firstBuild = 1;
+                    gongziId = api.pageParam.gongziId;
+                    getGongzi();
+                }
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function getGongzi(){
+    //alert(gongziId)
+    api.ajax({
+        url: appUrl+'Get/gongziById',
+        method: 'post',
+        data: {
+            values: { 
+                gongzi_id:gongziId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                gongziJson = ret.data;
+                $api.addCls($api.byId('loadBox'), 'aui-hidden');
+                $api.removeCls($api.byId('showBox'), 'aui-hidden');
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    showType = api.pageParam.showType;
+    getQiantaiRenyuan();
+}      
+</script>
+</html>

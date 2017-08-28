@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,dingdanId,headerHeight,frameHeight;
+var companyId = $api.getStorage('companyId');
+var gongziId;
+function closeWin(){
+    api.closeWin();
+}
+function openFrame(){
+    var thisFrameName = 'gongzi_shenpi_list';
+    api.closeFrame({
+        name: thisFrameName
+    });
+    api.openFrame({
+        name: thisFrameName,
+        url: './'+thisFrameName+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight ,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            gongziId:gongziId
+        },
+        bounces: true
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    gongziId = api.pageParam.gongziId;
+    var titleStr = '工资发放审核清单';
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleStr);
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameHeight = api.winHeight - headerHeight; 
+    openFrame();
+};
+</script>
+</html>
