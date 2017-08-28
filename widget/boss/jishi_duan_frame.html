@@ -1,0 +1,129 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-accordion.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-slide.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <div id="chartBox" class="aui-col-xs-12"; style="height:500px;">
+        <div style="text-align: center;padding-top: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript" src="../script/aui-accordion.js"></script>
+<script type="text/javascript" src="../script/aui-tap.js" ></script>
+<script type="text/javascript" src="../script/aui-slide.js"></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var headerHeight,frameHeight,buttonBoxHeight,jishiData,showData,startDate,endDate,showType;
+var companyId = $api.getStorage('companyId');
+var showColor = '#e74c3c';
+var titleStr = '';
+var showNameArr = ['预约量','业务量','销售次数'];
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    // alert(JSON.stringify(jishiData));
+    // alert(JSON.stringify(showData));
+    
+    var option = {
+        title: {
+            text: titleStr
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            }
+        },
+        legend: {
+            data: [showNameArr[showType]],
+            left: 'right'
+        },
+        //color:['#e74c3c','#f1c40f','#2ecc71'],
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'value',
+            boundaryGap: [0, 0.01]
+        },
+        yAxis: {
+            type: 'category',
+            data: jishiData
+        },
+        color:[showColor],
+        series: [
+            {
+                name: showNameArr[showType],
+                type: 'bar',
+                data: showData,
+                markPoint: {
+                    data: [
+                        {type: 'max', name: '最大值'},
+                        {type: 'min', name: '最小值'}
+                    ]
+                },
+                markLine: {
+                    data: [
+                        {type: 'average', name: '平均值'}
+                    ]
+                }
+            }
+        ]
+    };
+    tongjiChart.setOption(option, true);
+}
+function reBuildData(){
+    for(var i = 0;i < showData.length;i++){
+        if(i != 0){
+            var checkNum = i 
+            for(var j = checkNum;j > 0;j--){
+                var lastKey = j;
+                var lastJishiName = jishiData[lastKey];
+                var lastShowNum = showData[lastKey];
+                var preKey = j - 1;
+                var preJishiName = jishiData[preKey];
+                var preShowNum = showData[preKey];
+                if(lastShowNum <= preShowNum){
+                    jishiData[preKey] = lastJishiName;
+                    jishiData[lastKey] = preJishiName;
+                    showData[preKey] = lastShowNum;
+                    showData[lastKey] = preShowNum;
+                }
+            } 
+        }
+    }
+    setTimeout("buildChart()",300);
+}
+apiready = function(){
+    api.parseTapmode();
+    showType = api.pageParam.showType;
+    jishiData = api.pageParam.jishiData;
+    showData = api.pageParam.showData;
+    startDate = api.pageParam.startDate.substring(8);
+    endDate = api.pageParam.endDate.substring(8);
+    titleStr = startDate + '号到'+endDate+'号'+showNameArr[showType]+'横比';
+    reBuildData();
+}  
+</script>
+</html>

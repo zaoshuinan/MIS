@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="./css/aui.css" />
+</head>
+<body>
+    <footer class="aui-nav" id="aui-footer">
+        <ul class="aui-bar-tab">
+            <li class="active-success" id="tabbar1" tapmode onclick="fnOpenFrame(this,'yewu')">
+                <span class="aui-iconfont aui-icon-favor"></span>
+                <p>业务</p>
+            </li>
+            <li id="tabbar2" tapmode onclick="fnOpenFrameGroup(this,'dingdan_group')">
+                <span class="aui-iconfont aui-icon-list"></span>
+                <p>订单</p>
+            </li>
+            <li id="tabbar3" tapmode onclick="fnOpenFrame(this,'jiaoliu')">
+                <span class="aui-iconfont aui-icon-comment"></span>
+                <p>交流</p>
+            </li>
+            <li id="tabbar4" tapmode onclick="fnOpenFrame(this,'wo')">
+                <span class="aui-iconfont aui-icon-people"></span>
+                <p>我</p>
+            </li>
+        </ul>
+    </footer>
+</body>
+<script type="text/javascript" src="./script/api.js"></script>
+<script type="text/javascript">
+
+    function loadRongCloud2(){
+        var rong = api.require('rongCloud2');
+        alert(1);
+		alert(JSON.stringify(rong));
+        rong.init(function(ret, err){
+            if (ret.status == 'error')
+                api.toast({ msg: err.code });
+        });
+
+        rong.connect({
+            token: 'ThptTWyiPPPvZHvuSiuri82yq+hfEluLjZ78E1qo4hEVSFQNpqdoPu406urMWKN4Z3/olWR+v9JVLAwfOQoLrA=='},
+            function(ret, err){
+                if (ret.status == 'success')
+                    api.toast({ msg: ret.result.userId });
+        });
+    }
+    
+    function list(){
+        var obj = api.require('MNActionButton');
+        obj.open({
+            layout: {
+                row: 2,                        //（可选项）数字类型；每屏显示菜单按钮的行数；默认：2
+                col: 3,                        //（可选项）数字类型；每屏显示菜单按钮的列数；默认：3
+                rowSpacing: 5,                 //（可选项）数字类型；行与行之间的距离；默认：10
+                colSpacing: 10,                //（可选项）数字类型；列与列之间的距离；默认：10
+                offset: 0                      //（可选项）数字类型；整个菜单底部距离所属 window 底部的距离，只能为正整数；默认：0
+            },
+            animation: true,                   //（可选项）布尔类型；弹出和隐藏菜单时是否带弹出动画效果，true|false；默认：true
+            autoHide: true,                    //（可选项）布尔类型；点击菜单按钮后是否自动隐藏菜单，true|false；默认：true
+            styles: {
+                maskBg: 'rgba(0,0,0,0.2)',     //（可选项）字符串类型；遮罩层背景，支持 rgb，rgba，#，img；默认：rgba(0,0,0,0.2)
+                bg: '#fff',                    //（可选项）字符串类型；菜单有效区域背景，支持 rgb，rgba，#，img；默认：#fff
+                cancelButton: {                      //（可选项）JSON 对象类型，取消按钮设置
+                    size: 44,                  //（可选项）数字类型；底部取消按钮的高和宽；默认：44
+                    bg: '#fff',                //（可选项）字符串类型；取消按钮的 100% 宽度的背景，支持rgb，rgba，#，img；默认：'#fff'
+                    icon: 'widget://res/action-button-cancel.png'  //（可选项）字符串类型：取消按钮的图标，要求本地路径（widget://、fs://）；默认：默认X型图标
+                },
+                item: { //（可选项）JSON 对象类型，菜单按钮设置
+                    titleColor: '#888',        //（可选项）字符串类型；菜单按钮文字颜色，支持 rgb，rgba，#；默认：#848484
+                    titleHighlight: 'dd2727',  //（可选项）字符串类型；菜单按钮文字高亮颜色，支持 rgb，rgba，#；默认：同 titleColor
+                    titleSize: 12              //（可选项）数字类型；菜单按钮文字大小，同时也是文字栏所占高度，值为 0 时不显示文字栏；默认：12
+                },
+                indicator: {                   //（可选项）JSON 对象类型；页标指示器样式，若不传则不显示该指示器
+                    color: '#c4c4c4',          //（可选项）字符串类型；其它页指示器颜色；支持rgb、rgba、#；默认：'#c4c4c4'
+                    highlight: '#9e9e9e'       //（可选项）字符串类型；当前页指示器颜色；支持rgb、rgba、#；默认：'#9e9e9e'
+                }
+            },
+            items:[{ //JSON 对象类型；一个菜单项的设置信息
+                icon: 'widget://res/icon1.png', //字符串类型；一个菜单按钮的图标路径，要求本地路径（widget://、fs://）；
+            highlight: 'widget://res/highlight1.png', //（可选项）字符串类型；一个菜单按钮的高亮图标路径，要求本地路径（widget://、fs://）；默认：同 icon
+                title: '菜单项1',               //字符串类型；菜单按钮的文字；默认：未设置时不显示，但文字栏仍按 titleSize 设置显示高度
+            }, {
+                icon: 'widget://res/icon2.png',
+                highlight: 'widget://res/highlight2.png',
+                title: '菜单项2'
+            }, {
+                icon: 'widget://res/icon3.png',
+                highlight: 'widget://res/highlight3.png',
+                title: '菜单项3'
+            }, {
+                icon: 'widget://res/icon4.png',
+                highlight: 'widget://res/highlight4.png',
+                title: '菜单项4'
+            }, {
+                icon: 'widget://res/icon5.png',
+                highlight: 'widget://res/highlight5.png',
+                title: '菜单项5'
+            }, {
+                icon: 'widget://res/icon6.png',
+                highlight: 'widget://res/highlight6.png',
+                title: '菜单项6'
+            }, {
+                icon: 'widget://res/icon7.png',
+                highlight: 'widget://res/highlight7.png',
+                title: '菜单项7'
+            }, {
+                icon: 'widget://res/icon8.png',
+                highlight: 'widget://res/highlight8.png',
+                title: '菜单项8'
+            }]
+        }, function(ret, err) {
+            if (ret) {
+                alert(JSON.stringify(ret));
+            } else {
+                alert(JSON.stringify(err));
+            }
+        });
+
+    }
+    
+    var footer,frameHeight,footerHeight;
+    var dingdanFrameName = ['all','waiting','doing','done'];
+    apiready = function(){
+        list();
+        loadRongCloud2();
+        footer = $api.byId('aui-footer');
+        footerHeight = $api.offset(footer).h;
+        frameHeight = api.winHeight - footerHeight;
+        var defaultAct = $api.dom(footer, '.aui-bar-tab li.active-success');
+        fnOpenFrame(defaultAct,'yewu');
+    }
+
+    function fnOpenFrame(obj,frameName){
+        api.openFrame({
+            name: frameName,
+            url: './html/' + frameName + '_frame.html',
+            bounces: false,
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: frameHeight
+            }
+        });
+        var footerAct = $api.dom(footer, '.aui-bar-tab li.active-success');
+        $api.removeCls(footerAct, 'active-success');
+        $api.addCls(obj, 'active-success');
+    }
+    function fnOpenFrameGroup(obj,frameGroupName){
+        api.openFrameGroup({
+            name: frameGroupName,
+            scrollEnabled: true,
+            rect: {
+                x:0,
+                y:0,
+                w:'auto',
+                h:frameHeight
+            },
+            index: 0,
+            frames: [{
+                name: frameGroupName + '_' + dingdanFrameName[0], 
+                url: './html/' + frameGroupName + '_' + dingdanFrameName[0] + '_win.html'
+            },{
+                name: frameGroupName + '_' + dingdanFrameName[1], 
+                url: './html/' + frameGroupName + '_' + dingdanFrameName[1] + '_win.html'
+            },{
+                name: frameGroupName + '_' + dingdanFrameName[2], 
+                url: './html/' + frameGroupName + '_' + dingdanFrameName[2] + '_win.html'
+            },{
+                name: frameGroupName + '_' + dingdanFrameName[3], 
+                url: './html/' + frameGroupName + '_' + dingdanFrameName[3] + '_win.html'
+            }]
+        }, function(ret, err){
+           var name  = ret.name;
+           var index = ret.index;
+        });
+        var footerAct = $api.dom(footer, '.aui-bar-tab li.active-success');
+        $api.removeCls(footerAct, 'active-success');
+        $api.addCls(obj, 'active-success');
+    }
+</script>
+</html>

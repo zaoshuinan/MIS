@@ -1,0 +1,418 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+<meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+<link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+.my-header {
+background-color: #e74c3c;
+position: relative;
+margin-bottom: 0;
+}
+.my-info {
+position: relative;
+padding: 20px 0;
+width: 100%;
+bottom: 0;
+text-align: center;
+vertical-align: center;
+}
+.my-info img {
+width: 100px;
+height: 100px;
+border-radius: 50%;
+}
+.my-info p.nickname {
+margin-top: 5px;
+color: #ffffff;
+font-size: 18px;
+}
+.aui-list-view-cell {
+line-height: 26px;
+}
+.amount-info {
+background-color: #ffffff;
+overflow: hidden;
+}
+.amount-info p {
+font-size: 0.75em;
+}
+.amount-info p strong {
+font-size: 18px;
+}
+.aui-list-view-cell {
+line-height: 26px;
+}
+.amount-info .aui-col-xs-4 {
+padding: 15px 0;
+position: relative;
+height: 80px;
+}
+.amount-info .aui-col-xs-4:after {
+border-left: 1px solid #ddd;
+display: block;
+content: '';
+position: absolute;
+top: 0;
+right: 0;
+bottom: 0;
+left: 0;
+-webkit-transform-origin: 0 0;
+-webkit-transform: scale(1);
+pointer-events: none;
+}
+.amount-info .aui-col-xs-4:first-child:after {
+border:none;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+.amount-info .aui-col-xs-4:after {
+    right: -100%;
+    bottom: -100%;
+    -webkit-transform: scale(0.5);
+}
+}
+</style>
+<body>
+<div class="aui-content my-header" id="misHeader">
+    <div class="my-info" tapmode onclick="fnOpenWin(7)">
+        <img id="touxiang" src="" />
+        <p id="userName" class="nickname"></p>
+    </div>
+</div>
+<div class="aui-content aui-text-center amount-info">
+    <div class="aui-col-xs-4" tapmode onclick="fnOpenWin(0)">
+        <strong class="aui-iconfont aui-icon-sort aui-text-warning"></strong>
+        <p>记录日志</p>
+    </div>
+    <div class="aui-col-xs-4" tapmode onclick="fnOpenWin(1)">
+        <strong class="aui-iconfont aui-icon-sponsor aui-text-danger"></strong>
+        <p>今日提成</p>
+    </div>
+    <div class="aui-col-xs-4" tapmode onclick="fnOpenWin(2)">
+        <strong class="aui-iconfont aui-icon-scan aui-text-info"></strong>
+        <p>扫码下班</p>
+    </div>
+</div>
+<div class="aui-content">
+    <ul class="aui-list-view aui-in">
+        <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(3)">
+            <i class="aui-iconfont aui-icon-profile aui-bg-info"></i>个人资料
+        </li>
+        <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(4)">
+            <i class="aui-iconfont aui-icon-form aui-bg-danger"></i>我的业务
+        </li>
+        <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(5)">
+            <i class="aui-iconfont aui-icon-pay aui-bg-warning"></i>我的提成
+        </li>
+        <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(6)">
+            <i class="aui-iconfont aui-icon-edit aui-bg-success"></i>我的考勤
+        </li>
+        <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(8)">
+            <i class="aui-iconfont aui-icon-edit aui-bg-blue"></i>系统设置
+        </li>
+    </ul>
+</div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var checkNum=0;
+var touxiangUrl;
+var winNameArr = ['yewu_today','ticheng_today','kaoqin_today','geren','yewu_all','ticheng_all','kaoqin_all','change_touxiang','system_config'];
+
+function fnOpenWin(id){
+    var winName = winNameArr[id];
+    //alert(winName)
+    if(id == 2){
+        if($api.getStorage('hasSaoma') == 1){
+            var FNScanner = api.require('FNScanner');
+            FNScanner.openScanner({
+                autorotation: true,
+            },function( ret, err ){        
+                if( ret ){
+                    if(ret.eventType == 'success'){
+                        alert( JSON.stringify( ret.content ) );
+                        //alert(JSON.parse(ret.content));
+                        var contentStr = ret.content;
+                        var contentArr = contentStr.split('+');
+                        var checkStr = contentArr[0];
+                        var missionDay = contentArr[1];
+                        //alert(checkStr + missionDay);
+                        //var checkStr = ret.content;
+                        checkSaoma(checkStr);
+                        FNScanner.closeView();
+                    } 
+                }else{
+                    //alert( JSON.stringify( err ) );
+                }
+            });
+        }else{
+            api.toast({
+                msg: '你还没有扫码考勤上班',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    }else{
+        api.openWin({
+            name: winName,
+            url: './' + winName + '_win.html',
+            bounces: false,
+            slidBackEnabled:false
+        });
+    }
+    
+}
+function checkSaoma(checkStr){
+    api.ajax({
+        url: ipUrl + 'Apps/Get/checkSaoma',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            checkNum = 1;
+            //alert( JSON.stringify( ret ) );
+            //alert(ret.check_saoma + '-' + checkStr);
+            if(checkNum == 1){
+                    if(ret.check_saoma == checkStr){
+                        //alert('验证成功');
+                        //alert('验证成功，现在的时间是：'+ret.saoma_time+'，随后统计当天任务并关闭程序！');
+                        api.ajax({
+                            url: ipUrl + 'Apps/Get/todayDingdan',
+                            method: 'post',
+                            data: {
+                                values: { 
+                                    user_id: $api.getStorage('userId'),
+                                    user_tel:$api.getStorage('userTel'),
+                                    user_name:$api.getStorage('userName'),
+                                    today_num:$api.getStorage('todayNum'),
+                                    company_id:$api.getStorage('companyId')
+                                },
+                                files: { 
+                                    file: 'fs://a.gif'
+                                }
+                            }
+                        },function(ret, err){
+                            checkNum = 2;
+                            if(checkNum == 2){
+                                if (ret) {
+                                    //alert( JSON.stringify( ret ) );
+                                    //return false;
+                                    var idStr = '';
+                                    var gongzuoliang = 0;
+                                    var duliNum = 0;
+                                    var duliStr = '';
+                                    var bangNum = 0;
+                                    var bangStr = '';
+                                    var beibangNum = 0;
+                                    var beibangStr = '';
+                                    var dingdanJson = ret.dingdan_data;
+                                    var dingdanNum = dingdanJson.length;
+                                    for(var i = 0; i < dingdanNum;i++){
+                                        var dingdanHaoma = dingdanJson[i].dingdan_haoma;
+                                        if(idStr == ''){
+                                            idStr += dingdanJson[i].id;
+                                        }else{
+                                            idStr += ',' + dingdanJson[i].id;
+                                        }
+                                        if(dingdanJson[i].dingdan_jingli_tel == $api.getStorage('userTel')){
+                                            if(dingdanJson[i].dingdan_help_tel == ''){
+                                                gongzuoliang = gongzuoliang + 1;
+                                                duliNum ++;
+                                                if(duliStr == ''){
+                                                    duliStr += dingdanHaoma;
+                                                }else{
+                                                    duliStr += ',' + dingdanHaoma;
+                                                }
+                                            }else{
+                                                gongzuoliang = gongzuoliang + 0.7;
+                                                bangNum ++;
+                                                if(bangStr == ''){
+                                                    bangStr += dingdanHaoma;
+                                                }else{
+                                                    bangStr += ',' + dingdanHaoma;
+                                                }
+                                            }
+                                        }else{
+                                            gongzuoliang = gongzuoliang + 0.3;
+                                            beibangNum ++;
+                                            if(beibangStr == ''){
+                                                beibangStr += dingdanHaoma;
+                                            }else{
+                                                beibangStr += ',' + dingdanHaoma;
+                                            }
+                                        }
+                                    }
+                                    //alert($api.getStorage('kaoqinId') + '-' + $api.getStorage('missionDay') + '-' + gongzuoliang + '-' + dingdanNum + '-' + duliNum + '-' + duliStr + '-' + bangNum + '-' + bangStr + '-' + beibangNum + '-' + beibangStr);
+                                    checkNum = 3;
+                                    
+                                    if(checkNum == 3){
+                                        //alert(checkNum);
+                                        api.ajax({
+                                            url: ipUrl + 'Apps/Add/tongjiTodayJingli',
+                                            method: 'post',
+                                            data: {
+                                                values: { 
+                                                    user_id: $api.getStorage('userId'),
+                                                    user_tel:$api.getStorage('userTel'),
+                                                    user_name:$api.getStorage('userName'),
+                                                    today_num:$api.getStorage('todayNum'),
+                                                    company_id:$api.getStorage('companyId'),
+                                                    kaoqin_id:$api.getStorage('kaoqinId'),
+                                                    kaoqin_day:$api.getStorage('missionDay'),
+                                                    id_str:idStr,
+                                                    yewuliang:gongzuoliang,
+                                                    dingdan_num:dingdanNum,
+                                                    duli_num:duliNum,
+                                                    bang_num:bangNum,
+                                                    beibang_num:beibangNum,
+                                                    duli_str:duliStr,
+                                                    bang_str:bangStr,
+                                                    beibang_str:beibangStr
+                                                },
+                                                files: { 
+                                                    file: 'fs://a.gif'
+                                                }
+                                            }
+                                        },function(ret, err){
+                                            if (ret) {
+                                                //alert( JSON.stringify( ret ) );
+                                                //return false;
+                                                alert(ret.msg);
+                                                $api.setStorage('kaoqinId', '');
+                                                $api.setStorage('hasSaoma', '0');
+                                                $api.setStorage('missionDay', '');
+                                                var thisWinName = api.winName;
+                                                var num = GetRandomNum(10000,99999);
+                                                var newWinName = 'jingli_win_'+num;
+                                                api.openWin({
+                                                    name: newWinName,
+                                                    url: './index.html',
+                                                    slidBackEnabled:false,
+                                                    bounces: false,
+                                                    pageParam: {
+                                                        name: 'test'
+                                                    }
+                                                });
+                                                api.closeWin({
+                                                    name: thisWinName
+                                                });
+                                                //api.closeWidget();
+                                            } else {
+                                                api.toast({
+                                                    msg: '网络错误',
+                                                    duration: 2000,
+                                                    location: 'bottom'
+                                                });
+                                            }
+                                        });
+                                        
+                                    }
+                                    
+                                } else {
+                                    api.toast({
+                                        msg: '网络错误',
+                                        duration: 2000,
+                                        location: 'bottom'
+                                    });
+                                }
+                            }
+                        });
+                    }else{
+                        alert('验证失败，请重新验证');
+                    }
+                } else {
+                    //alert( JSON.stringify( err ) );
+                    api.toast({
+                        msg: '网络错误',
+                        duration: 2000,
+                        location: 'bottom'
+                    });
+                }
+            }  
+    });
+}
+function GetRandomNum(Min,Max){   
+    var Range = Max - Min;   
+    var Rand = Math.random();   
+    return(Min + Math.round(Rand * Range));   
+} 
+function getCacheImgUrl(realImgUrl,fn){
+    //alert(realImgUrl);
+    //var cacheUrl;
+    api.imageCache({
+        url: touxiangUrl
+    }, function(ret, err){
+        if( ret ){
+             //alert( JSON.stringify( ret ) );
+             //alert(ret.url)
+             cacheUrl = ret.url;
+             fn(cacheUrl);
+        }else{
+             //alert( JSON.stringify( err ) );
+             cacheUrl = realImgUrl;
+             fn(cacheUrl);
+             //return cacheUrl;
+        }
+    });
+    //cacheUrl = 1;
+    
+    //return cacheUrl;
+}
+function showTouxiang(cacheImgUrl){
+    //alert(cacheImgUrl);
+    $api.attr($api.byId('touxiang'), 'src', cacheImgUrl);
+}
+apiready = function () {
+    var header = $api.byId('misHeader');
+    if(!$api.getStorage('touxiangUrl')){
+        touxiangUrl = '../image/jingli.png';
+    }else{
+        touxiangUrl = $api.getStorage('touxiangUrl');
+    }
+    if(!$api.getStorage('allNum')){
+        $api.setStorage('allNum', 0);
+    }
+    if(!$api.getStorage('todayNum')){
+        $api.setStorage('todayNum', 0);
+    }
+    $api.fixStatusBar(header);
+    api.parseTapmode();
+    api.addEventListener({
+        name: 'changeTouxiang'
+    }, function(ret, err){
+        //alert(1);
+        if( ret ){
+             //alert( JSON.stringify( ret ) );
+             touxiangUrl = ipUrl + ret.value.imgPath;
+             $api.setStorage('touxiangUrl', touxiangUrl);
+             //alert(touxiangUrl);
+             getCacheImgUrl(touxiangUrl,showTouxiang);
+        }else{
+             //alert( JSON.stringify( err ) );
+        }
+    });
+    api.addEventListener({
+        name: 'changeTodayNum'
+    }, function(ret, err){
+        $api.html($api.byId('todayNum'), $api.getStorage('todayNum'));
+        $api.html($api.byId('allNum'), $api.getStorage('allNum'));
+    });
+    getCacheImgUrl(touxiangUrl,showTouxiang);
+    $api.html($api.byId('todayNum'), $api.getStorage('todayNum'));
+    $api.html($api.byId('allNum'), $api.getStorage('allNum'));
+    $api.html($api.byId('userName'), $api.getStorage('userName'));
+}
+</script>
+</html>

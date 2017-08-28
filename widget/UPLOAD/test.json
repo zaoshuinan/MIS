@@ -1,0 +1,76 @@
+{
+    "id": "o_1boje6k6u1jk21tbholb1bqtljk1",
+    "uid": "o_1boje6k6u1jk21tbholb1bqtljk1",
+    "state": 1,
+    "features": {
+        "chunks": true,
+        "multipart": true,
+        "multi_selection": true
+    },
+    "runtime": "html5",
+    "files": [
+        {
+            "id": "o_1boje6p0e1rsr17o4qa09pc17fa7",
+            "name": "前面.psd",
+            "type": "image/vnd.adobe.photoshop",
+            "size": 818721,
+            "origSize": 818721,
+            "loaded": 0,
+            "percent": 0,
+            "status": 1,
+            "lastModifiedDate": "2016-08-15T03:54:09.000Z"
+        }
+    ],
+    "settings": {
+        "runtimes": "html5,flash,silverlight,html4",
+        "max_retries": 0,
+        "chunk_size": 0,
+        "multipart": true,
+        "multi_selection": true,
+        "file_data_name": "file",
+        "flash_swf_url": "lib/plupload-2.1.2/js/Moxie.swf",
+        "silverlight_xap_url": "lib/plupload-2.1.2/js/Moxie.xap",
+        "filters": {
+            "mime_types": [],
+            "prevent_duplicates": false,
+            "max_file_size": 0
+        },
+        "resize": {
+            "enabled": false,
+            "preserve_headers": true,
+            "crop": false
+        },
+        "send_file_name": true,
+        "send_chunk_number": true,
+        "browse_button": [
+            {
+                "moxie_o_1boje6k6s1gcb6j7inl1liu1eja0": "o_1boje6k7a17261gs21li2na711pn4"
+            }
+        ],
+        "container": {
+            "moxie_o_1boje6k6s1gcb6j7inl1liu1eja0": "o_1boje6k7a1bg01j73po517131dgk5"
+        },
+        "url": "http://liangcai-product-south.oss-cn-shenzhen.aliyuncs.com",
+        "multipart_params": {
+            "Filename": "${filename}",
+            "key": "${filename}",
+            "policy": "eyJleHBpcmF0aW9uIjoiMjAyMC0wMS0wMVQxMjowMDowMC4wMDBaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
+            "OSSAccessKeyId": "LTAIwkT8bFYSds3e",
+            "success_action_status": "200",
+            "signature": "JkzZNnuDBMvJSN6UQ82w4l33iss="
+        },
+        "init": {},
+        "required_features": {
+            "select_file": true
+        }
+    },
+    "total": {
+        "size": 818721,
+        "loaded": 0,
+        "uploaded": 0,
+        "failed": 0,
+        "queued": 1,
+        "percent": 0,
+        "bytesPerSec": 0
+    }
+}

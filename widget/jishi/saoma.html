@@ -1,0 +1,353 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-content-padded">
+            <ul>
+                <li class="aui-list-view" style="padding-top:30px;">
+                    <div class="aui-user-view-cell aui-img">
+                        <div class="aui-img-body">
+                            <span>系统信息：你尚未扫码上班</span>
+                        </div>
+                    </div>
+                    <div class="aui-padded-10 content">
+                        <p>身在曹营心在，休息日也可赚钱</p>
+                        <p>除早上6-11点外，你可随时进行客户预约</p>
+                        <p>如已到公司，请前往考勤地点扫码上班</p>
+                    </div>
+                </li>
+            </ul>
+            <ul class="aui-grid-nine" id="detailBox">
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openYuyue()">
+                    <img src="../image/yuyue.png" style="width:60px">
+                    <p>客户预约</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="openQingjia()"><img src="../image/qingjia1.png" style="width:60px"><p>请假</p></li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="saoma()">
+                    <img src="../image/saoma.png" style="width:60px">
+                    <p>扫码上班</p>
+                </li>
+            </ul>
+            <p onclick="gotoKaoqin()" class="aui-hidden">测试</p>
+            <ul class="aui-grid-nine" id="detailBox">
+                <p class="aui-text-danger" style="font-size: 16px;padding: 20px" id="msg"></p>
+            </ul>
+        </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var checkNum = 0;
+var kaoqinFirstCheck,timeNow,startTimeStr,showStartTime,endTimeStr,showEndTime,showSystemTime,kaoqinStartTimeNum,kaoqinEndTimeNum,nowTimeNum,zhengchangNum;
+var userId = $api.getStorage('userId');
+var userName = $api.getStorage('userName');
+var userTel = $api.getStorage('userTel');
+var userBanciId = $api.getStorage('userBanciId');
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var banciJson = $api.getStorage('cacheBanci')[userBanciId];
+var userType = $api.getStorage('userType');
+if(userType == 9){
+    var jishiId = $api.getStorage('jishiId');
+}else{
+    var jishiId = 0;
+}
+function openQingjia(){
+    api.actionSheet({
+        destructiveTitle: '休假申请',
+        buttons: ['请假列表']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.confirm({
+                    msg: '确定要申请休假吗？',
+                    buttons: ['确定', '取消']
+                }, function(ret, err) {
+                    if (ret) {
+                        if(ret.buttonIndex == 1){
+                            api.openWin({
+                                name: 'addQingjia',
+                                url: './add_qingjia_win.html',
+                                pageParam: {
+                                    userType: 0
+                                }
+                            });
+                        }
+                    }
+                }); 
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'qingjiaHistroy',
+                    url: './qingjia_histroy_win.html',
+                    pageParam: {
+                        userType: 0
+                    }
+                });
+            }
+        } 
+    });
+}
+function openYuyue(){
+    api.actionSheet({
+        destructiveTitle: '新建预约',
+        buttons: ['查看预约列表']
+    }, function(ret, err){
+        if( ret ){
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addYuyue',
+                    url: './add_yuyue_win.html',
+                    bounces: false,
+                    slidBackEnabled:false,
+                    pageParam: {key : 'value'}
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'yuyueList',
+                    url: './yuyue_list_win.html',
+                    bounces: false,
+                    slidBackEnabled:false,
+                    pageParam: {key : 'value'}
+                });
+            }
+        }
+    });
+}
+function saoma(){
+    var FNScanner = api.require('FNScanner');
+    FNScanner.openScanner({
+        autorotation: true,
+    },function( ret, err ){ 
+        if( ret ){
+            if(ret.eventType == 'success'){
+                var contentStr = ret.content;
+                var contentArr = contentStr.split('-');
+                if(contentArr[0] == "Q"){
+                    kaoqinShebeiType = 3;
+                }
+                if(contentArr[0] == "Z"){
+                    kaoqinShebeiType = 0;
+                }
+                if(contentArr[0] == "P"){
+                    kaoqinShebeiType = 1;
+                }
+                checkSaoma(contentArr[1]);
+                FNScanner.closeView();
+            } 
+        }
+    });
+}
+function checkSaoma(checkStr){
+    if(kaoqinShebeiType == 3){
+        var checkArr = qiantaiMaArr;
+        var maStr = 'Q-';
+    }
+    if(kaoqinShebeiType == 1){
+        var checkArr = peisongMaArr;
+        var maStr = 'P-';
+    }
+    if(kaoqinShebeiType == 0){
+        var checkArr = zhongfangMaArr;
+        var maStr = 'Z-';
+    }
+    maStr = maStr + checkStr
+    var erweimaNum = checkArr[maStr];
+    api.ajax({
+        url: appUrl+'Get/checkSaoma',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                type:kaoqinShebeiType
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            if(ret.erweima_num == erweimaNum){
+                gotoKaoqin();
+            }else{
+                alert('验证失败，请重新验证');
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function GetRandomNum(Min,Max){   
+    var Range = Max - Min;   
+    var Rand = Math.random();   
+    return(Min + Math.round(Rand * Range));   
+}  
+function buildPage(){
+    api.ajax({
+        url: appUrl+'Get/kaoqinStatus',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                mission_day:missionDay,
+                user_id:$api.getStorage('userId')
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            timeNow = ret.time;
+            if(ret.has == 0){
+                kaoqinFirstCheck = 1;
+            }else{
+                kaoqinFirstCheck = 0
+            }
+            showTime();
+        } else {
+            alert(JSON.stringify(err))
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+} 
+function gotoKaoqin(){
+    if(userType == 9){
+        kaoqinType = 2;
+    }else{
+        if(userType == 2){
+            kaoqinType = 1;
+        }else{
+            kaoqinType = 3;
+        }
+    }
+    api.toast({
+        msg: '登陆系统中。。。。'
+    });
+    api.ajax({
+        url: appUrl+'Add/shangbanKaoqin',
+        method: 'post',
+        data: {
+            values: { 
+                user_id: userId,
+                user_tel:userTel,
+                user_name:userName,
+                company_id:companyId,
+                kaoqin_type:kaoqinType,
+                mission_day:missionDay,
+                banci_id:userBanciId,
+                kaoqin_first:kaoqinFirstCheck,
+                zhengchang:zhengchangNum
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            alert('验证成功，现在的时间是：'+ret.this_time.substring(11)+'，请开始工作吧！');
+            var kaoqinId = ret.id;
+            $api.setStorage('hasSaoma', '1');
+            $api.setStorage('kaoqinId', kaoqinId);
+            $api.setStorage('missionDay', missionDay);
+            var thisWinName = api.winName;
+            var num = GetRandomNum(10000,99999);
+            var newWinName = 'jishi_win_'+num;
+            api.openWin({
+                name: newWinName,
+                url: './index.html',
+                slidBackEnabled:false,
+                bounces: false,
+                pageParam: {
+                    name: 'test'
+                }
+            });
+            api.closeWin({
+                name: thisWinName
+            });
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function showTime(){
+    var beginHour,beginMin,endHour,endMin;
+    if(banciJson.banci_begin_hour < 10){
+        beginHour = '0' + banciJson.banci_begin_hour;
+    }else{
+        beginHour = banciJson.banci_begin_hour;
+    }
+    if(banciJson.banci_end_hour < 10){
+        endHour = '0' + banciJson.banci_end_hour;
+    }else{
+        endHour = banciJson.banci_end_hour;
+    }
+    if(banciJson.banci_begin_min < 10){
+        beginMin = '0' + banciJson.banci_begin_min;
+    }else{
+        beginMin = banciJson.banci_begin_min;
+    }
+    if(banciJson.banci_end_min < 10){
+        endMin = '0' + banciJson.banci_end_min;
+    }else{
+        endMin = banciJson.banci_end_min;
+    }
+    startTimeStr = missionDay + ' ' + beginHour + ':' + beginMin + ':' + '00';
+    startTimeStr = startTimeStr.replace(/-/g,"/");
+    var startTime = new Date(startTimeStr);
+    var chaTime = 30 * 60 * 1000;
+    endTimeStr = missionDay + ' ' + endHour + ':' + endMin + ':' + '00';
+    endTimeStr = endTimeStr.replace(/-/g,"/");
+
+    var endTime = new Date(endTimeStr);
+    var oneDayTime = 24 * 60 * 60 * 1000;
+    kaoqinStartTimeNum = startTime.getTime() + chaTime;
+    if(banciJson.banci_end_hour < 12){
+        kaoqinEndTimeNum = endTime.getTime() +oneDayTime - chaTime;
+    }else{
+        kaoqinEndTimeNum = endTime.getTime() - chaTime;
+    }
+    
+    showStartTime = beginHour + ':' + beginMin;
+    showEndTime = endHour + ':' + endMin;
+    showSystemTime = timeNow.substr(11)
+
+    timeNow = timeNow.replace(/-/g,"/");
+    var nowTime = new Date(timeNow);
+    nowTimeNum = nowTime.getTime();
+    //alert(startTime.getTime()+':'+kaoqinStartTimeNum + '_' + endTime.getTime()+':'+kaoqinEndTimeNum + '_' + nowTimeNum);
+    //alert(missionDay + kaoqinStartTimeNum +':'+ nowTimeNum +':'+ kaoqinEndTimeNum);
+    var msgStr = '扫码正常考勤';
+
+    //alert(kaoqinFirstCheck)
+    if(nowTimeNum > kaoqinStartTimeNum){
+        zhengchangNum = 0;
+        if(kaoqinFirstCheck == 1){
+            var msgStr = '现在上班考勤迟到了哦~';
+        }else{
+            var msgStr = '扫码返回上班';
+        }
+    }
+    if(nowTimeNum < kaoqinStartTimeNum || nowTimeNum > kaoqinEndTimeNum){
+        zhengchangNum = 1;
+    }
+    $api.html($api.byId('msg'), '班次：'+banciJson.banci_name+'（'+showStartTime+'-'+showEndTime+'）<br>系统时间：'+showSystemTime + '<br>'+msgStr);
+}
+apiready = function(){
+    if($api.getStorage('userBanciId') == 0){
+        alert('没有发现你的班次信息，你无法扫码进入系统，请联系前台');
+        api.closeWin();
+        return false;
+    }
+    buildPage()
+} 
+</script>
+</html>

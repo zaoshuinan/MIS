@@ -1,0 +1,375 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-btn-danger aui-pull-left">
+            
+        </a>
+        <div class="aui-title">新桑拿</div>
+    </header>
+    <div class="aui-tab aui-tab-danger">
+        <ul class="aui-tab-nav" id="frameGroupButtonBox">
+            <li class="active" tapmod onclick="changeFrameGroup(0)">未上单</li>
+            <li tapmod onclick="changeFrameGroup(1)">正上钟</li>
+            <li tapmod onclick="changeFrameGroup(2)">已完钟</li>
+        </ul>
+    </div>
+    <footer class="aui-nav" id="misFooter">
+        <ul class="aui-bar-tab">
+            <li class="active-danger" id="tabbar0" tapmode onclick="fnOpen(0)">
+                <span class="aui-iconfont aui-icon-favor"></span>
+                <p>业务</p>
+            </li>
+            <li id="tabbar1" tapmode onclick="fnOpen(1)">
+                <span class="aui-iconfont aui-icon-list"></span>
+                <p>订单</p>
+            </li>
+            <li id="tabbar2" tapmode onclick="fnOpen(2)">
+                <span class="aui-iconfont aui-icon-people"></span>
+                <p>我</p>
+            </li>
+        </ul>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest-SHA1.js"></script>
+<script type="text/javascript" src="../script/SHA1.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var dingdanIndex = 0;
+var appId = 'A6908494336341';
+var appKey = "54094443-FDD9-6436-DF54-B2C1EA5AAC7D";
+var framesJson = [
+    {
+        'id':0,
+        'type':'frame',
+        'frameName':'yewu'
+    },{
+        'id':1,
+        'type':'frameGroup',
+        'frameGroupName':'dingdan',
+        'groupJson':[{
+            name: 'dingdan_waiting', 
+            url: 'dingdan_waiting.html'
+        },{
+            name: 'dingdan_doing', 
+            url: 'dingdan_doing.html'
+        },{
+            name: 'dingdan_done', 
+            url: 'dingdan_done.html'
+        }]
+    },{
+        'id':2,
+        'type':'frame',
+        'frameName':'my'
+    }
+]
+function changeFrameGroup(index){
+    api.setFrameGroupIndex({
+        name: 'dingdan',
+        index: index,
+        scroll: true
+    });
+}
+function fnOpen(index){
+    //alert(index)
+    if(index == 1){
+        if($api.getStorage('companyStatu') == 1){
+            if($api.getStorage('hasSaoma') == 1){
+                api.openFrameGroup({
+                    name: framesJson[index].frameGroupName,
+                    scrollEnabled: true,
+                    bounces:false,
+                    slidBackEnabled:false,
+                    rect: {
+                        x:0,
+                        y:frameGroupStart,
+                        w:'auto',
+                        h:frameGroupHeight
+                    },
+                    index: dingdanIndex,
+                    frames: framesJson[index].groupJson
+                }, function(ret, err){
+                   var name  = ret.name;
+                   var index = ret.index;
+                   dingdanIndex = index;
+                   changeGroupButtonStyle(index);
+                });
+            }else{
+                api.openFrame({
+                    name: 'saoma',
+                    url: './saoma.html',
+                    rect: {
+                        x: 0,
+                        y: headerHeight1,
+                        w: 'auto',
+                        h: frameHeight1
+                    },
+                    pageParam: {
+                        name: 'saoma'
+                    },
+                    bounces: false,
+                    bgColor: 'rgba(0,0,0,0)',
+                    vScrollBarEnabled: true,
+                    hScrollBarEnabled: true
+                });
+            }
+            
+        }else{
+            headerHeight1 = headerHeight;
+            frameHeight1 = frameHeight;
+            //alert(frameHeight1);
+            api.openFrame({
+                name: 'waitting',
+                url: './waitting.html',
+                rect: {
+                    x: 0,
+                    y: headerHeight1,
+                    w: 'auto',
+                    h: frameHeight1
+                },
+                pageParam: {
+                    name: 'waitting'
+                },
+                bounces: false,
+                bgColor: 'rgba(0,0,0,0)',
+                vScrollBarEnabled: true,
+                hScrollBarEnabled: true
+            });
+        }
+        
+    }else{
+        if(index == 2){
+            headerHeight1 = 0;
+            frameHeight1 = api.winHeight - footerHeight;
+            api.openFrame({
+                name: framesJson[index].frameName,
+                url: './' + framesJson[index].frameName + '_frame.html',
+                bounces: false,
+                slidBackEnabled:false,
+                rect: {
+                    x: 0,
+                    y: headerHeight1,
+                    w: 'auto',
+                    h: frameHeight1
+                }
+            });
+        }else{
+            //alert($api.getStorage('companyStatu'));
+            headerHeight1 = headerHeight;
+            frameHeight1 = frameHeight;
+            if($api.getStorage('companyStatu') == 1){
+                if($api.getStorage('hasSaoma') == 1){
+                    api.openFrame({
+                        name: framesJson[index].frameName,
+                        url: './' + framesJson[index].frameName + '_frame.html',
+                        bounces: false,
+                        slidBackEnabled:false,
+                        rect: {
+                            x: 0,
+                            y: headerHeight1,
+                            w: 'auto',
+                            h: frameHeight1
+                        }
+                    });
+                }else{
+                    api.openFrame({
+                        name: 'saoma',
+                        url: './saoma.html',
+                        rect: {
+                            x: 0,
+                            y: headerHeight1,
+                            w: 'auto',
+                            h: frameHeight1
+                        },
+                        pageParam: {
+                            name: 'saoma'
+                        },
+                        bounces: false,
+                        bgColor: 'rgba(0,0,0,0)',
+                        vScrollBarEnabled: true,
+                        hScrollBarEnabled: true
+                    });
+                }
+                
+            }else{
+                api.openFrame({
+                    name: 'waitting',
+                    url: './waitting.html',
+                    rect: {
+                        x: 0,
+                        y: headerHeight1,
+                        w: 'auto',
+                        h: frameHeight1
+                    },
+                    pageParam: {
+                        name: 'test'
+                    },
+                    bounces: false,
+                    bgColor: 'rgba(0,0,0,0)',
+                    vScrollBarEnabled: true,
+                    hScrollBarEnabled: true
+                });
+            }
+            
+        }
+    }
+    hideOther(index);
+    changeFootButton(index);
+}
+function changeFootButton(index){
+    var buttonsObj = $api.domAll(footer, 'ul li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active-danger');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active-danger');
+        }
+    }
+}
+function hideOther(index){
+    for(var i in framesJson){
+        if(i != index){
+            if(framesJson[i].type == 'frame'){
+                api.setFrameAttr({
+                    name: framesJson[i].frameName,
+                    hidden: true
+                }); 
+            }
+            if(framesJson[i].type == 'frameGroup'){
+                api.setFrameGroupAttr({
+                    name: framesJson[i].frameGroupName,
+                    hidden: true
+                });
+            }
+        }
+    }
+}
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll(frameGroupButtonBox, 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function checkSystem(){
+    var companyId = $api.getStorage('companyId');
+    //alert(companyId);
+    api.ajax({
+        url: ipUrl + 'Apps/Get/checkSystem',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            if(ret.statu == 1){
+                var companyId = $api.getStorage('companyId');
+                $api.setStorage('companyStatu', '1');
+                if($api.getStorage('hasLogin') == 1){
+                    api.ajax({
+                        url: ipUrl + 'Apps/Get/checkCache',
+                        method: 'post',
+                        data: {
+                            values: { 
+                                company_id: companyId
+                            },
+                            files: { 
+                                file: 'fs://a.gif'
+                            }
+                        }
+                    },function(cacheData, err){
+                        if (cacheData) {
+                            //alert( JSON.stringify( cacheData ) );
+                            if(cacheData.cache_check_str != $api.getStorage('cacheCheckStr')){
+                                //alert(ret.cache_check_str + $api.getStorage('cacheCheckStr'))
+                                
+                                var cacheGroup = JSON.parse(cacheData.cache_group);
+                                var cacheJishi = JSON.parse(cacheData.cache_jishi);
+                                var cacheRoom = JSON.parse(cacheData.cache_room);
+                                var cacheService = JSON.parse(cacheData.cache_service);
+                                var cacheBanci = JSON.parse(cacheData.cache_banci);
+                                var cacheCompany = JSON.parse(cacheData.cache_company);
+                                var cacheCheckStr = cacheData.cache_check_str;
+                                //alert(cacheCheckStr);
+                                $api.setStorage('cacheCheckStr', cacheCheckStr);
+                                $api.setStorage('cacheJishi', cacheJishi);
+                                $api.setStorage('cacheGroup', cacheGroup);
+                                $api.setStorage('cacheRoom', cacheRoom);
+                                $api.setStorage('cacheService', cacheService);
+                                $api.setStorage('cacheBanci', cacheBanci);
+                                $api.setStorage('cacheCompany', cacheCompany);
+                                //alert($api.getStorage('cacheCheckStr'));                                
+                            }
+                            fnOpen(0);
+                        } else {
+                            //alert( JSON.stringify( err ) );
+                        }
+                    });
+                    
+                }else{
+                    
+                }
+                
+            }else{
+                $api.setStorage('companyStatu', '0');
+                fnOpen(0);
+            }
+        } else {
+            alert( JSON.stringify( err ) );
+        }
+    });
+}
+
+
+
+apiready = function(){
+
+    api.parseTapmode();
+    header = $api.byId('misHeader');
+    footer = $api.byId('misFooter');
+    frameGroupButtonBox = $api.byId('frameGroupButtonBox');
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    frameGroupButtonBoxHeight = $api.offset(frameGroupButtonBox).h;
+    frameStart = headerHeight;
+    frameHeight = api.winHeight - headerHeight - footerHeight;
+    frameGroupStart = headerHeight + frameGroupButtonBoxHeight;
+    frameGroupHeight = frameHeight - frameGroupButtonBoxHeight;
+    frameHeight -= 15;
+    frameGroupHeight -= 15;
+    // alert($api.getStorage('cacheCheckStr'));
+    // alert($api.getStorage('cacheJishi'));
+    // alert($api.getStorage('cacheGroup'));
+    // alert($api.getStorage('cacheRoom'));
+    // alert($api.getStorage('cacheService'));
+    // alert($api.getStorage('cacheBanci'));
+    // alert($api.getStorage('cacheCompany'));
+    // alert($api.getStorage('companyId'));
+    // alert($api.getStorage('userTypeName'));
+    // return false;
+    checkSystem();
+    //setInterval(test,10000);
+
+    //testPush();
+}
+</script>
+</html>

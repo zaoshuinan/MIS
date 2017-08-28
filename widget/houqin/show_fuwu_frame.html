@@ -1,0 +1,172 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view aui-in" id="viewBox" style="margin-top:10px;">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var dataJson;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    api.ajax({
+        url: appUrl+'Get/fuwuListByQiantai',
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            if(ret.has == 0){
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }else{
+                dataJson = ret.data;
+                dataJson = dataJson.sort(downByTypeAndOrderAsc);
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+
+function downByTypeAndOrderAsc(x,y){
+    var xTemp =  x.service_leixing_id + '-' +x.service_order;
+    var yTemp =  y.service_leixing_id + '-' +y.service_order;
+    return (xTemp < yTemp) ? 1 : -1
+}
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < dataJson.length;i++){
+        var thisJson = dataJson[i];
+        var serviceId = thisJson.id;
+        var contentStr = '服务：'+thisJson.service_name+'，价格：'+thisJson.service_price+'元，技师提成：'+thisJson.service_ticheng+'元';
+
+        var tplStr = '<li  class="aui-list-view-cell" tapmode onclick="changeService('+serviceId+')"><div class="aui-swipe-handle"><i  class="aui-iconfont aui-icon-choiceness aui-bg-danger"></i>'+contentStr+'</div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+function changeService(serviceId){
+    api.actionSheet({
+        destructiveTitle: '修改服务',
+        buttons: ['删除服务']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                fnEdit(serviceId);
+            }
+            if(ret.buttonIndex == 2){
+                fnCancel(serviceId);
+            }
+        } 
+    });
+}
+function fnEdit(serviceId){
+    api.openWin({
+        name: 'editfuwu',
+        url: './add_fuwu_win.html',
+        pageParam: {
+            dataId: serviceId,
+            action:'edit'
+        }
+    });
+}
+
+function fnCancel(serviceId){
+    api.confirm({
+        msg: '你确认要删除该服务吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.ajax({
+                    url: appUrl+'Change/cancelFuwu',
+                    method: 'post',
+                    data: {
+                        values: {
+                            data_id:serviceId
+                        }
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        api.sendEvent({
+                            name: 'reFlashList',
+                            extra: {
+                                canFlash:1
+                            }
+                        });
+                        alert('删除成功');
+                    } else {
+                        api.toast({
+                            msg: '网络错误'
+                        });
+                    }
+                });
+            }
+        } 
+    });
+}
+
+apiready = function () {
+    api.parseTapmode();
+    buildPageByJson();
+    shuaxin();
+    api.addEventListener({
+        name: 'reFlashList'
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.value.canFlash == 1){
+                buildPageByJson();
+            }
+        } else {
+            
+        }
+    });
+}
+</script>
+</html>

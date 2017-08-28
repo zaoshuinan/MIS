@@ -1,0 +1,214 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder">       
+        <div class="aui-form" style="margin-top:20px;">
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">充值优惠名称</span>
+                <input type="text" class="aui-input" id="chongzhiYouhuiName" placeholder="充值优惠名称" value="" />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">充值优惠说明</span>
+                <input type="text" class="aui-input" id="chongzhiYouhuiInfo" placeholder="充值优惠说明"/>
+            </div>
+            <div class="aui-input-row ">
+                <span class="aui-input-addon aui-text-danger">起充金额</span>
+                <input type="number" class="aui-input" id="chongzhiStartMoney" placeholder="起充金额"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">赠送金额</span>
+                <input type="number" class="aui-input" id="chongzhiYouhuiMoney" placeholder="赠送金额"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">经理提成金额</span>
+                <input type="number" class="aui-input" id="chongzhiTichengMoney" placeholder="经理提成金额"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">排序</span>
+                <input type="number" class="aui-input" id="chongzhiYouhuiOrder" placeholder="输入数字" />
+            </div>
+            <p class="aui-padded-10 aui-text-danger">
+                请填写免费产品信息
+            </p>
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="saveCheck()" id="saveButton">增加产品</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var pageAction,pageJson,dataId;
+var getAction = 'chongzhiById';
+var addAction = 'newChongzhi';
+var changeAction = 'changeChongzhiById';
+var companyId = $api.getStorage('companyId');
+
+var chongzhiYouhuiName,chongzhiYouhuiInfo,chongzhiStartMoney,chongzhiYouhuiMoney,chongzhiTichengMoney,chongzhiYouhuiOrder;
+
+function saveCheck(){
+    var canSend = 1;
+    chongzhiYouhuiName = $api.val($api.byId('chongzhiYouhuiName'));
+    chongzhiYouhuiInfo = $api.val($api.byId('chongzhiYouhuiInfo'));
+    chongzhiStartMoney = $api.val($api.byId('chongzhiStartMoney'));
+    chongzhiYouhuiMoney = $api.val($api.byId('chongzhiYouhuiMoney'));
+    chongzhiTichengMoney = $api.val($api.byId('chongzhiTichengMoney'));
+    chongzhiYouhuiOrder = $api.val($api.byId('chongzhiYouhuiOrder'));
+    if(chongzhiYouhuiName == ''){
+        api.toast({
+            msg: '还没有输入充值名称信息'
+        });
+        canSend = 0;
+    }
+    if(chongzhiStartMoney == ''){
+        api.toast({
+            msg: '还没有输入起充金额'
+        });
+        canSend = 0;
+    }
+    if(chongzhiYouhuiMoney == ''){
+        api.toast({
+            msg: '还没有输入优惠金额'
+        });
+        canSend = 0;
+    }
+    if(chongzhiTichengMoney == ''){
+        api.toast({
+            msg: '还没有输入提成金额'
+        });
+        canSend = 0;
+    }
+    if(canSend == 1){
+        saveInfo();
+    }
+}
+
+function saveInfo(){
+    var ajaxUrl;
+    var postJson = {
+        company_id:companyId,
+        chongzhi_youhui_name:chongzhiYouhuiName,
+        chongzhi_youhui_info:chongzhiYouhuiInfo,
+        chongzhi_start_money:chongzhiStartMoney,
+        chongzhi_youhui_money:chongzhiYouhuiMoney,
+        chongzhi_ticheng_money:chongzhiTichengMoney,
+        chongzhi_youhui_order:chongzhiYouhuiOrder
+    }
+    if(pageAction == 'edit'){
+        ajaxUrl = appUrl+'Change/' + changeAction;
+        postJson.data_id = dataId;
+    }else{
+        ajaxUrl = appUrl+'Add/'+addAction;
+    }
+    api.ajax({
+        url: ajaxUrl,
+        method: 'post',
+        data: {
+            values: postJson,
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            $api.setStorage('changeCache', '1');
+            if(pageAction == 'edit'){
+                alert('修改成功');
+                api.sendEvent({
+                    name: 'reFlashList',
+                    extra: {
+                        canFlash:1
+                    }
+                });
+            }else{
+                alert('添加成功');
+            }
+            api.closeWin();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+
+function bulidPageById(){
+    api.ajax({
+        url: appUrl+'Get/'+getAction,
+        method: 'post',
+        data: {
+            values: { 
+                data_id: dataId
+            },
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                pageJson = ret.data;
+                changePage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+
+function changePage(){
+    chongzhiYouhuiName = pageJson.chongzhi_youhui_name;
+    chongzhiYouhuiInfo = pageJson.chongzhi_youhui_info;
+    chongzhiStartMoney = pageJson.chongzhi_start_money;
+    chongzhiYouhuiMoney = pageJson.chongzhi_youhui_money;
+    chongzhiTichengMoney = pageJson.chongzhi_ticheng_money;
+    chongzhiYouhuiOrder = pageJson.chongzhi_youhui_order;
+    $api.val($api.byId('chongzhiYouhuiName'), chongzhiYouhuiName);
+    $api.val($api.byId('chongzhiYouhuiInfo'), chongzhiYouhuiInfo);
+    $api.val($api.byId('chongzhiStartMoney'), chongzhiStartMoney);
+    $api.val($api.byId('chongzhiYouhuiMoney'), chongzhiYouhuiMoney);
+    $api.val($api.byId('chongzhiTichengMoney'), chongzhiTichengMoney);
+    $api.val($api.byId('chongzhiYouhuiOrder'), chongzhiYouhuiOrder);
+    $api.html($api.byId('saveButton'), '修改充值优惠');
+}
+
+apiready = function(){
+    api.parseTapmode();
+    pageAction = api.pageParam.action;
+    if(pageAction == 'edit'){
+        dataId = api.pageParam.dataId;
+        bulidPageById();
+    }
+}
+        
+</script>
+</html>

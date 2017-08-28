@@ -1,0 +1,149 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-content-padded">
+            <ul>
+                <li class="aui-list-view" style="margin-top:30px;">
+                    <div class="aui-user-view-cell aui-img">
+                        <div class="aui-img-body">
+                            <span>系统信息</span>
+                        </div>
+                    </div>
+                    <div class="aui-padded-10 content">
+                        请前往考勤地点扫码上班
+                    </div>
+                    
+                </li>
+            </ul>
+            <p><div class="aui-btn aui-btn-primary aui-btn-block" onclick="saoma()">点击扫码</div></p>
+        </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var missionDay;
+var checkNum = 0;
+function saoma(){
+    var FNScanner = api.require('FNScanner');
+    FNScanner.openScanner({
+        autorotation: true,
+    },function( ret, err ){        
+        if( ret ){
+            if(ret.eventType == 'success'){
+                //alert( JSON.stringify( ret ) );
+                var contentStr = ret.content;
+                var contentArr = contentStr.split('+');
+                var checkStr = contentArr[0];
+                missionDay = contentArr[1];
+                if(missionDay != $api.getStorage('missionDay')){
+                    $api.setStorage('missionDay', missionDay);
+                    $api.setStorage('todayNum', 0);
+                }
+                checkSaoma(checkStr);
+                FNScanner.closeView();
+            } 
+        }else{
+            //alert( JSON.stringify( err ) );
+        }
+    });
+}
+function checkSaoma(checkStr){
+    api.ajax({
+        url: ipUrl + 'Apps/Get/checkSaoma',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        checkNum = 1;
+        if(checkNum == 1){
+            if (ret) {
+                //alert( JSON.stringify( ret ) + checkStr );
+                if(ret.check_saoma == checkStr){
+                    //alert('验证成功');
+                    alert('验证成功，现在的时间是：'+ret.saoma_time+'，准备上传你的考勤数据，请准备开始工作吧！');
+                    //return false;
+                    //alert(ipUrl + 'Apps/Add/kaoqinJingli');
+                    checkNum = 2;
+                    if(checkNum ==2){
+                        api.ajax({
+                            url: ipUrl + 'Apps/Add/kaoqinJingli',
+                            method: 'post',
+                            data: {
+                                values: { 
+                                    user_id: $api.getStorage('userId'),
+                                    user_tel:$api.getStorage('userTel'),
+                                    user_name:$api.getStorage('userName'),
+                                    company_id:$api.getStorage('companyId'),
+                                    kaoqin_day:missionDay
+                                },
+                                files: { 
+                                    file: 'fs://a.gif'
+                                }
+                            }
+                        },function(ret, err){
+                            if (ret) {
+                                //alert( JSON.stringify( ret ) );
+                                //return false;
+                                var kaoqinId = ret.id;
+                                $api.setStorage('hasSaoma', '1');
+                                $api.setStorage('todayNum', 0);
+                                $api.setStorage('kaoqinId', kaoqinId);
+                                $api.setStorage('missionDay', missionDay);
+                                var thisWinName = api.winName;
+                                var num = GetRandomNum(10000,99999);
+                                var newWinName = 'jingli_win_'+num;
+                                api.openWin({
+                                    name: newWinName,
+                                    url: './index.html',
+                                    slidBackEnabled:false,
+                                    bounces: false,
+                                    pageParam: {
+                                        name: 'test'
+                                    }
+                                });
+                                api.closeWin({
+                                    name: thisWinName
+                                });
+                            } else {
+                                api.toast({
+                                    msg: '网络错误',
+                                    duration: 2000,
+                                    location: 'bottom'
+                                });
+                            }
+                        });
+                    }
+                }else{
+                    alert('验证失败，请重新验证');
+                }
+            } else {
+                //alert( JSON.stringify( err ) );
+            }
+        }
+        
+    });
+}
+function GetRandomNum(Min,Max){   
+    var Range = Max - Min;   
+    var Rand = Math.random();   
+    return(Min + Math.round(Rand * Range));   
+}   
+
+</script>
+</html>

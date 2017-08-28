@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <style type="text/css">
+        .aui-grid-sixteen:after {
+            border:none;
+        }
+        .aui-grid-sixteen li:after {
+            border:none;
+        }
+        .aui-grid-sixteen li .aui-iconfont {
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            line-height: 38px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+
+    <div class="aui-content-padded" id="buttonBox" style="margin-top: 5px;">
+        <div class="aui-tab aui-tab-danger">
+            <ul class="aui-tab-nav aui-tab-border">
+                <li tapmode onclick="openFrame(0)">收入</li>
+                <li tapmode onclick="openFrame(1)">支出</li>
+                <li tapmode onclick="openFrame(2)">订单</li>
+                <li tapmode onclick="openFrame(3)">预约</li>
+            </ul>
+        </div>
+    </div>
+    <div class="aui-card" id="showBox"> 
+        <p style="text-align: center;font-size: 16px;padding-top: 30px;padding-bottom: 30px;">
+            根据你的需要，点击按钮查看数据<br>
+            收入 = 收银 + 充值 + 买钟<br>
+            支出 = 经理实际提成 + 技师实际提成
+        </p>
+    </div>
+
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,dingdanId,headerHeight,frameHeight,buttonBoxHeight,isToday,showDate;
+var groupIndex = 0;
+var titleStr = '';
+
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll($api.byId('buttonBox'), 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function closeWin(){
+    api.closeWin();
+}
+function openFrame(index){
+    changeGroupButtonStyle(index);
+    var frameNameArr = ['shouru_company_single','zhichu_company_single','dingdan_company_single','yuyue_company_single'];
+    var thisFrameName = frameNameArr[index];
+    if(isToday == 1){
+        api.closeFrame({
+            name: thisFrameName
+        });
+    }
+    api.openFrame({
+        name: thisFrameName,
+        url: './'+frameNameArr[index]+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight + buttonBoxHeight + 10,
+            w: 'auto',
+            h: frameHeight - 10
+        },
+        pageParam: {
+            isToday:isToday,
+            showDate: showDate
+        },
+        bounces: false
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    isToday = api.pageParam.isToday;
+    if(isToday == 0){
+        showDate = api.pageParam.showDate
+        titleStr = '公司业绩('+showDate+')';
+    }else{
+        showDate = $api.getStorage('missionDay');
+        titleStr = '今日公司业绩';
+    }
+    
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleStr);
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    buttonBoxHeight = $api.offset($api.byId('buttonBox')).h;
+    frameHeight = api.winHeight - headerHeight - buttonBoxHeight; 
+    //openFrame(0);
+};
+</script>
+</html>

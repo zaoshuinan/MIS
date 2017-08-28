@@ -1,0 +1,175 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+.aui-content {
+    background: #ffffff;
+    overflow: hidden;
+    padding: 15px;
+}
+</style>
+<body>
+
+    <div class="aui-content">
+        <ul class="aui-timeline" id="viewBox">
+            
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var rizhiJson,missionDay,companyId,userId;
+var cacheCompany = $api.getStorage('cacheCompany');
+var yewuTicheng = cacheCompany.jingli_yewu_ticheng;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    //alert(companyId + missionDay +userId)
+    api.ajax({
+        url: appUrl+'Get/jingliRizhi',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                jingli_id:userId,
+                mission_day:missionDay
+            },
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            //alert(JSON.stringify(ret));
+            rizhiJson = ret;
+            buildPage();
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+}
+function downByTimeAsc(x,y){
+    var xTemp =  x.time;
+    var yTemp =  y.time;
+    return (xTemp > yTemp) ? 1 : -1
+}
+function buildPage(){
+    var innerStr = '<li class="aui-time-label"><span class="aui-bg-info" id="missionDayBox">'+missionDay+'</span></li>';
+    //alert(JSON.stringify(rizhiJson));
+    if(rizhiJson.kaoqin_has == 0 && rizhiJson.jingli_liushui_has == 0){
+        innerStr += '<p class="aui-text-center">暂时还没有任何记录</p>';
+    }else{
+        var tempJson = new Array();
+        var tempKeyNum = 0;
+        if(rizhiJson.kaoqin_has == 1){
+            kaoqinJson = rizhiJson.kaoqin_data;
+            for(var i = 0; i < kaoqinJson.length; i++){
+                tempJson[tempKeyNum] = kaoqinJson[i];
+                tempJson[tempKeyNum].rizhiType = 'kaoqin';
+                tempJson[tempKeyNum].time = tempJson[tempKeyNum].kaoqin_time;
+                tempKeyNum++;
+            }
+        }
+        
+        if(rizhiJson.jingli_liushui_has == 1){
+            liushuiJson = rizhiJson.jingli_liushui_data;
+            for(var i = 0; i < liushuiJson.length; i++){
+                tempJson[tempKeyNum] = liushuiJson[i];
+                tempJson[tempKeyNum].rizhiType = 'yewu';
+                tempKeyNum++;
+            }
+        }
+        tempJson = tempJson.sort(downByTimeAsc);
+        var yewuNum = 1;
+        //alert(JSON.stringify(tempJson));
+        for(var i = 0; i < tempJson.length; i++){
+            thisJson = tempJson[i];
+            var showTime = thisJson.time.substring(11);
+            if(thisJson.rizhiType == 'kaoqin'){
+                if(thisJson.kaoqin_status == 1){
+                    var buttonStr = 'friendadd aui-bg-success';
+                    var titleStr = '上班考勤';
+                    var contentStr = '开始一天的工作吧！';
+                }
+                if(thisJson.kaoqin_status == 2){
+                    var buttonStr = 'roundcheck aui-bg-info';
+                    var titleStr = '外出归来';
+                    var contentStr = '继续工作，努力！';
+                }
+                if(thisJson.kaoqin_status == 8){
+                    var buttonStr = 'roundclose aui-bg-warning';
+                    var titleStr = '临时外出';
+                    var contentStr = '快去快回哦！亲~';
+                }
+                if(thisJson.kaoqin_status == 9){
+                    var buttonStr = 'home aui-bg-danger';
+                    var titleStr = '下班考勤';
+                    var contentStr = '感谢你一天的付出，回家好好休息吧！';
+                }
+            }else{
+                var buttonStr = 'roundadd aui-bg-warning';
+                var titleStr = '第'+yewuNum+'单业务';
+                var thisStatus = thisJson.status;
+                var querenNum = thisJson.queren;
+                var statusStr = '';
+                var tichengStr = '';
+                if(querenNum == 1){
+                    tichengStr = '提成'+yewuTicheng+'元，';
+                    buttonStr = 'roundadd aui-bg-success';
+                }
+                if(thisStatus == 0){
+                    statusStr = '等待技师上钟';
+                }
+                if(thisStatus == 1){
+                    statusStr = '技师正在上钟';
+                }
+                if(thisStatus == 2){
+                    statusStr = '技师已下钟';
+                }
+                if(thisStatus == 3){
+                    statusStr = '客户更换技师';
+                }
+                if(thisStatus == 5){
+                    statusStr = '客户否钟';
+                }
+
+                var contentStr = thisJson.fuwu_name +'，'+tichengStr+statusStr;
+                yewuNum++;
+            }
+            var tplStr = '<li><i class="aui-iconfont aui-icon-'+buttonStr+'"></i><div class="aui-timeline-item"><span class="aui-timeline-time"><i class="aui-iconfont aui-icon-time"></i>'+showTime+'</span><h3 class="aui-timeline-header">'+titleStr+'</h3><div class="aui-timeline-body">'+contentStr+'</div></div></li>';
+            innerStr += tplStr;
+        }
+    }
+    
+    $api.html($api.byId('viewBox'), innerStr);
+}
+apiready = function () {
+    api.parseTapmode();
+    companyId = $api.getStorage('companyId');
+    userId = $api.getStorage('userId');
+    missionDay = $api.getStorage('missionDay');
+    buildPageByJson();
+    shuaxin();
+}
+</script>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-accordion.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-slide.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder" style="padding-top: 30px;">  
+        <div class="aui-form">  
+            <div id="single" class="aui-hidden">   
+                <div class="aui-card">
+                    <ul class="aui-list-view" id="singleBox">
+                    </ul>
+                </div>
+            </div>
+            <div id="hebing">
+                <div class="aui-card">
+                    <ul class="aui-list-view" id="hebingBox">
+                    </ul>
+                </div>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">是否赠送</span>
+                <input type="checkbox" class="aui-switch aui-pull-right" id="zengsongBtn" status="0" onclick="showZengsong()">
+            </div>
+            <div class="aui-hidden" id="zengsongList" style="padding-bottom: 20px;">
+                
+            </div>
+            <p class="aui-padded-10" id="wuyouhuiBox">实收金额:<span class="aui-text-danger" style="font-size: 20px"><b id="allPayMoney">0</b>元</span></p>
+            <p class="aui-padded-10 aui-hidden" id="youhuiShishouBox">实收金额:<span class="aui-text-danger" style="font-size: 20px"><b id="realPayMoney">0</b>元</span>，减免<b id="youhuiMoney">0</b>元</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/aui-accordion.js"></script>
+<script type="text/javascript" src="../script/aui-tap.js" ></script>
+<script type="text/javascript" src="../script/aui-slide.js"></script>
+<script type="text/javascript">
+var pageJson,dingdanId,shoufeiHas,peitaoHas,shoufeiJson,peitaoJson,hasHebing,dingdanIdStr;
+var dingdanArr = new Array();
+var shoufeiMoneyArr = new Array();
+var peitaoMoneyArr = new Array();
+var shoufeiNameStrArr = new Array();
+var peitaoNameStrArr = new Array();
+var allMoneyArr = new Array()
+var companyId = $api.getStorage('companyId');
+var zengsongJson = $api.getStorage('cacheYouhui');
+var canSend = 1;
+var zengsongOpen = 0;
+var listNum = 0;
+var thisPayAllMoney = 0;
+var realPayMoney = 0;
+var youhuiMoney = 0;
+var afterYouhuiMoney = 0;
+function loadCallBack (event) {
+    if(event.currentTarget.getAttribute("data") && event.currentTarget.getAttribute("data") == 'slide'){
+        var slide = new auiSlide({
+            container:document.getElementById("aui-slide"),
+            // "width":300,
+            "height":240,
+            "speed":500,
+            autoPlay: 0, //自动播放
+            "pageShow":true,
+            "pageStyle":'dot',
+            'dotPosition':'center'
+        })
+    }
+}
+function buildZengsongList(){
+    var innerHtml = '';
+    var zengsongBox = $api.byId('zengsongList');
+    for(key in zengsongJson){
+        listNum++;
+        var thisStr = '<div class="aui-input-row"><label class="aui-input-addon">消费满'+zengsongJson[key].huodong_start_money+'元，减免'+zengsongJson[key].huodong_youhui_money+'元</label><input id="zengsongList'+listNum+'" class="aui-pull-right aui-radio aui-radio-success" onclick="changeZengsongMoney('+zengsongJson[key].huodong_start_money+','+zengsongJson[key].huodong_youhui_money+','+listNum+')" type="radio" name="zengsongMoney"></div>';
+        innerHtml += thisStr;
+    }
+    $api.html(zengsongBox, innerHtml);
+}
+function showZengsong(){
+    thisStatus = $api.attr(zengsongBtn, 'status');
+    if(zengsongOpen == 0){
+        if(afterYouhuiMoney == 0){
+            canSend = 0;
+        }
+        zengsongOpen = 1;
+        $api.removeCls($api.byId('zengsongList'), 'aui-hidden');
+        $api.removeCls($api.byId('youhuiShishouBox'), 'aui-hidden');
+        $api.addCls($api.byId('wuyouhuiBox'), 'aui-hidden');
+        realPayMoney = afterYouhuiMoney;
+    }else{
+        canSend = 1;
+        zengsongOpen = 0;
+        $api.removeCls($api.byId('wuyouhuiBox'), 'aui-hidden');
+        $api.addCls($api.byId('youhuiShishouBox'), 'aui-hidden');
+        $api.addCls($api.byId('zengsongList'), 'aui-hidden');
+        realPayMoney = thisPayAllMoney;
+    }
+    sendEvent();
+}
+function changeZengsongMoney(startMoney,zengsongMoney,index){
+    if(zengsongOpen == 1){
+        if(parseInt(thisPayAllMoney) < parseInt(startMoney)){
+            alert('消费金额不足以使用该赠送项目，请重新选择');
+            canSend = 0;
+            return false;
+        }else{
+            canSend = 1;
+            afterYouhuiMoney = parseInt(thisPayAllMoney) - parseInt(zengsongMoney);
+            realPayMoney = afterYouhuiMoney;
+            youhuiMoney = parseInt(zengsongMoney);
+            $api.html($api.byId('youhuiMoney'), youhuiMoney);
+            $api.html($api.byId('realPayMoney'), realPayMoney);
+            $api.removeCls($api.byId('youhuiShishouBox'), 'aui-hidden');
+            sendEvent();
+        }
+    }else{
+        alert('你还没打开赠送列表呢')
+        return false;
+    }
+}
+function getDataByIdStr(){
+    api.ajax({
+        url: appUrl+'Get/dingdanAllByIdStr',
+        method: 'post',
+        data: {
+            values: { 
+                dingdan_id_str: dingdanIdStr
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has_dingdan == 1){
+                dingdanArr = ret.dingdan_data;
+                shoufeiMoneyArr = ret.shoufei_money_data;
+                peitaoMoneyArr = ret.peitao_money_data;
+                shoufeiNameStrArr = ret.shoufei_name_str_data;
+                peitaoNameStrArr = ret.peitao_name_str_data;
+                allMoneyArr = ret.all_money_data;
+                buildPageByData()
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function buildPageByData(){
+    $api.removeCls($api.byId('hebing'), 'aui-hidden');
+    $api.addCls($api.byId('single'), 'aui-hidden');
+    var innerStr = '';
+    var dingdanNum = dingdanArr.length
+    for(var i = 0;i <dingdanNum ;i ++){
+        var thisDingdan = dingdanArr[i];
+        var dingdanId = thisDingdan.id;
+        var thisAllMoney = parseFloat(allMoneyArr[i]);
+        var jingliLiushuiId = thisDingdan.jingli_liushui_id;
+        var jishiLiushuiId = thisDingdan.jishi_liushui_id;
+        var shoufeiMoney = shoufeiMoneyArr[i];
+        if(shoufeiMoney == 0){
+            var shoufeiStr = '无';
+        }else{
+            var shoufeiStr = shoufeiNameStrArr[i];
+        }
+        var peitaoMoney = peitaoMoneyArr[i];
+        if(peitaoMoney == 0){
+            var peitaoStr = '无';
+        }else{
+            var peitaoStr = peitaoNameStrArr[i];
+        }
+        thisPayAllMoney += thisAllMoney;
+        var thisStr = '<li class="aui-list-view-cell aui-fold"><div class="aui-arrow-right" id="boxTitle">订单编号：#'+thisDingdan.dingdan_haoma+'，共<b style="color:red">'+thisAllMoney+'</b>元</div><div class="aui-fold-content"><ul class="aui-list-view" id="detailBox"><li class="aui-list-view-cell"><a>服务类型：'+thisDingdan.service_name+'（'+thisDingdan.service_price+'元）</a></li><li class="aui-list-view-cell"><a>服务时间：'+thisDingdan.shangzhong_time.substring(11)+'-'+thisDingdan.wanzhong_time.substring(11)+'</a></li><li class="aui-list-view-cell"><a>服务人员：经理（'+thisDingdan.dingdan_jingli_name+'）、技师（'+thisDingdan.dingdan_jishi_paihao+'号）</a></li><li class="aui-list-view-cell"><a>加钟费用：'+thisDingdan.jiazhong_money+'元（'+thisDingdan.jiazhong_num+'个钟）</a></li><li class="aui-list-view-cell"><a>产品消费：'+shoufeiMoney+'元（'+shoufeiStr+'）</a></li><li class="aui-list-view-cell"><a>配套产品：'+peitaoMoney+'元（'+peitaoStr+'）</a></li></ul></div></li>';
+        innerStr += thisStr;
+    }
+    realPayMoney = thisPayAllMoney;
+    $api.html($api.byId('allPayMoney'), thisPayAllMoney);
+    $api.html($api.byId('realPayMoney'), thisPayAllMoney);
+    $api.html($api.byId('hebingBox'), innerStr);
+    var fold = new auiAccordion({
+        callback:loadCallBack
+    });
+    sendEvent();
+}
+function sendEvent(){
+    api.sendEvent({
+        name: 'dingdanDetail',
+        extra: {
+            canSend:canSend,
+            realPayMoney:realPayMoney,
+            youhuiMoney:youhuiMoney
+        }
+    });
+}
+apiready = function(){
+    hasHebing = api.pageParam.hasHebing;
+    dingdanIdStr = api.pageParam.dingdanIdStr;
+    getDataByIdStr();
+    buildZengsongList();
+    api.parseTapmode();
+}
+        
+</script>
+</html>

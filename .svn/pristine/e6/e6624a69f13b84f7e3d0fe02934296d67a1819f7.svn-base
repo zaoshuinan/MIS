@@ -1,0 +1,129 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript">
+var dingdanJson;
+dingdanJson = [
+    {
+        'fuwu_detail_id':1,
+        'fanwei_id':1,
+        'fuwu_name':'日式按摩',
+        'dingdan_id':547,
+        'dingdan_bianma':'20160213043',
+        'dingdan_room_haoma':'A01',
+        'dingdan_jishi_paihao':'',
+        'dingdan_start_time':'15:31:25'
+    },{
+        'fuwu_detail_id':1,
+        'fanwei_id':1,
+        'fuwu_name':'日式按摩',
+        'dingdan_id':473,
+        'dingdan_bianma':'20160213034',
+        'dingdan_room_haoma':'VIP-03',
+        'dingdan_jishi_paihao':'085',
+        'dingdan_start_time':'15:24:46'
+    },{
+        'fuwu_detail_id':1,
+        'fanwei_id':2,
+        'fuwu_name':'中式按摩',
+        'dingdan_id':325,
+        'dingdan_bianma':'20160213003',
+        'dingdan_room_haoma':'B42',
+        'dingdan_jishi_paihao':'073',
+        'dingdan_start_time':'14:21:21'
+    }
+]
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    var url = '';
+    var dataJson = {
+
+    };
+    api.ajax({
+        url: url,
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data:dataJson,
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            ret = dingdanJson;
+            buildPage(); 
+        } else {
+            api.alert({
+                msg:('错误码：'+err.code+'；错误信息：'+err.msg+'网络状态码：'+err.statusCode)
+            });
+        };
+    });
+}
+function buildPage(){
+    var innerStr = '';
+    for(var i = 0; i < dingdanJson.length;i++){
+        var dingdanId = dingdanJson[i].dingdan_id;
+        var dingdanBianma = dingdanJson[i].dingdan_bianma;
+        var dingdanRoomHaoma = dingdanJson[i].dingdan_room_haoma;
+        var dingdanJishiPaihao = dingdanJson[i].dingdan_jishi_paihao;
+        var dingdanStartTime = dingdanJson[i].dingdan_start_time;
+        var fuwuName = dingdanJson[i].fuwu_name;
+        var fuwuDetailId = dingdanJson[i].fuwu_detail_id;
+        var fanweiId = dingdanJson[i].fanwei_id;
+        if(dingdanJishiPaihao == ''){
+            showJishiStr = '<span class="aui-text-info">未选择</span>';
+        }else{
+            showJishiStr = '<span class="aui-text-danger">'+dingdanJishiPaihao+'号，等待确认</span>';
+        }
+        var tplStr = '<li tapmode onclick="gotoDingdan('+dingdanId+','+fuwuDetailId+','+fanweiId+')" class="aui-list-view-cell aui-img"><div class="aui-img-body">房间：<span class="aui-text-success">'+dingdanRoomHaoma+'</span>，技师：'+showJishiStr+'<p class="aui-ellipsis-2">服务：'+fuwuName+'，房间开启时间：'+dingdanStartTime+'</p></div></li>';
+        innerStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), innerStr);
+}
+function gotoDingdan(dingdanId,fuwuDetailId,fanweiId){
+    api.openWin({
+        name: 'fuwuDingdan',
+        url: './fuwu_dingdan_win.html',
+        bounces: false,
+        slidBackEnabled:false,
+        pageParam: {
+            'fuwuDetailId':fuwuDetailId,
+            'fanweiId':fanweiId,
+            'dingdanId':dingdanId
+        }
+    });
+}
+apiready = function () {
+    api.parseTapmode();
+    buildPage();
+    shuaxin();
+}
+</script>
+</html>

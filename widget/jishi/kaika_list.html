@@ -1,0 +1,107 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var userTel = $api.getStorage('userTel');
+var companyId = $api.getStorage('companyId');
+var showType;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">加载数据中......</p>');
+    var url = appUrl+'Get/kaikaList';
+    api.ajax({
+        url: url,
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId,
+                jingli_tel:userTel
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            if(ret.check == 0){
+                $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">没有找到数据</p>');
+            }else{
+                var listData = ret.list_data;
+                var innerStr = '';
+                for(var i = 0;i < listData.length;i++){
+                    var thiskaikaJson = listData[i];
+                    var kaikaId = thiskaikaJson.id;
+                    var kaikaKehuTel = thiskaikaJson.huiyuan_tel;
+                    var kaikaKehuName = thiskaikaJson.huiyuan_name;
+                    var kaikaJingliName = thiskaikaJson.jingli_name;
+                    var kaikaJingliTel = thiskaikaJson.jingli_tel;
+                    var hasQueren = thiskaikaJson.has_queren;
+                    var querenName = thiskaikaJson.queren_name;
+                    if(hasQueren == 0){
+                        var tplStr = '<li class="aui-list-view-cell aui-img" onclick="gotoKaika('+kaikaId+')"><div class="aui-img-body">客户手机号：<span class="aui-text-success">'+kaikaKehuTel+'</span>，客户称呼：'+kaikaKehuName+'<p class="aui-ellipsis-2">开卡人：'+kaikaJingliName+'('+kaikaJingliTel+')，尚未验证！</p></div></li>';
+                    }else{
+                        var tplStr = '<li class="aui-list-view-cell aui-img" onclick="gotoKaika('+kaikaId+')"><div class="aui-img-body">客户手机号：<span class="aui-text-success">'+kaikaKehuTel+'</span>，客户称呼：'+kaikaKehuName+'<p class="aui-ellipsis-2">开卡人：'+kaikaJingliName+'('+kaikaJingliTel+')，已验证，验证人：'+querenName+'</p></div></li>';
+                    }
+                    
+                    innerStr += tplStr;
+                }
+                //alert(innerStr);
+                $api.html($api.byId('viewBox'), innerStr);
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+
+function gotoKaika(kaikaId){
+    api.toast({
+        msg: '别点了，好痛~',
+        duration: 2000,
+        location: 'bottom'
+    });
+}
+apiready = function () {
+    showType = api.pageParam.showType;
+    api.parseTapmode();
+    buildPageByJson();
+    shuaxin();
+    
+}
+</script>
+</html>

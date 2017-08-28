@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,dingdanId,headerHeight,frameHeight;
+var companyId = $api.getStorage('companyId');
+var userType,userName,liushuiIdStr,gongziType;
+function closeWin(){
+    api.closeWin();
+}
+function openFrame(){
+    var thisFrameName = 'gongzi_detail';
+    api.closeFrame({
+        name: thisFrameName
+    });
+    api.openFrame({
+        name: thisFrameName,
+        url: './'+thisFrameName+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight ,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            userType:userType,
+            userName:userName,
+            liushuiIdStr:liushuiIdStr
+        },
+        bounces: true
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    userType = api.pageParam.userType;
+    userName = api.pageParam.userName;
+    liushuiIdStr = api.pageParam.liushuiIdStr;
+    if(userType == 0){
+        var titleStr = userName+'技师'
+    }
+    if(userType == 1){
+        var titleStr = '经理' + userName
+    }
+    if(userType == 2){
+        var titleStr = '员工' + userName
+    }
+    titleStr += '工资详情';
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleStr);
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameHeight = api.winHeight - headerHeight; 
+    openFrame();
+};
+</script>
+</html>

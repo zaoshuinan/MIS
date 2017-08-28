@@ -1,0 +1,168 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <p style="margin:10px 0px;" class="padded">请输入预约信息</p>
+    <div class="aui-content">       
+        <div class="aui-form">
+            <div class="aui-input-row">
+                <span class="aui-input-addon">客户手机后四位</span>
+                <input type="number" class="aui-input" placeholder="手机号码" id="tel"/>
+            </div>
+            <div class="aui-col-xs-12 yincang" id="jishiBox" style="border: 1px solid #c8c7cc;text-align: center">
+                <img id="jishiImgUrl" style="width:40%" src="">
+                <p id="jishiPaihao" style="text-align: center"></p>
+                <span id="jishiId" class="yincang"></span>
+                <span id="jishiTel" class="yincang"></span>
+            </div>
+            <div class="aui-input-row aui-col-xs-12" id="selectJishi">
+                <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="selectJishi()">选择预约技师</button>
+            </div>
+        </div>
+    </div>
+    <footer class="aui-nav yincang" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="sendInfo()">提交预约信息</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var zengsongMoney = 0;
+var yewuId = $api.getStorage('myId');
+var yewuName = $api.getStorage('myName');
+var yewuTel = $api.getStorage('myTel');
+var zengsongBtn = $api.byId('zengsongBtn');
+function changeZengsongMoney(money){
+    zengsongMoney = money;
+}
+function selectJishi(){
+    var canSend = 1;
+    var tel = $api.val($api.byId('tel'));
+    if(tel == ''){
+        api.toast({
+            msg: '还没有将输入手机后四位号码',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(tel.length != 4){
+        api.toast({
+            msg: '输入的不是四位号码',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(canSend == 1){
+        api.openWin({
+            name: 'selectYuyueJishi',
+            url: './select_yuyue_jishi_win.html',
+            bounces: false,
+            slidBackEnabled:false
+        });
+    }
+}
+function sendInfo(){
+    var canSend = 1;
+    var tel = $api.val($api.byId('tel'));
+    if(tel == ''){
+        api.toast({
+            msg: '还没有将输入手机后四位号码',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(tel.length != 4){
+        api.toast({
+            msg: '输入的不是四位号码',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(canSend == 1){
+        var jishiId = $api.html($api.byId('jishiId'));
+        var jishiPaihao = $api.html($api.byId('jishiPaihao'));
+        var jishiTel = $api.html($api.byId('jishiTel'));
+        var yuyueName = $api.getStorage('myName');
+        var yuyueId = $api.getStorage('myId');
+        var yuyueTel = $api.getStorage('myTel');
+        api.confirm({
+            title: '请确认预约信息',
+            msg: '确认给手机尾号为'+tel+'的客户预约?技师牌号为：'+jishiPaihao+'号，预约人：'+yuyueName,
+            buttons:['确定', '取消']
+        },function(ret,err){
+            if(ret.buttonIndex == 1){
+                api.alert({
+                    title: '预约成功', 
+                    msg: '前台已登记，请等待客户到来'
+                });
+                api.closeWin();
+            }
+        });
+    }
+}
+
+function eventListen(){
+    api.addEventListener({
+        name: 'showYuyueJishiPaihao'
+    }, function(ret, err){
+        var jishiBox = $api.byId('jishiBox');
+        var jishiImgUrlObj = $api.byId('jishiImgUrl');
+        var jishiPaihaoObj = $api.byId('jishiPaihao');
+        var jishiIdObj = $api.byId('jishiId');
+        var jishiTelObj = $api.byId('jishiTel');
+        var jishiImgUrl = ret.value.jishiImgUrl;
+        var jishiId = ret.value.jishiId;
+        var jishiPaihao = ret.value.jishiPaihao;
+        var jishiTel = ret.value.jishiTel;
+        $api.html($api.byId('selectJishi'), '<button class="aui-btn aui-btn-info aui-btn-block" tapmode onclick="selectJishi()">重新预约技师</button>');
+        $api.attr(jishiImgUrlObj, 'src', '../image/'+jishiImgUrl);
+        $api.html(jishiPaihaoObj, jishiPaihao);
+        $api.html(jishiIdObj, jishiId);
+        $api.html(jishiTelObj, jishiTel);
+        $api.removeCls(jishiBox, 'yincang');
+        $api.removeCls($api.byId('aui-footer'), 'yincang');
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    eventListen();
+    $api.addCls($api.byId('chongzhiMoney'), 'yincang');
+    $api.addCls($api.byId('zengsongBtn'), 'yincang');
+}
+        
+</script>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-accordion.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-slide.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <div id="chartBox" class="aui-col-xs-12"; style="height:460px;">
+        <div style="text-align: center;padding-top: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript" src="../script/aui-accordion.js"></script>
+<script type="text/javascript" src="../script/aui-tap.js" ></script>
+<script type="text/javascript" src="../script/aui-slide.js"></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var headerHeight,frameHeight,buttonBoxHeight,jingliData,tongjiData;
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var showDate,isToday;
+var nameArr = new Array();
+var nameNum = 0;
+var numArr = new Array();
+var numNum = 0;
+var yewuAllNum = 0
+var showNameArr = new Array();
+var showNumArr = new Array();
+var showName = '业务量';
+var showColor = '#3498db';
+var getAction = 'jingliYewuHengbiByBoss';
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    var option = {
+        title: {
+            text: '经理'+showName+'横比(共'+yewuAllNum+'单)'
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            }
+        },
+        legend: {
+            data: [showName],
+            left: 'right'
+        },
+        //color:['#e74c3c','#f1c40f','#2ecc71'],
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'value',
+            boundaryGap: [0, 0.01]
+        },
+        yAxis: {
+            type: 'category',
+            data: showNameArr
+        },
+        color:[showColor],
+        series: [
+            {
+                name: showName,
+                type: 'bar',
+                data: showNumArr,
+                markPoint: {
+                    data: [
+                        {type: 'max', name: '最大值'},
+                        {type: 'min', name: '最小值'}
+                    ]
+                },
+                markLine: {
+                    data: [
+                        {type: 'average', name: '平均值'}
+                    ]
+                }
+            }
+        ]
+    };
+    tongjiChart.setOption(option, true);
+}
+function reBuildData(){
+    var canBuildChart = 0;
+    for(var i = 0;i < nameNum;i++){
+        var thisJingli = nameArr[i];
+        var thisJingliId = thisJingli['id'];
+        var thisnameNumNum = 0;
+        for(var j = 0;j < numNum;j++){
+            var thisYewu = numArr[j];
+            var thisYewuId = thisYewu['jingli_id'];
+            if(thisYewuId == thisJingliId){
+                thisnameNumNum++;
+                yewuAllNum ++;
+            }
+        }
+        showNameArr[i] = thisJingli['user_name'];
+        showNumArr[i] = thisnameNumNum;
+        if(i != 0){
+            var checkNum = i 
+            for(var k = checkNum;k > 0;k--){
+                var lastKey = k;
+                var lastJingliName = showNameArr[lastKey];
+                var lastnameNumNum = showNumArr[lastKey];
+                var preKey = k - 1;
+                var preJingliName = showNameArr[preKey];
+                var prenameNumNum = showNumArr[preKey];
+                if(lastnameNumNum <= prenameNumNum){
+                    showNameArr[preKey] = lastJingliName;
+                    showNameArr[lastKey] = preJingliName;
+                    showNumArr[preKey] = lastnameNumNum;
+                    showNumArr[lastKey] = prenameNumNum;
+                }
+            } 
+        }
+    }
+    canBuildChart = 1;
+    if(canBuildChart == 1){
+        setTimeout("buildChart()",50);
+    }
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/'+getAction,
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                mission_day:showDate
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            // salert(JSON.stringify(ret));
+            // return false;
+            if(ret.has_jingli == 1){
+                nameArr = ret.jingli_data;
+                nameNum = nameArr.length;
+            }
+            if(ret.has_yewu == 1){
+                numArr = ret.yewu_data;
+                numNum = numArr.length;
+            }
+            reBuildData();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    isToday = api.pageParam.isToday;
+    if(isToday == 1){
+        showDate = missionDay;
+    }else{
+        showDate = api.pageParam.showDate;
+    }
+   getData();
+}  
+</script>
+</html>

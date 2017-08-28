@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<widget id="A6908494336341" version="1.2.0"> 
+  <name>MIS</name>  
+  <description/>  
+  <author email="leowang_007@163.com" href="http://www.apicloud.com">zaoshuinan</author>  
+  <content src="index.html"/>  
+  <preference name="pageBounce" value="false"/>  
+  <preference name="appBackground" value="rgba(0,0,0,0.0)"/>  
+  <preference name="windowBackground" value="rgba(0,0,0,0.0)"/>  
+  <preference name="frameBackgroundColor" value="rgba(0,0,0,0.0)"/>  
+  <preference name="hScrollBarEnabled" value="true"/>  
+  <preference name="vScrollBarEnabled" value="true"/>  
+  <preference name="autoLaunch" value="true"/>  
+  <preference name="fullScreen" value="false"/>  
+  <preference name="autoUpdate" value="true"/>  
+  <preference name="smartUpdate" value="false"/>  
+  <preference name="debug" value="true"/>  
+  <preference name="statusBarAppearance" value="true"/>  
+  <permission name="readPhoneState"/>  
+  <permission name="camera"/>  
+  <permission name="record"/>  
+  <permission name="location"/>  
+  <permission name="fileSystem"/>  
+  <permission name="internet"/>  
+  <permission name="bootCompleted"/>  
+  <permission name="hardware"/>  
+  <access origin="*"/>  
+  <feature name="rongCloud2"> 
+    <param name="mis" value="54094443-FDD9-6436-DF54-B2C1EA5AAC7D"/> 
+  </feature>  
+  <feature name="ajpush"> 
+    <param name="app_key" value="3a68625dca2bd524c6280c7e"/>  
+    <param name="channel" value="leo"/> 
+  </feature>  
+  <feature name="MNActionButton"/>  
+  <feature name="touchID"/>  
+  <feature name="listContact"/>  
+  <feature name="chatBox"/>  
+  <feature name="patternLock"/>  
+  <feature name="FNScanner"/>  
+  <feature name="3DTouch"/>  
+  <feature name="photoBrowser"/>  
+  <feature name="3DTouch"/>  
+  <feature name="chatBox"/>  
+  <feature name="zhiChi"/>  
+  <feature name="UIMediaScanner"/> 
+</widget>

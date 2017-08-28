@@ -1,0 +1,612 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+<meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+<link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+.my-header {
+background-color: #e74c3c;
+position: relative;
+margin-bottom: 0;
+}
+.my-info {
+position: relative;
+padding: 20px 0;
+width: 100%;
+bottom: 0;
+text-align: center;
+vertical-align: center;
+}
+.my-info img {
+width: 100px;
+height: 100px;
+border-radius: 50%;
+}
+.my-info p.nickname {
+margin-top: 5px;
+color: #ffffff;
+font-size: 18px;
+}
+.aui-list-view-cell {
+line-height: 26px;
+}
+.amount-info {
+background-color: #ffffff;
+overflow: hidden;
+}
+.amount-info p {
+font-size: 0.75em;
+}
+.amount-info p strong {
+font-size: 18px;
+}
+.aui-list-view-cell {
+line-height: 26px;
+}
+.amount-info .aui-col-xs-4 {
+padding: 15px 0;
+position: relative;
+height: 80px;
+}
+.amount-info .aui-col-xs-4:after {
+border-left: 1px solid #ddd;
+display: block;
+content: '';
+position: absolute;
+top: 0;
+right: 0;
+bottom: 0;
+left: 0;
+-webkit-transform-origin: 0 0;
+-webkit-transform: scale(1);
+pointer-events: none;
+}
+.amount-info .aui-col-xs-4:first-child:after {
+border:none;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5) {
+.amount-info .aui-col-xs-4:after {
+    right: -100%;
+    bottom: -100%;
+    -webkit-transform: scale(0.5);
+}
+}
+</style>
+<body>
+<div class="aui-content my-header" id="misHeader">
+    <div class="my-info" tapmode onclick="fnOpenWin(7)">
+        <img id="touxiang" src="" />
+        <p id="userName" class="nickname"></p>
+    </div>
+</div>
+<div class="aui-content aui-text-center amount-info">
+    <div class="aui-col-xs-4" tapmode onclick="fnOpenWin(0)">
+        <strong class="aui-iconfont aui-icon-sort aui-text-warning"></strong>
+        <p>记录日志</p>
+    </div>
+    <div class="aui-col-xs-4" tapmode onclick="fnOpenWin(0)">
+        <strong class="aui-iconfont aui-icon-recharge aui-text-danger"></strong>
+        <p>我的工资</p>
+    </div>
+    <div class="aui-col-xs-4" tapmode onclick="fnOpenWin(2)">
+        <strong class="aui-iconfont aui-icon-scan aui-text-info"></strong>
+        <p>扫码下班</p>
+    </div>
+</div>
+<div class="aui-content">
+    <div class="aui-content aui-card">
+        <ul class="aui-list-view aui-in">
+            <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(3)">
+                <i class="aui-iconfont aui-icon-profile aui-bg-pink"></i>个人资料
+            </li>
+            <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(5)">
+                <i class="aui-iconfont aui-icon-rank aui-bg-warning"></i>近十五天
+            </li>
+            <li class="aui-list-view-cell" tapmode onclick="fnOpenWin(6)">
+                <i class="aui-iconfont aui-icon-info aui-bg-info"></i>使用说明
+            </li>
+            <li class="aui-list-view-cell" tapmode onclick="fnOut()">
+                <i class="aui-iconfont aui-icon-pullleft aui-bg-danger"></i>退出系统
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var userBanciId = $api.getStorage('userBanciId');
+var banciJson = $api.getStorage('cacheBanci')[userBanciId];
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var userId = $api.getStorage('userId');
+var userName = $api.getStorage('userName');
+var userTel = $api.getStorage('userTel');
+var userType = $api.getStorage('userType');
+var yuyueTichengPrice = 15;
+var checkNum=0;
+var kaoqinShebeiType;
+var kaoqinType;
+var touxiangUrl;
+var winNameArr = ['yewu_today','ticheng_today','kaoqin_today','geren','rank','histroy','shuoming','change_touxiang','system_config','chaxun'];
+var timeNow;
+var timeNow,startTimeStr,showStartTime,endTimeStr,showEndTime,showSystemTime,kaoqinStartTimeNum,kaoqinOneHourTimeNum,nowTimeNum,zhengchangNum;
+function clearHuancun(){
+    //异步返回结果：
+    api.getCacheSize(function(ret) {
+        var size = ret.size;
+        alert(size)
+    });
+}
+function fnOut(){
+    api.confirm({
+        title: '确认信息',
+        msg: '你确定要退出系统吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                $api.setStorage('hasLogin', 0);
+                $api.setStorage('hasSaoma', 0);
+                $api.setStorage('lanuchCheckStr', '');
+                $api.setStorage('shebeiType', '');
+                $api.setStorage('shebeiId', '');
+                $api.setStorage('userTouxiangUrl', '');
+                api.rebootApp();
+            }
+        } else {
+            alert(JSON.stringify(err));
+        }
+    }); 
+}
+function fnOpenWin(id){
+    var winName = winNameArr[id];
+    //alert(winName)
+    if(id == 2){
+        if($api.getStorage('hasSaoma') == 1){
+            api.toast({
+                msg: '正在获取数据',
+                location:'middle'
+            });
+            getStatusNow();
+        }else{
+            alert('你还没扫码上班呢！')
+            return false;
+        }
+    }else{
+        //alert($api.getStorage('hasSaoma'))
+        api.openWin({
+            name: winName,
+            url: './' + winName + '_win.html',
+            bounces: false,
+            slidBackEnabled:false
+        });
+    } 
+}
+function getStatusNow(){
+    api.ajax({
+        url: appUrl+'Get/xiabanSaomaStatus',
+        method: 'post',
+        data: {
+            values: { 
+                user_id: userId,
+                mission_day:missionDay,
+                company_id:companyId,
+                jishi_id:0
+            }
+        }
+    }, function(ret, err) {
+        //alert(JSON.stringify(ret));
+        if(ret.maizhong_has == 1){
+            api.actionSheet({
+                destructiveTitle: '在前台买钟并扫码离开'
+            }, function(ret, err) {
+                if (ret) {
+                    if(ret.buttonIndex == 1){
+                        openCamara();
+                    }
+                }
+            });
+        }
+        if(ret.maizhong_has == 0){
+            timeNow = ret.time;
+            checkTime();
+        }
+        return false;
+        if (ret) {
+            
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function checkTime(){
+    var beginHour,beginMin,endHour,endMin;
+    if(banciJson.banci_begin_hour < 10){
+        beginHour = '0' + banciJson.banci_begin_hour;
+    }else{
+        beginHour = banciJson.banci_begin_hour;
+    }
+    if(banciJson.banci_end_hour < 10){
+        endHour = '0' + banciJson.banci_end_hour;
+    }else{
+        endHour = banciJson.banci_end_hour;
+    }
+    if(banciJson.banci_begin_min < 10){
+        beginMin = '0' + banciJson.banci_begin_min;
+    }else{
+        beginMin = banciJson.banci_begin_min;
+    }
+    if(banciJson.banci_end_min < 10){
+        endMin = '0' + banciJson.banci_end_min;
+    }else{
+        endMin = banciJson.banci_end_min;
+    }
+    startTimeStr = missionDay + ' ' + beginHour + ':' + beginMin + ':' + '00';
+    startTimeStr = startTimeStr.replace(/-/g,"/");
+    var startTime = new Date(startTimeStr);
+    var chaTime = 30 * 60 * 1000;
+    endTimeStr = missionDay + ' ' + endHour + ':' + endMin + ':' + '00';
+    var showEndTimeStr = endTimeStr.substr(11,5);
+    endTimeStr = endTimeStr.replace(/-/g,"/");
+
+    var endTime = new Date(endTimeStr);
+    var oneDayTime = 24 * 60 * 60 * 1000;
+    kaoqinStartTimeNum = startTime.getTime() + chaTime;
+    if(banciJson.banci_end_hour < 12){
+        kaoqinEndTimeNum = endTime.getTime() +oneDayTime;
+        kaoqinOneHourTimeNum = endTime.getTime() +oneDayTime - chaTime - chaTime;
+    }else{
+        kaoqinEndTimeNum = endTime.getTime();
+        kaoqinOneHourTimeNum = endTime.getTime() - chaTime - chaTime;
+    }
+    //alert(timeNow)
+    var showTimeNow = timeNow.substr(11,5);
+    timeNow = timeNow.replace(/-/g,"/");
+    var nowTime = new Date(timeNow);
+    nowTimeNum = nowTime.getTime();
+    var msgStr = '正常下班';
+    if(nowTimeNum > kaoqinOneHourTimeNum){
+        kaoqinType = 9;
+        if(nowTimeNum > kaoqinEndTimeNum){
+            zhengchangNum = 1;
+            var msgStr = '正常下班';
+        }else{
+            zhengchangNum = 0;
+            var msgStr = '提前下班（'+showEndTimeStr+'）';
+        }
+    }else{
+        kaoqinType = 8;
+        zhengchangNum = 1;
+        var msgStr = '暂离公司（记录）';
+    }
+    api.actionSheet({
+        title: '现在时间是'+showTimeNow,
+        destructiveTitle: msgStr
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                openCamara();
+            }
+        }
+    });
+}
+function openCamara(){
+    var FNScanner = api.require('FNScanner');
+    FNScanner.openScanner({
+        autorotation: true,
+    },function( ret, err ){   
+        if( ret ){
+            if(ret.eventType == 'success'){
+                var contentStr = ret.content;
+                //alert(contentStr)
+                var contentArr = contentStr.split('-');
+                if(contentArr[0] == "Q"){
+                    kaoqinShebeiType = 3;
+                }
+                if(contentArr[0] == "Z"){
+                    kaoqinShebeiType = 0;
+                }
+                if(contentArr[0] == "P"){
+                    kaoqinShebeiType = 1;
+                }
+                //alert(kaoqinShebeiType)
+                checkSaoma(contentArr[1]);
+                FNScanner.closeView();
+            } 
+        }else{
+            
+        }
+    });
+}
+function checkSaoma(checkStr){
+    if(kaoqinShebeiType == 3){
+        var checkArr = qiantaiMaArr;
+        var maStr = 'Q-';
+    }
+    if(kaoqinShebeiType == 1){
+        var checkArr = peisongMaArr;
+        var maStr = 'P-';
+    }
+    if(kaoqinShebeiType == 0){
+        var checkArr = zhongfangMaArr;
+        var maStr = 'Z-';
+    }
+    maStr = maStr + checkStr;
+    //alert(maStr)
+    //return false
+    var erweimaNum = checkArr[maStr];
+    api.ajax({
+        url: appUrl+'Get/checkSaoma',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                type:kaoqinShebeiType
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert(ret.erweima_num + ':' + erweimaNum)
+            if(ret.erweima_num == erweimaNum){
+                if(kaoqinType == 9){
+                    if(zhengchangNum == 0){
+                        alert('扫码成功，现在的时间是：'+ret.this_time+'，系统记录你提前下班！')
+                    }else{
+                        alert('扫码成功，现在的时间是：'+ret.this_time+'，赶快回去休息吧，感谢你的付出！')
+                    }
+                    getTodayJingli();
+                }
+                if(kaoqinType == 8){
+                    alert('扫码成功，现在的时间是：'+ret.this_time+'，快去快回吧！');
+                    //kaoqinLikai();
+                }
+            }else{
+                alert('验证失败，请重新验证');
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function kaoqinLikai(){
+    if($api.getStorage('userType') == 9){
+        jishiId = $api.getStorage('jishiId');
+    }else{
+        jishiId = 0;
+    }
+    if($api.getStorage('userType') == 9){
+        var kaoqinType1 = 2 
+    }else{
+        var kaoqinType1 = 1
+    }
+    api.ajax({
+        url: appUrl+'Change/kaoqinLikai',
+        method: 'post',
+        data: {
+            values: { 
+                user_id:userId,
+                user_name:userName,
+                user_tel:userTel,
+                company_id:companyId,
+                kaoqin_type:kaoqinType1,
+                kaoqin_status:kaoqinType,
+                banci_id:userBanciId,
+                zhengchang:zhengchangNum,
+                mission_day:missionDay,
+                jishi_id:jishiId,
+                user_type:userType,
+
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            $api.setStorage('hasSaoma', 0);
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function getTodayJingli(){
+    api.ajax({
+        url: appUrl+'get/todayJingli',
+        method: 'post',
+        data: {
+            values: { 
+                user_id: userId,
+                user_tel:userTel,
+                user_name:userName,
+                company_id:companyId,
+                mission_day:missionDay,
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+                //alert(JSON.stringify(ret));
+                //return false;
+                var yewuHas = ret.jingli_liushui_has;
+                var yewuArr = ret.jingli_liushui_data;
+                var yuyueHas = ret.yuyue_has;
+                var yuyueArr = ret.yuyue_data;
+                var chongzhiHas = ret.chongzhi_has;
+                var chongzhiArr = ret.chongzhi_data;
+                var shoufeiHas = ret.shoufei_has;
+                var shoufeiArr = ret.shoufei_data;
+                var tichengAll = 0;
+                var tichengAllStr = '';
+                var yewuIdStr = yuyueIdStr = chongzhiIdStr = shoufeiIdStr = '';
+                var yewuTicheng = yuyueTicheng = chongzhiTicheng = shoufeiTicheng = 0;
+                if(yewuHas == 0){
+                    var yewuStr = '没有跟单';
+                }else{
+                    var yewuNum = yewuArr.length;
+                    for(var i = 0;i < yewuNum;i++){
+                        yewuTicheng += parseFloat(yewuArr[i].ticheng);
+                        if(yewuIdStr == ''){
+                            yewuIdStr = yewuArr[i].id;
+                        }else{
+                            yewuIdStr += ',' + yewuArr[i].id;
+                        }
+                    }
+                    yewuStr = '业务' + yewuNum + '单，共提成'+yewuTicheng+'元';
+                }
+
+                if(yuyueHas == 0){
+                    var yuyueStr = '没有预约';
+                }else{
+                    var yuyueNum = yuyueArr.length;
+                    for(var j = 0;j< yuyueNum;j++){
+                        yuyueTicheng += parseFloat(yuyueTichengPrice);
+                        if(yuyueIdStr == ''){
+                            yuyueIdStr = yuyueArr[j].id;
+                        }else{
+                            yuyueIdStr += ',' + yuyueArr[j].id;
+                        }
+                    }
+                    yuyueStr = '预约'+yuyueNum+'单，共提成'+yuyueTicheng+'元';
+                }
+
+                if(chongzhiHas == 0){
+                    var chongzhiStr = '没有充值';
+                }else{
+                    var chongzhiNum = chongzhiArr.length;
+                    for(var k = 0;k< chongzhiNum;k++){
+                        chongzhiTicheng += parseFloat(chongzhiArr[k].ticheng_money);
+                        if(chongzhiIdStr == ''){
+                            chongzhiIdStr = chongzhiArr[k].id;
+                        }else{
+                            chongzhiIdStr += ',' + chongzhiArr[k].id;
+                        }
+                    }
+                    var chongzhiStr = '充值'+chongzhiNum+'单，共提成'+chongzhiTicheng+'元';
+                }
+
+                if(shoufeiHas == 0){
+                    var shoufeiStr = '没有销售';
+                }else{
+                    var shoufeiNum = shoufeiArr.length;
+                    for(var l = 0;l < shoufeiNum;l++){
+                        shoufeiTicheng += parseFloat(shoufeiArr[l].chanpin_ticheng);
+                        if(shoufeiIdStr == ''){
+                            shoufeiIdStr = shoufeiArr[l].id;
+                        }else{
+                            shoufeiIdStr += ',' + shoufeiArr[l].id;
+                        }
+                    }
+                    var shoufeiStr = '销售'+shoufeiNum+'单，共提成'+shoufeiTicheng+'元';
+                }
+                tichengAll = yewuTicheng + yuyueTicheng + chongzhiTicheng + shoufeiTicheng;
+                if(tichengAll == 0){
+                    tichengAllStr = '目前还没有任何提成，继续努力';
+                    tichengAllStr = '你今日的总提成为'+tichengAll+'元，其中:'+yewuStr+','+yuyueStr+','+chongzhiStr+','+shoufeiStr;
+                }else{
+                    tichengAllStr = '你今日的总提成为'+tichengAll+'元，其中:'+yewuStr+','+yuyueStr+','+chongzhiStr+','+shoufeiStr;
+                }
+                // alert(tichengAllStr);
+                // return false;
+                tongjiAndLogout(tichengAll,yewuTicheng,yuyueTicheng,chongzhiTicheng,shoufeiTicheng,yewuNum,yuyueNum,chongzhiNum,shoufeiNum,yewuIdStr,yuyueIdStr,chongzhiIdStr,shoufeiIdStr);
+            } else {
+                api.toast({
+                    msg: '网络错误',
+                    duration: 2000,
+                    location: 'bottom'
+                });
+            }
+    });
+}
+function tongjiAndLogout(tichengAll,yewuTicheng,yuyueTicheng,chongzhiTicheng,shoufeiTicheng,yewuNum,yuyueNum,chongzhiNum,shoufeiNum,yewuIdStr,yuyueIdStr,chongzhiIdStr,shoufeiIdStr){
+    var valueJson = { 
+        tongji_day: missionDay,
+        ticheng_all:tichengAll,
+        yewu_ticheng:yewuTicheng,
+        yuyue_ticheng:yuyueTicheng,
+        chongzhi_ticheng:chongzhiTicheng,
+        shoufei_ticheng:shoufeiTicheng,
+        yuyue_num:yuyueNum,
+        yewu_num:yewuNum,
+        chongzhi_num:chongzhiNum,
+        shoufei_num:shoufeiNum,
+        yewu_id_str:yewuIdStr,
+        yuyue_id_str:yuyueIdStr,
+        chongzhi_id_str:chongzhiIdStr,
+        shoufei_id_str:shoufeiIdStr,
+        zhengchang:zhengchangNum,
+        user_id:userId,
+        user_name:userName,
+        user_tel:userTel,
+        company_id:companyId
+    }
+    alert(JSON.stringify(valueJson))
+    return false;
+    api.ajax({
+        url: appUrl+'Add/jingliTongji',
+        method: 'post',
+        data: {
+            values: valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            alert('扫码成功！');
+            $api.setStorage('hasSaoma', 0);
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function GetRandomNum(Min,Max){   
+    var Range = Max - Min;   
+    var Rand = Math.random();   
+    return(Min + Math.round(Rand * Range));   
+} 
+function getCacheImgUrl(realImgUrl,fn){
+    api.imageCache({
+        url: touxiangUrl
+    }, function(ret, err){
+        if( ret ){
+             cacheUrl = ret.url;
+             fn(cacheUrl);
+        }else{
+             cacheUrl = realImgUrl;
+             fn(cacheUrl);
+        }
+    });
+}
+function showTouxiang(cacheImgUrl){
+    $api.attr($api.byId('touxiang'), 'src', cacheImgUrl);
+}
+apiready = function () {
+    var header = $api.byId('misHeader');
+    if(!$api.getStorage('userTouxiangUrl')){
+        touxiangUrl = '../image/jingli.png';
+    }else{
+        touxiangUrl = ipUrl + $api.getStorage('userTouxiangUrl');
+    }
+    $api.fixStatusBar(header);
+    api.parseTapmode();
+    api.addEventListener({
+        name: 'changeTouxiang'
+    }, function(ret, err){
+        if( ret ){
+             touxiangUrl = ipUrl + ret.value.imgPath;
+             $api.setStorage('userTouxiangUrl', ret.value.imgPath);
+             getCacheImgUrl(touxiangUrl,showTouxiang);
+        }else{
+             //alert( JSON.stringify( err ) );
+        }
+    });
+    getCacheImgUrl(touxiangUrl,showTouxiang);
+    $api.html($api.byId('userName'), userName);
+}
+</script>
+</html>

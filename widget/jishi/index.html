@@ -1,0 +1,305 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-btn-danger aui-pull-left">
+            
+        </a>
+        <div class="aui-title">新沐足(技师端)</div>
+    </header>
+    <div class="aui-col-xs-12";>
+        <div style="text-align: center;padding-top: 200px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p style="color:black">加载页面中</p>
+        </div>
+    </div>
+    <footer class="aui-nav" id="misFooter">
+        <ul class="aui-bar-tab">
+            <li class="active-danger" id="tabbar0" tapmode onclick="fnOpen(0)">
+                <span class="aui-iconfont aui-icon-favor"></span>
+                <p>业务</p>
+            </li>
+            <li id="tabbar1" tapmode onclick="fnOpen(1)">
+                <span class="aui-iconfont aui-icon-list"></span>
+                <p>订单</p>
+            </li>
+            <li id="tabbar2" tapmode onclick="fnOpen(2)">
+                <span class="aui-iconfont aui-icon-people"></span>
+                <p>我</p>
+            </li>
+        </ul>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest-SHA1.js"></script>
+<script type="text/javascript" src="../script/SHA1.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var frameStart,frameHeight,frameGroupStart,frameGroupHeight,Height,headerHeight,headerHeight1,frameHeight,frameHeight1,footerHeight;
+var dingdanIndex = 0;
+var companyId = $api.getStorage('companyId');
+var userId = $api.getStorage('userId');
+//alert($api.getStorage('missionDay'))
+var shebeiId = '';
+var pushCode = '';
+var appId = 'A6908494336341';
+var appKey = "54094443-FDD9-6436-DF54-B2C1EA5AAC7D";
+var framesJson = [
+    {
+        'id':0,
+        'type':'frame',
+        'frameName':'yewu'
+    },{
+        'id':1,
+        'type':'frame',
+        'frameName':'dingdan'
+    },{
+        'id':2,
+        'type':'frame',
+        'frameName':'my'
+    }
+];
+function fnOpen(index){
+    var thisDate = new Date();
+    var thisTime = thisDate.getTime(); 
+    
+    if(index == 2){
+        headerHeight1 = 0;
+        frameHeight1 = api.winHeight - footerHeight;
+        api.openFrame({
+            name: framesJson[index].frameName,
+            url: './' + framesJson[index].frameName + '_frame.html',
+            bounces: false,
+            slidBackEnabled:false,
+            rect: {
+                x: 0,
+                y: headerHeight1,
+                w: 'auto',
+                h: frameHeight1
+            }
+        });
+    }else{
+        //alert($api.getStorage('companyStatus'));
+        headerHeight1 = headerHeight;
+        frameHeight1 = frameHeight;
+        if($api.getStorage('companyStatus') == 1){
+            if($api.getStorage('hasSaoma') == 1){
+                api.openFrame({
+                    name: framesJson[index].frameName,
+                    url: './' + framesJson[index].frameName + '_frame.html',
+                    bounces: false,
+                    slidBackEnabled:false,
+                    rect: {
+                        x: 0,
+                        y: headerHeight1,
+                        w: 'auto',
+                        h: frameHeight1
+                    }
+                });
+            }else{
+                api.openFrame({
+                    name: 'saoma',
+                    url: './saoma.html',
+                    rect: {
+                        x: 0,
+                        y: headerHeight1,
+                        w: 'auto',
+                        h: frameHeight1
+                    },
+                    pageParam: {
+                        name: 'saoma'
+                    },
+                    bounces: false,
+                    bgColor: 'rgba(0,0,0,0)',
+                    vScrollBarEnabled: true,
+                    hScrollBarEnabled: true
+                });
+            }
+            
+        }else{
+            api.openFrame({
+                name: 'waitting',
+                url: './waitting.html',
+                rect: {
+                    x: 0,
+                    y: headerHeight1,
+                    w: 'auto',
+                    h: frameHeight1
+                },
+                pageParam: {
+                    name: 'test'
+                },
+                bounces: false,
+                bgColor: 'rgba(0,0,0,0)',
+                vScrollBarEnabled: true,
+                hScrollBarEnabled: true
+            });
+        }
+        
+    }
+    hideOther(index);
+    changeFootButton(index);
+}
+function changeFootButton(index){
+    var buttonsObj = $api.domAll(footer, 'ul li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active-danger');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active-danger');
+        }
+    }
+}
+function hideOther(index){
+    for(var i in framesJson){
+        if(i != index){
+            if(framesJson[i].type == 'frame'){
+                api.setFrameAttr({
+                    name: framesJson[i].frameName,
+                    hidden: true
+                }); 
+            }
+            if(framesJson[i].type == 'frameGroup'){
+                api.setFrameGroupAttr({
+                    name: framesJson[i].frameGroupName,
+                    hidden: true
+                });
+            }
+        }
+    }
+}
+function checkSystem(){
+    api.ajax({
+        url: appUrl+'Get/checkSystemByJishi',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                user_id: userId
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert(JSON.stringify(ret))
+            if(ret.company_status == 1){
+                $api.setStorage('companyStatus', '1');
+                if(ret.has_user == 1){
+                    if(ret.user_status == 1){
+                        $api.setStorage('hasSaoma', '1');
+                    }
+                    if(ret.user_status == 0){
+                        $api.setStorage('hasSaoma', '0');
+                    }
+                    $api.setStorage('userBanciId', ret.user_banci_id);
+                    //alert($api.getStorage('userBanciId'))
+                    if($api.getStorage('hasLogin') == 1){
+                        var newCacheCheckStr = ret.cache_check_str;
+                        //alert('新的缓存字符串是'+newCacheCheckStr + '，旧的缓存字符串是' + $api.getStorage('cacheCheckStr'));
+                        // return false;
+                        if($api.getStorage('cacheCheckStr') != newCacheCheckStr){
+                            alert( '检测到新的系统配置，正在为你更换');
+                            resetCache(newCacheCheckStr);
+                        }else{
+                            fnOpen(2);
+                            fnOpen(0);
+                        }
+                    }
+                }else{
+                    $api.setStorage('hasLogin', 0);
+                    $api.setStorage('hasSaoma', 0);
+                    $api.setStorage('lanuchCheckStr', '');
+                    $api.setStorage('cacheCheckStr', '');
+                    $api.setStorage('shebeiType', '');
+                    $api.setStorage('shebeiId', '');
+                    $api.setStorage('userTouxiangUrl', '');
+                    alert('用户已被系统删除！');
+                    api.rebootApp();
+                }
+            }else{
+                $api.setStorage('companyStatus', '0');
+                fnOpen(2);
+                fnOpen(0);
+            }
+        } else {
+           api.toast({
+               msg: '网络错误',
+               duration: 2000,
+               location: 'bottom'
+           });
+        }
+    });
+}
+function resetCache(newCacheCheckStr){
+    api.ajax({
+        url: appUrl+'Get/cacheByJishi',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            var cacheData = ret.cache;
+            var cacheBanci = JSON.parse(cacheData.cache_banci);
+            var cacheCompany = JSON.parse(cacheData.cache_company);
+            var cacheService =  JSON.parse(cacheData.cache_service);
+            var cacheMianfei = JSON.parse(cacheData.cache_mianfei);
+            var cacheShoufei = JSON.parse(cacheData.cache_shoufei);
+            var cachePeitao = JSON.parse(cacheData.cache_peitao);
+            $api.setStorage('cacheBanci', cacheBanci);
+            $api.setStorage('cacheCompany', cacheCompany); 
+            $api.setStorage('cacheService', cacheService); 
+            $api.setStorage('cacheMianfei', cacheMianfei);
+            $api.setStorage('cacheShoufei', cacheShoufei);
+            $api.setStorage('cachePeitao', cachePeitao);
+            $api.setStorage('cacheCheckStr', newCacheCheckStr);
+            fnOpen(2);
+            fnOpen(0);
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    shebeiId = api.deviceId;
+    header = $api.byId('misHeader');
+    footer = $api.byId('misFooter');
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    frameStart = headerHeight;
+    frameHeight = api.winHeight - headerHeight - footerHeight;
+    frameHeight -= 10;
+    checkSystem();
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err){
+        
+    });
+    api.setKeepScreenOn({
+        keepOn: true
+    });
+}
+</script>
+</html>

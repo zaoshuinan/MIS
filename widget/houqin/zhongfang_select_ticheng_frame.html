@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons" style="padding-bottom: 50px;">
+    <div id="msg" class="aui-hidden"></div>
+        <div class="aui-form" id="viewBox" style="padding-top:20px;">
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="saveCheck()" id="saveButton">配置提成</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var listJson,selectNameStr,selectIdStr,selectIdArr,selectNameArr,fuwuJishiTichengStr,fuwuTicheng,jishiRealIdStr;
+var fuwuJishiTichengArr = new Array();
+var newTichengArr = new Array();
+var fudongFanwei = 30;
+var buildStep = 0;
+
+function buildPage(){
+    var innerStr = '<p class="aui-text-danger" style="font-size:16px;padding-top:20px;">请根据实际情况，配置技师的具体提成</p>';
+    $api.html($api.byId('msg'), fuwuJishiTichengStr);
+    var tempArr = fuwuJishiTichengStr.split(',');
+    for(var k = 0;k < tempArr.length;k++){
+        var thisTempStr = tempArr[k];
+        var thisTempArr = thisTempStr.split(':');
+        var thisKey = 'paihao' + thisTempArr[0];
+        var thisValue = thisTempArr[1];
+        //alert(thisKey + ':' +thisValue);
+        fuwuJishiTichengArr[thisKey] = thisValue;
+        //alert(fuwuJishiTichengArr[thisKey])
+    }
+    //alert(fuwuJishiTichengArr['paihao52'])
+    // for(var key in fuwuJishiTichengArr){
+    //     alert(key)
+    // }
+    //return false;
+    for(var i = 0;i < selectIdArr.length;i++){
+        var jishiId = selectIdArr[i];
+        var jishiName = selectNameArr[i];
+        var arrKey = 'paihao' + jishiId;
+        //alert(arrKey + fuwuJishiTichengArr[arrKey])
+        if(fuwuJishiTichengStr == ''){
+            var thisTicheng = fuwuTicheng;
+            fuwuJishiTichengArr[arrKey] = thisTicheng;
+        }else{
+            //alert(fuwuJishiTichengArr[arrKey]);
+            if(fuwuJishiTichengArr[arrKey]){
+                var thisTicheng = fuwuJishiTichengArr[arrKey];
+                newTichengArr[arrKey] = fuwuJishiTichengArr[arrKey];
+            }else{
+                var thisTicheng = fuwuTicheng;
+                newTichengArr[arrKey] = thisTicheng;
+            }
+            //alert(arrKey + ':' + newTichengArr[arrKey])
+        }
+        var maxNum = fuwuTicheng + fudongFanwei;
+        var minNum = fuwuTicheng - fudongFanwei;
+        var thisStr = '<div class="aui-input-row"><span class="aui-input-addon  aui-text-danger">'+jishiName+'号技师</span><input type="number" class="aui-input" id="tichengObj'+jishiId+'"  value="'+thisTicheng+'" /></div>';
+        innerStr += thisStr;
+    }
+    var viewBox = $api.byId('viewBox');
+    $api.html(viewBox, innerStr);
+}
+
+function saveCheck(){
+    var step = 1;
+    var newNum = 0
+    var newTichengStr = '';
+    for(var key in newTichengArr){
+        var jishiId = key.substr(6);
+        var tichengMoney = $api.val($api.byId('tichengObj' + jishiId));
+        var thisStr = jishiId + ':' + tichengMoney;
+        //alert(thisStr)
+        if(newTichengStr == ''){
+            newTichengStr = thisStr;
+        }else{
+            newTichengStr += ',' + thisStr;
+        }
+        newNum ++;
+    }
+    if(newNum == 0){
+        alert('你没有操作');
+        return false;
+    }
+    step = 2;
+    if(step == 2){
+        //alert(newTichengStr)
+        api.sendEvent({
+            name: 'backSelect',
+            extra: {
+                type:'peizhi',
+                newTichengStr: newTichengStr
+            }
+        });
+        api.closeWin();
+    }
+    return false;
+}
+apiready = function(){
+    api.parseTapmode();
+    fuwuJishiTichengStr = api.pageParam.fuwuJishiTichengStr;
+    //alert(fuwuJishiTichengStr)
+    fuwuTicheng = api.pageParam.fuwuTicheng;
+    selectIdStr = api.pageParam.jishiRealIdStr;
+    selectNameStr = api.pageParam.selectNameStr;
+    selectIdArr = selectIdStr.split(',');
+    selectNameArr = selectNameStr.split(',');
+    buildPage();
+}
+        
+</script>
+</html>

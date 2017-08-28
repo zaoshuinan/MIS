@@ -1,0 +1,120 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var dingdanJson;
+
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    var url = appUrl+'Get/dingdanList';
+    var companyId = $api.getStorage('companyId');
+    api.ajax({
+        url: url,
+        method: 'post',
+        data: {
+            values: { 
+                dingdan_status: '5,6,7',
+                company_id:companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            if(ret.check == 0){
+                // api.toast({
+                //     msg: '系统找不到该项数据',
+                //     duration: 2000,
+                //     location: 'bottom'
+                // });
+                $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">没有找到数据</p>');
+            }else{
+                //alert(JSON.stringify(ret))
+                var listData = ret.list_data;
+                var innerStr = '';
+                //alert(listData.length);
+                for(var i = 0;i < listData.length;i++){
+                    //alert(i);
+                    var thisDingdanJson = listData[i];
+                    //alert(thisDingdanJson.dingdan_haoma);
+                    var dingdanId = thisDingdanJson.id;
+                    var dingdanBianma = thisDingdanJson.dingdan_haoma;
+                    var dingdanRoomHaoma = thisDingdanJson.dingdan_room_name;
+                    var dingdanJishiPaihao = thisDingdanJson.dingdan_jishi_paihao;
+                    var dingdanStartTime = thisDingdanJson.xiadan_time;
+                    var fuwuName = thisDingdanJson.service_name;
+                    var fanweiId = thisDingdanJson.dingdan_type;
+                    var fuwuDetailId = thisDingdanJson.service_id;
+                    if(dingdanJishiPaihao == ''){
+                        var showJishiStr = '<span class="aui-text-info">未选择</span>';
+                    }else{
+                        var showJishiStr = '<span class="aui-text-danger">'+dingdanJishiPaihao+'号，等待确认</span>';
+                    }
+                    var tplStr = '<li class="aui-list-view-cell aui-img" onclick="gotoDingdan('+dingdanId+','+fanweiId+','+fuwuDetailId+')"><div class="aui-img-body">房间：<span class="aui-text-success">'+dingdanRoomHaoma+'</span>，技师：'+showJishiStr+'<p class="aui-ellipsis-2">服务：'+fuwuName+'，房间开启时间：'+dingdanStartTime+'</p></div></li>';
+                    innerStr += tplStr;
+                }
+                //alert(innerStr);
+                $api.html($api.byId('viewBox'), innerStr);
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+
+function gotoDingdan(dingdanId,fanweiId,fuwuDetailId){
+    api.openWin({
+        name: 'fuwuDingdan',
+        url: './fuwu_dingdan_win.html',
+        bounces: false,
+        slidBackEnabled:false,
+        pageParam: {
+            'fanweiId':fanweiId,
+            'fuwuDetailId':fuwuDetailId,
+            'dingdanId':dingdanId
+        }
+    });
+}
+apiready = function () {
+    api.parseTapmode();
+    buildPageByJson();
+    shuaxin();
+}
+</script>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+    <style type="text/css">
+        .aui-grid-sixteen:after {
+            border:none;
+        }
+        .aui-grid-sixteen li:after {
+            border:none;
+        }
+        .aui-grid-sixteen li .aui-iconfont {
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            line-height: 38px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+
+    <div class="aui-content-padded" id="buttonBox" style="margin-top: 5px;">
+        <div class="aui-tab aui-tab-danger">
+            <ul class="aui-tab-nav aui-tab-border">
+                <li tapmode onclick="openFrame(0)">收入</li>
+                <li tapmode onclick="openFrame(1)">支出</li>
+                <li tapmode onclick="openFrame(2)">利润</li>
+                <li tapmode onclick="openFrame(3)">订单</li>
+                <li tapmode onclick="openFrame(4)">预约</li>
+            </ul>
+        </div>
+    </div>
+    <div class="aui-card" style="text-align: center;padding-top: 30px;padding-bottom: 30px;" id="showBox">
+        <div class="loading-2">
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+        </div>
+        <p>读取数据中....</p>
+    </div>
+
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,dingdanId,headerHeight,frameHeight,buttonBoxHeight,isToday,startDate,endDate;
+var groupIndex = 0;
+var titleStr = '';
+var hasLoad = 0;
+
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll($api.byId('buttonBox'), 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+
+function closeWin(){
+    api.closeWin();
+}
+
+function openFrame(index){
+    if(hasLoad == 0){
+        alert('正在读取数据，请稍后点击');
+        return false;
+    }
+    changeGroupButtonStyle(index);
+    var frameNameArr = ['shouru_company_duan','zhichu_company_duan','lirun_company_duan','dingdan_company_duan','yuyue_company_duan'];
+    var thisFrameName = frameNameArr[index];
+    // for(var i = 0;i < frameNameArr.length;i++){
+    //     api.closeFrame({
+    //         name: frameNameArr[i]
+    //     });
+    // }
+    
+    api.openFrame({
+        name: thisFrameName,
+        url: './'+frameNameArr[index]+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight + buttonBoxHeight + 10,
+            w: 'auto',
+            h: frameHeight - 10
+        },
+        pageParam: {
+            startDate:startDate,
+            endDate:endDate
+        },
+        bounces: false
+    });
+}
+function getData(){
+    $api.html($api.byId('showBox'), '点击按钮，查看'+startDate.substring(5)+'到'+endDate.substring(5)+'统计数据');
+    hasLoad = 1;
+}
+apiready = function(){
+    api.parseTapmode();
+    startDate = api.pageParam.startDate;
+    endDate = api.pageParam.endDate;
+    var startDateStr = startDate.substring(5);
+    var endDateStr = endDate.substring(5);
+    var titleStr = startDateStr + '至' + endDateStr + '公司业绩';
+    
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleStr);
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    buttonBoxHeight = $api.offset($api.byId('buttonBox')).h;
+    frameHeight = api.winHeight - headerHeight - buttonBoxHeight;
+    getData();
+};
+</script>
+</html>

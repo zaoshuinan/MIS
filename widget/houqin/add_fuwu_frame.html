@@ -1,0 +1,438 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder">       
+        <div class="aui-form" style="margin-top:20px;">
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">服务类型</span>
+                <input type="text" class="aui-input" id="fuwuLeixingName"  value="" readonly />
+                <input type="hidden" id="fuwuLeixingId">
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">服务名称</span>
+                <input type="text" class="aui-input" id="fuwuName" placeholder="服务名称" value="" />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">服务说明</span>
+                <input type="text" class="aui-input" id="fuwuInfo" placeholder="服务说明"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">服务时长（分钟）</span>
+                <input type="number" class="aui-input" id="fuwuShichang" placeholder="服务时长（分钟）"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">服务价格（元）</span>
+                <input type="number" class="aui-input" id="fuwuPrice" placeholder="服务价格（元）"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">技师标准提成（元）</span>
+                <input type="number" class="aui-input" id="fuwuTicheng" placeholder="技师提成（元）"/>
+                <input type="hidden" id="fuwuJishiTicheng">
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">加钟价格（元）</span>
+                <input type="number" class="aui-input" id="fuwuJiazhongPrice" placeholder="加钟价格（元）"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">加钟提成（元）</span>
+                <input type="number" class="aui-input" id="fuwuJiazhongTicheng" placeholder="加钟提成（元）"/>
+
+                <input type="hidden" class="aui-input" id="jishiRealId" readonly />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger" tapmode onclick="selectJishi()">选择技师</span>
+                <input tapmode onclick="selectJishi()" type="text" class="aui-input" id="selectJishiName" placeholder="点击选择技师" readonly />
+                <span class="aui-input-addon">
+                    <div class="aui-btn aui-btn-danger" id="tichengButton" status="1" tapmode onclick="peizhiTicheng()">配置技师提成</div>
+                </span>
+                <input type="hidden" class="aui-input" id="selectJishiId" readonly />
+            </div>
+            <div class="aui-input-row" tapmode onclick="selectPeitao()">
+                <span class="aui-input-addon">选择配套产品</span>
+                <input type="text" class="aui-input" id="selectPeitaoName" placeholder="选择配套产品" readonly />
+                <input type="hidden" class="aui-input" id="selectPeitaoId" readonly />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">排序</span>
+                <input type="number" class="aui-input" id="fuwuOrder" placeholder="输入数字" />
+            </div>
+            <p class="aui-padded-10  aui-text-danger">
+                请在填写好基本参数后，务必选择关联的技师哦！
+            </p>
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="saveCheck()" id="saveButton">增加服务</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var pageAction,pageJson,dataId;
+var getAction = 'fuwuById';
+var addAction = 'newFuwu';
+var changeAction = 'changeFuwuById';
+var companyId = $api.getStorage('companyId');
+var fuwuTicheng = 0;
+var jishiHasChange = 0;
+
+var fuwuLeixingId,fuwuName,fuwuInfo,fuwuShichang,fuwuPrice,fuwuJishiTichengStr,fuwuJiazhongPrice,fuwuJiazhongTicheng,selectJishiIdStr,selectJishiNameStr,selectPeitaoIdStr,selectPeitaoNameStr,jishiRealIdStr,fuwuOrder;
+function peizhiTicheng(){
+    selectJishiIdStr = $api.val($api.byId('selectJishiId'));
+    selectJishiNameStr = $api.val($api.byId('selectJishiName'));
+    jishiRealIdStr = $api.val($api.byId('jishiRealId'));
+    fuwuTicheng = $api.val($api.byId('fuwuTicheng'));
+    fuwuJishiTichengStr = $api.val($api.byId('fuwuJishiTicheng'));
+    var fuwuJishiTichengArr = fuwuJishiTichengStr.split(',');
+
+    if(fuwuTicheng == ''){
+        api.toast({
+            msg: '还没有设置标准提成'
+        });
+        return false;
+    }
+    if(selectJishiIdStr == ''){
+        api.toast({
+            msg: '还没有选择关联技师'
+        });
+        return false;
+    }
+    api.openWin({
+        name: 'zhongfangPeizhiJishiTicheng',
+        url: './zhongfang_select_ticheng_win.html',
+        pageParam: {
+            selectIdStr:selectJishiIdStr,
+            selectNameStr: selectJishiNameStr,
+            fuwuTicheng:fuwuTicheng,
+            jishiRealIdStr:jishiRealIdStr,
+            fuwuJishiTichengStr:fuwuJishiTichengStr
+        }
+    });
+}
+
+function selectPeitao(){
+    selectPeitaoIdStr = $api.val($api.byId('selectPeitaoId'));
+    selectPeitaoNameStr = $api.val($api.byId('selectPeitaoName'));
+    api.openWin({
+        name: 'qiantaiselectPeitao',
+        url: './qiantai_select_peitao_win.html',
+        pageParam: {
+            selectIdStr:selectPeitaoIdStr,
+            selectNameStr: selectPeitaoNameStr
+        }
+    });
+}
+
+function selectJishi(){
+    fuwuTicheng = $api.val($api.byId('fuwuTicheng'));
+    if(fuwuTicheng == ''){
+        alert('你还没输入服务提成价格呢！');
+        return false;
+    }
+    selectJishiIdStr = $api.val($api.byId('selectJishiId'));
+    selectJishiNameStr = $api.val($api.byId('selectJishiName'));
+    jishiRealIdStr = $api.val($api.byId('jishiRealId'));
+    api.openWin({
+        name: 'qiantaiSelectJishi',
+        url: './qiantai_select_jishi_win.html',
+        pageParam: {
+            selectIdStr:selectJishiIdStr,
+            selectNameStr: selectJishiNameStr,
+            jishiRealIdStr:jishiRealIdStr,
+        }
+    });
+}
+
+function saveCheck(){
+    var canSend = 1;
+    fuwuLeixingId = $api.val($api.byId('fuwuLeixingId'));
+    fuwuName = $api.val($api.byId('fuwuName'));
+    fuwuInfo = $api.val($api.byId('fuwuInfo'));
+    fuwuShichang = $api.val($api.byId('fuwuShichang'));
+    fuwuPrice = $api.val($api.byId('fuwuPrice'));
+    fuwuTicheng = $api.val($api.byId('fuwuTicheng'));
+    fuwuJishiTichengStr = $api.val($api.byId('fuwuJishiTicheng'));
+    fuwuJiazhongPrice = $api.val($api.byId('fuwuJiazhongPrice'));
+    fuwuJiazhongTicheng = $api.val($api.byId('fuwuJiazhongTicheng'));
+    selectJishiIdStr = $api.val($api.byId('selectJishiId'));
+    selectJishiNameStr = $api.val($api.byId('selectJishiName'));
+    selectPeitaoIdStr = $api.val($api.byId('selectPeitaoId'));
+    selectPeitaoNameStr = $api.val($api.byId('selectPeitaoName'));
+    jishiRealIdStr = $api.val($api.byId('jishiRealId'));
+    fuwuOrder = $api.val($api.byId('fuwuOrder'));
+    if(fuwuName == ''){
+        api.toast({
+            msg: '还没有输入服务名称'
+        });
+        canSend = 0;
+    }
+    if(fuwuShichang == ''){
+        api.toast({
+            msg: '还没有输入服务时长'
+        });
+        canSend = 0;
+    }
+    if(fuwuPrice == ''){
+        api.toast({
+            msg: '还没有输入服务价格'
+        });
+        canSend = 0;
+    }
+    if(fuwuTicheng == ''){
+        api.toast({
+            msg: '还没有输入服务提成'
+        });
+        canSend = 0;
+    }
+    if(fuwuJiazhongPrice == ''){
+        api.toast({
+            msg: '还没有输入服务加钟价格'
+        });
+        canSend = 0;
+    }
+    if(fuwuJiazhongPrice == ''){
+        api.toast({
+            msg: '还没有输入服务加钟提成'
+        });
+        canSend = 0;
+    }
+    if(selectJishiIdStr == ''){
+        api.toast({
+            msg: '还没有选择关联的技师'
+        });
+        canSend = 0;
+    }
+    if(fuwuJishiTichengStr == ''){
+        api.toast({
+            msg: '还没有配置技师的提成金额'
+        });
+        canSend = 0;
+    }
+    if(jishiHasChange == 1){
+        api.toast({
+            msg: '请配置技师的提成金额'
+        });
+        canSend = 0;
+    }
+    if(canSend == 1){
+        saveInfo();
+    }
+}
+
+function saveInfo(){
+    var ajaxUrl;
+    var postJson = {
+        company_id:companyId,
+        fuwu_leixing_id:fuwuLeixingId,
+        service_name:fuwuName,
+        service_info:fuwuInfo,
+        service_shichang:fuwuShichang,
+        service_price:fuwuPrice,
+        service_ticheng:fuwuTicheng,
+        service_jishi_ticheng_str:fuwuJishiTichengStr,
+        service_jiazhong_price:fuwuJiazhongPrice,
+        service_jiazhong_ticheng:fuwuJiazhongTicheng,
+        service_jishi_id_str:selectJishiIdStr,
+        jishi_real_id_str:jishiRealIdStr,
+        service_jishi_name_str:selectJishiNameStr,
+        service_peitao_id_str:selectPeitaoIdStr,
+        service_peitao_name_str:selectPeitaoNameStr,
+        service_order:fuwuOrder
+    }
+    if(pageAction == 'edit'){
+        ajaxUrl = appUrl+'Change/' + changeAction;
+        postJson.data_id = dataId;
+    }else{
+        ajaxUrl = appUrl+'Add/'+addAction;
+    }
+    // alert(jishiRealIdStr);
+    // return false;
+    api.ajax({
+        url: ajaxUrl,
+        method: 'post',
+        data: {
+            values: postJson,
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(pageAction == 'edit'){
+                $api.setStorage('changeCache', '1');
+                alert('修改成功');
+                api.sendEvent({
+                    name: 'reFlashList',
+                    extra: {
+                        canFlash:1
+                    }
+                });
+            }else{
+                alert('添加成功');
+            }
+            api.closeWin();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+
+function bulidPageById(){
+    api.ajax({
+        url: appUrl+'Get/'+getAction,
+        method: 'post',
+        data: {
+            values: { 
+                data_id: dataId
+            },
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                pageJson = ret.data;
+                changePage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+
+function changePage(){
+    fuwuLeixingId = pageJson.fuwu_leixing_id;
+    fuwuName = pageJson.service_name;
+    fuwuInfo = pageJson.service_info;
+    fuwuShichang = pageJson.service_shichang;
+    fuwuPrice = pageJson.service_price;
+    fuwuTicheng = pageJson.service_ticheng;
+    fuwuJishiTichengStr = pageJson.service_jishi_ticheng_str;
+    fuwuJiazhongPrice = pageJson.service_jiazhong_price;
+    fuwuJiazhongTicheng = pageJson.service_jiazhong_ticheng;
+    selectJishiIdStr = pageJson.service_jishi_id_str;
+    selectJishiNameStr = pageJson.service_jishi_name_str;
+    jishiRealIdStr = pageJson.jishi_real_id_str;
+    selectPeitaoIdStr = pageJson.service_peitao_id_str;
+    selectPeitaoNameStr = pageJson.service_peitao_name_str;
+    fuwuOrder = pageJson.service_order;
+    if(fuwuLeixingId == 0){
+        $api.val($api.byId('fuwuLeixingName'), '沐足');
+    }
+    if(fuwuLeixingId == 1){
+        $api.val($api.byId('fuwuLeixingName'), '按摩');
+    }
+    if(fuwuLeixingId == 2){
+        $api.val($api.byId('fuwuLeixingName'), '桑拿');
+    }
+    $api.val($api.byId('fuwuLeixingId'), fuwuLeixingId);
+    $api.val($api.byId('fuwuName'), fuwuName);
+    $api.val($api.byId('fuwuInfo'), fuwuInfo);
+    $api.val($api.byId('fuwuShichang'), fuwuShichang);
+    $api.val($api.byId('fuwuPrice'), fuwuPrice);
+    $api.val($api.byId('fuwuTicheng'), fuwuTicheng);
+    $api.val($api.byId('fuwuJishiTicheng'), fuwuJishiTichengStr);
+    $api.val($api.byId('fuwuJiazhongPrice'), fuwuJiazhongPrice);
+    $api.val($api.byId('fuwuJiazhongTicheng'), fuwuJiazhongTicheng);
+    $api.val($api.byId('selectJishiId'), selectJishiIdStr);
+    $api.val($api.byId('selectJishiName'), selectJishiNameStr);
+    $api.val($api.byId('jishiRealId'), jishiRealIdStr);
+    $api.val($api.byId('selectPeitaoId'), selectPeitaoIdStr);
+    $api.val($api.byId('selectPeitaoName'), selectPeitaoNameStr);
+    $api.val($api.byId('fuwuOrder'), fuwuOrder);
+    $api.html($api.byId('saveButton'), '修改服务');
+}
+
+apiready = function(){
+    api.parseTapmode();
+    pageAction = api.pageParam.action;
+    fuwuLeixingId = api.pageParam.fuwuLeixingId;
+    if(pageAction == 'edit'){
+        dataId = api.pageParam.dataId;
+        bulidPageById();
+    }else{
+        $api.val($api.byId('fuwuLeixingId'), fuwuLeixingId);
+        if(fuwuLeixingId == 0){
+            $api.val($api.byId('fuwuLeixingName'), '沐足');
+        }
+        if(fuwuLeixingId == 1){
+            $api.val($api.byId('fuwuLeixingName'), '按摩');
+        }
+    }
+
+    api.addEventListener({
+        name: 'backSelect'
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.value.type == 'peizhi'){
+                //alert(ret.value.newTichengStr);
+                jishiHasChange = 0;
+                fuwuJishiTichengStr = ret.value.newTichengStr;
+                $api.val($api.byId('fuwuJishiTicheng'), fuwuJishiTichengStr);
+            }
+            if(ret.value.type == 'peitao'){
+                selectPeitaoIdStr = ret.value.selectIdStr;
+                selectPeitaoNameStr = ret.value.selectNameStr;
+                $api.val($api.byId('selectPeitaoId'), selectPeitaoIdStr);
+                $api.val($api.byId('selectPeitaoName'), selectPeitaoNameStr);
+            }
+            if(ret.value.type == 'jishi'){
+                jishiHasChange = 1;
+                selectJishiIdStr = ret.value.selectIdStr;
+                selectJishiNameStr = ret.value.selectNameStr;
+                jishiRealIdStr = ret.value.jishiRealIdStr;
+                $api.val($api.byId('selectJishiId'), selectJishiIdStr);
+                $api.val($api.byId('selectJishiName'), selectJishiNameStr);
+                $api.val($api.byId('jishiRealId'), jishiRealIdStr);
+                if(fuwuJishiTichengStr == ''){
+                    var selectIdArr = selectJishiIdStr.split(',');
+                    for(var i = 0; i < selectIdArr.length;i++){
+                        var thisStr = selectIdArr[i] + ':' + fuwuTicheng;
+                        if(i == 0){
+                            fuwuJishiTichengStr = thisStr;
+                        }else{
+                            fuwuJishiTichengStr += ',' + thisStr;
+                        }
+                    }
+                    $api.val($api.byId('fuwuJishiTicheng'), fuwuJishiTichengStr);
+                }
+            }
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+}
+        
+</script>
+</html>

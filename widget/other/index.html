@@ -1,0 +1,380 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-btn-danger aui-pull-left">
+            
+        </a>
+        <div class="aui-title" id="titleBox"></div>
+    </header>
+    <div class="aui-col-xs-12";>
+        <div style="text-align: center;padding-top: 200px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p style="color:black">加载页面中</p>
+        </div>
+    </div>
+    <footer class="aui-nav" id="misFooter">
+        <ul class="aui-bar-tab">
+            <li class="active-danger" id="tabbar0" tapmode onclick="fnOpen(0)">
+                <span class="aui-iconfont aui-icon-favor"></span>
+                <p>业务</p>
+            </li>
+            <li id="tabbar1" tapmode onclick="fnOpen(1)">
+                <span class="aui-iconfont aui-icon-list"></span>
+                <p>订单</p>
+            </li>
+            <li id="tabbar2" tapmode onclick="fnOpen(2)">
+                <span class="aui-iconfont aui-icon-people"></span>
+                <p>我</p>
+            </li>
+        </ul>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest-SHA1.js"></script>
+<script type="text/javascript" src="../script/SHA1.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var frameStart,frameHeight,headerHeight,headerHeight1,frameHeight,frameHeight1,footerHeight;
+var dingdanIndex = 0;
+var userType = $api.getStorage('userType');
+//alert(userType)
+var userId = $api.getStorage('userId');
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var companyStatus = $api.getStorage('companyStatus');
+var hasSaoma = $api.getStorage('hasSaoma');
+var shebeiId = '';
+var pushCode = '';
+var appId = 'A6908494336341';
+var appKey = "54094443-FDD9-6436-DF54-B2C1EA5AAC7D";
+function changeFootButton(index){
+    var buttonsObj = $api.domAll(footer, 'ul li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active-danger');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active-danger');
+        }
+    }
+}
+function hideOther(index){
+    for(var i in framesJson){
+        if(i != index){
+            if(framesJson[i].type == 'frame'){
+                api.setFrameAttr({
+                    name: framesJson[i].frameName,
+                    hidden: true
+                }); 
+            }
+            if(framesJson[i].type == 'frameGroup'){
+                api.setFrameGroupAttr({
+                    name: framesJson[i].frameGroupName,
+                    hidden: true
+                });
+            }
+        }
+    }
+}
+function checkSystem(){
+    api.ajax({
+        url: appUrl+'Get/checkSystemByJingli',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                user_id: userId
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            if(ret.company_status == 1){
+                $api.setStorage('companyStatus', '1');
+                if(ret.has_user == 1){
+                    if(ret.user_status == 1){
+                        $api.setStorage('hasSaoma', '1');
+                    }
+                    if(ret.user_status == 0){
+                        $api.setStorage('hasSaoma', '0');
+                    }
+                    $api.setStorage('userBanciId', ret.user_banci_id);
+                    if($api.getStorage('hasLogin') == 1){
+                        var newCacheCheckStr = ret.cache_check_str;
+                        //alert(JSON.stringify($api.getStorage('cacheRoom')))
+                        // alert('新的缓存字符串是'+newCacheCheckStr + '，旧的缓存字符串是' + $api.getStorage('cacheCheckStr'));
+                        // return false;
+                        if($api.getStorage('cacheCheckStr') != newCacheCheckStr){
+                            alert( '检测到新的系统配置，正在为你更换')
+                            resetCache(newCacheCheckStr);
+                        }
+                    }
+                }else{
+                    $api.setStorage('hasLogin', 0);
+                    $api.setStorage('hasSaoma', 0);
+                    $api.setStorage('lanuchCheckStr', '');
+                    $api.setStorage('cacheCheckStr', '');
+                    $api.setStorage('shebeiType', '');
+                    $api.setStorage('shebeiId', '');
+                    $api.setStorage('userTouxiangUrl', '');
+                    alert('用户已被系统删除！');
+                    api.rebootApp();
+                }
+            }else{
+                $api.setStorage('companyStatus', '0');
+            }
+        } else {
+           api.toast({
+               msg: '网络错误',
+               duration: 2000,
+               location: 'bottom'
+           });
+        }
+    });
+}
+function resetCache(newCacheCheckStr){
+    api.ajax({
+        url: appUrl+'Get/cacheByJingli',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            }
+        }
+    },function(ret, err){
+        // alert(JSON.stringify(ret));
+        // return false;
+        if (ret) {
+            var cacheData = ret.cache;
+            var cacheJishi = JSON.parse(cacheData.cache_jishi);
+            var cacheRoom = JSON.parse(cacheData.cache_room);
+            var cacheService = JSON.parse(cacheData.cache_service);
+            var cacheBanci = JSON.parse(cacheData.cache_banci);
+            var cacheCompany = JSON.parse(cacheData.cache_company);
+            var cacheMianfei = JSON.parse(cacheData.cache_mianfei);
+            var cacheShoufei = JSON.parse(cacheData.cache_shoufei);
+            $api.setStorage('cacheJishi', cacheJishi);
+            $api.setStorage('cacheRoom', cacheRoom);
+            $api.setStorage('cacheService', cacheService);
+            $api.setStorage('cacheBanci', cacheBanci);
+            $api.setStorage('cacheCompany', cacheCompany); 
+            $api.setStorage('cacheMianfei', cacheMianfei);
+            $api.setStorage('cacheShoufei', cacheShoufei);
+            $api.setStorage('cacheCheckStr', newCacheCheckStr);
+            fnOpen(0);
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function openFrame(typeId,index){
+    //alert(index)
+    changeFootButton(index)
+    var qingjieFrameNameArr = ['check_room','qingjie_list','my'];
+    var qiantaiFrameNameArr = ['yewu','my'];
+    var zhongfangFrameNameArr = ['yewu','my'];
+    var peisongFrameNameArr = ['yewu','my'];
+    var yichangFrameNameArr = ['saoma','waiting'];
+    var thisFrameNameArr;
+    var bouncesValue = true;
+    var headerHeightValue = headerHeight;
+    var frameHeightValue = frameHeight;
+    //扫码或等待
+    if(typeId == 0){
+        api.setFrameAttr({
+            name: 'my',
+            hidden: true
+        });
+        thisFrameNameArr = yichangFrameNameArr;
+    }
+    //前台人员端
+    if(typeId == 3){
+        thisFrameNameArr = qiantaiFrameNameArr;
+        if(index == 0){
+            bouncesValue = false;
+        }
+        if(index == 1){
+            frameHeight1 = frameHeight + headerHeight;
+            headerHeight1 = 0;
+            headerHeightValue = headerHeight1;
+            frameHeightValue = frameHeight1;
+            bouncesValue = false;
+        }else{
+            api.setFrameAttr({
+                name: 'my',
+                hidden: true
+            });
+        }
+    }
+    //配送人员端
+    if(typeId == 4){
+        if(index == 0){
+            bouncesValue = false;
+        }
+        if(index == 1){
+            frameHeight1 = frameHeight + headerHeight;
+            headerHeight1 = 0;
+            headerHeightValue = headerHeight1;
+            frameHeightValue = frameHeight1;
+            bouncesValue = false;
+        }else{
+            api.setFrameAttr({
+                name: 'my',
+                hidden: true
+            });
+        }
+        thisFrameNameArr = peisongFrameNameArr;
+    }
+    //清洁人员端
+    if(typeId == 5){
+        if(index == 0){
+            bouncesValue = false;
+        }
+        if(index == 2){
+            frameHeight1 = frameHeight + headerHeight;
+            headerHeight1 = 0;
+            headerHeightValue = headerHeight1;
+            frameHeightValue = frameHeight1;
+            bouncesValue = false;
+        }else{
+            api.setFrameAttr({
+                name: 'my',
+                hidden: true
+            });
+        }
+        thisFrameNameArr = qingjieFrameNameArr;
+    }
+    //钟房人员端
+    if(typeId == 6){
+        thisFrameNameArr = zhongfangFrameNameArr;
+    }
+    //其他人员端
+    if(typeId == 7){
+        thisFrameNameArr = otherFrameNameArr;
+    }
+    var thisFrameName = thisFrameNameArr[index];
+    api.openFrame({
+        name: thisFrameName,
+        url: './'+thisFrameName+'_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeightValue,
+            w: 'auto',
+            h: frameHeightValue
+        },
+        pageParam: {
+            name: 'value'
+        },
+        bounces: bouncesValue
+    });
+}
+function openQingjie(index){
+    if(index == 0 || index == 1){
+        if(companyStatus == 1){
+            if(hasSaoma == 1){
+                openFrame(5,index)
+            }else{
+                openFrame(0,0);
+            }
+        }else{
+            openFrame(0,1);
+        }
+    }else{
+        openFrame(5,2)
+    }
+}
+function openQiantai(index){
+    if(index == 0){
+        if(companyStatus == 1){
+            if(hasSaoma == 1){
+                openFrame(3,index)
+            }else{
+                openFrame(0,0);
+            }
+        }else{
+            openFrame(0,1);
+        }
+    }else{
+        openFrame(3,1)
+    }
+}
+function openPeisong(index){
+    if(index == 0){
+        if(companyStatus == 1){
+            if(hasSaoma == 1){
+                openFrame(4,index)
+            }else{
+                openFrame(0,0);
+            }
+        }else{
+            openFrame(0,1);
+        }
+    }else{
+        openFrame(4,1)
+    }
+}
+function buildPage(){
+    checkSystem();
+    if(userType == 5){
+        var footStr = '<ul class="aui-bar-tab"><li class="active-danger" id="tabbar0" tapmode onclick="openQingjie(0)"><span class="aui-iconfont aui-icon-favor"></span><p>查看房间</p></li><li id="tabbar1" tapmode onclick="openQingjie(1)"><span class="aui-iconfont aui-icon-list"></span><p>打扫清单</p></li><li id="tabbar2" tapmode onclick="openQingjie(2)"><span class="aui-iconfont aui-icon-people"></span><p>我</p></li></ul>';
+        $api.html($api.byId('titleBox'), '新沐足(清洁人员)');
+        $api.html($api.byId('misFooter'), footStr);
+        openQingjie(0);
+    }
+    if(userType == 3){
+        var footStr = '<ul class="aui-bar-tab"><li class="active-danger" id="tabbar0" tapmode onclick="openQiantai(0)"><span class="aui-iconfont aui-icon-favor"></span><p>业务</p></li><li id="tabbar2" tapmode onclick="openQiantai(1)"><span class="aui-iconfont aui-icon-people"></span><p>我</p></li></ul>';
+        $api.html($api.byId('titleBox'), '新沐足(前台人员)');
+        $api.html($api.byId('misFooter'), footStr);
+        openQiantai(0);
+    }
+    if(userType == 4){
+        var footStr = '<ul class="aui-bar-tab"><li class="active-danger" id="tabbar0" tapmode onclick="openPeisong(0)"><span class="aui-iconfont aui-icon-favor"></span><p>配送清单</p></li><li id="tabbar2" tapmode onclick="openPeisong(1)"><span class="aui-iconfont aui-icon-people"></span><p>我</p></li></ul>';
+        $api.html($api.byId('titleBox'), '新沐足(配送人员)');
+        $api.html($api.byId('misFooter'), footStr);
+        openPeisong(0);
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+    shebeiId = api.deviceId;
+    pushCode = $api.getStorage('userTel') + $api.getStorage('companyHaoma');
+    header = $api.byId('misHeader');
+    footer = $api.byId('misFooter');
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    frameStart = headerHeight;
+    frameHeight = api.winHeight - headerHeight - footerHeight;
+    frameHeight -= 15;
+    api.setKeepScreenOn({
+        keepOn: true
+    });
+    api.setScreenSecure({
+        secure: true
+    });
+    buildPage();
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err){
+    });
+}
+</script>
+</html>

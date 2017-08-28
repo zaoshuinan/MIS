@@ -1,0 +1,210 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons">
+        <script type="text" id="tplBox">
+        {{# 
+            for(var i = 0, len = d.all.length; i < len; i++){ 
+                var jingliId = roomJson.all[i].jingliId;
+                if(jingliId != myId){
+                    var textColor = '#FFF';
+                }else{
+                    var textColor = '#000';
+                }
+        }}
+            <li class="{{roomLieClassJson[d.lieNum]}} aui-text-center aui-bar-{{roomStatusColorJson[d.all[i].status]}}" tapmode onclick="openRoom({{i}})">
+                <p style="color:{{textColor}}">{{d.all[i].name}}</p>
+            </li>
+        {{# } }}
+        </script>
+        <ul class="aui-grid-nine" id="viewBox">
+
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var fanweiId;
+var selectRoomHaoma,selectRoomId;
+var myId = $api.getStorage('myId');
+var myName = $api.getStorage('myName');
+var myTel = $api.getStorage('myTel');
+var roomJson = {
+    'lieNum':6,
+    'all':[
+        {
+            'id':'16',
+            'name':'A1',
+            'status':'0',
+            'jingliId':''
+        },
+        {
+            'id':'19',
+            'name':'B1',
+            'status':'1',
+            'jingliId':'13'
+        },
+        {
+            'id':'29',
+            'name':'C1',
+            'status':'0',
+            'jingliId':''
+        },
+        {
+            'id':'82',
+            'name':'D1',
+            'status':'1',
+            'jingliId':'163'
+        },
+        {
+            'id':'128',
+            'name':'E1',
+            'status':'2',
+            'jingliId':'13'
+        },
+        {
+            'id':'196',
+            'name':'F1',
+            'status':'0',
+            'jingliId':''
+        },
+        {
+            'id':'216',
+            'name':'A2',
+            'status':'0',
+            'jingliId':''
+        },
+        {
+            'id':'386',
+            'name':'A2',
+            'status':'4',
+            'jingliId':'14'
+        },
+    ]
+}
+function openRoom(index){
+    var roomId = roomJson.all[index].id;
+    var jingliId = roomJson.all[index].jingliId;
+    var roomName = roomJson.all[index].name;
+    var roomStatus = roomJson.all[index].status;
+    if(roomStatus >1){
+        api.toast({
+            msg: '工作状态，不可修改',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }
+    if(roomStatus == 1){
+        if(myId != jingliId){
+            api.toast({
+                msg: '该房间你不能操作',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }else{
+            //fnCloseRoom(roomId);
+            api.toast({
+                msg: '你的业务，如要关闭，请从订单打开',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    }
+    if(roomStatus == 0){
+        selectRoomId = roomId;
+        selectRoomHaoma = roomName;
+        fnOpenRoomDetail();
+    }
+
+}
+function creatDingdan(){
+    api.ajax({
+        url: 'ajax_url',
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data:{
+            'jingliId':myId,
+            'jingliName':myName,
+            'jingliTel':myTel,
+            'jingliTicheng':jingliTicheng
+        },
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            var dingdanId = ret.dingdanId;
+            api.sendEvent({
+                name: 'showRoomHaoma',
+                extra: {
+                    'roomHaoma':selectRoomHaoma,
+                    'roomId':selectRoomId,
+                    'dingdanId':dingdanId,
+                    'dingdanBianma':dingdanBianma
+                }
+            });
+        } else {
+            api.alert({
+                msg:('错误码：'+err.code+'；错误信息：'+err.msg+'网络状态码：'+err.statusCode)
+            });
+        };
+    });
+}
+function fnOpenRoomDetail(){
+    api.actionSheet({
+        title: '请针对房间进行操作',
+        buttons: ['开启房间']
+    },function(ret,err){
+        if(ret.buttonIndex == 1){
+            //creatDingdan(back);
+            var dingdanId = 4;
+            var dingdanBianma = '20160512012';
+            api.sendEvent({
+                name: 'showRoomHaoma',
+                extra: {
+                    'roomHaoma':selectRoomHaoma,
+                    'roomId':selectRoomId,
+                    'dingdanId':dingdanId,
+                    'dingdanBianma':dingdanBianma
+                }
+            });
+            api.closeWin();
+        }
+    });
+}
+function buildPage(){
+    var tplStr = $api.html($api.byId('tplBox'));
+    var viewBox = $api.byId('viewBox');
+    laytpl(tplStr).render(roomJson, function(render){
+        //alert(render)
+        $api.html(viewBox, render);
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    fanweiId = api.pageParam.fanweiId;
+    jingliTicheng = api.pageParam.jingliTicheng;
+    buildPage();
+}
+        
+</script>
+</html>

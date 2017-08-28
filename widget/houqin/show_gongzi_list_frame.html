@@ -1,0 +1,266 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder" style="margin-top:10px;">
+        <ul class="aui-list-view aui-in" id="viewBox">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var gongziId,showType;
+var companyId = $api.getStorage('companyId');
+var listData; 
+var showNum = 15;
+var startNum = 0;
+var innerStr = '';
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        innerStr = '';
+        startNum = 0;
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function addData(){
+    startNum += 15;
+    buildPageByJson();
+}
+function buildPageByJson(){
+    listData = new Array();
+    var url = '';
+    api.ajax({
+        url: appUrl+'Get/gongziLiushuiById',
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data: {
+            values: { 
+                gongzi_id:gongziId,
+                show_num:showNum,
+                start_num:startNum
+            }
+        },
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            listData = new Array();
+            if(ret.has ==0){
+                if(startNum == 0){
+                    $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+                }else{
+                    alert('已显示所有数据');
+                } 
+            }else{
+                if(ret.has == 1){
+                    listData = ret.data;
+                }
+                buildPage(); 
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        };
+    });
+}
+function buildPage(){
+    for(var i = 0;i < listData.length;i++){
+        var thisLiushuiJson = listData[i];
+        var liushuiId = thisLiushuiJson.id;
+        var gongziType = thisLiushuiJson.gongzi_type;
+        var userType = thisLiushuiJson.user_type;
+        var userName = thisLiushuiJson.user_name;
+        var money = thisLiushuiJson.money;
+        var liushuiIdStr = thisLiushuiJson.liushui_id_str;
+        var liushuiStatus = thisLiushuiJson.status;
+        var qiantaiQueren = thisLiushuiJson.qiantai_queren;
+        var userQueren = thisLiushuiJson.user_queren;
+        var userTypeName,statusClass;
+        var querenStatus = 0;
+        if(userQueren == 0 && qiantaiQueren == 0){
+            statusClass = '';
+        }
+        if(qiantaiQueren == 1 && userQueren == 1){
+            statusClass = ' aui-bg-success';
+            querenStatus = 1;
+        }
+        if(qiantaiQueren == 1 && userQueren == 0){
+            statusClass = ' aui-bg-warning';
+            querenStatus = 1;
+        }
+        if(qiantaiQueren == 0 && userQueren == 1){
+            statusClass = ' aui-bg-info';
+        }
+        if(userType == 0){
+            userTypeName = '技师';
+        }
+        if(userType == 1){
+            userTypeName = '经理';
+        }
+        if(userType == 2){
+            userTypeName = '员工';
+        }
+        if(gongziType != 4){
+            var tplStr = '<li id="gongzi'+liushuiId+'" hasQueren="'+querenStatus+'" class="aui-list-view-cell aui-img'+statusClass+'" tapmode onclick="queren('+userType+',\''+userName+'\',\''+liushuiId+'\',\''+liushuiIdStr+'\','+userQueren+')"><div class="aui-img-body">'+userTypeName+'：<span class="aui-text-danger">'+userName+'</span>，工资：<span class="aui-text-danger">'+money+'</span>元</div></li>';
+        }else{
+            var tplStr = '<li id="gongzi'+liushuiId+'" hasQueren="'+querenStatus+'" class="aui-list-view-cell aui-img'+statusClass+'" tapmode onclick="queren('+userType+',\''+userName+'\',\''+liushuiId+'\',\''+liushuiIdStr+'\','+userQueren+')"><div class="aui-img-body">'+userTypeName+'：<span class="aui-text-danger">'+userName+'</span>，奖金：<span class="aui-text-danger">'+money+'</span>元</div></li>';
+        }
+        
+        innerStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), innerStr);
+}
+function querenQianshou(userType,userName,liushuiId,liushuiIdStr,userQueren){
+    api.confirm({
+        msg: '确认'+userName+'签收工资吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                // var changeObj = $api.byId('gongzi'+liushuiId);
+                // $api.attr(changeObj, 'hasQueren','1');
+                // if(userQueren == 1){
+                //     api.toast({
+                //         msg: userName + '已完成签收！'
+                //     });
+                //     $api.removeCls(changeObj, 'aui-bg-info');
+                //     $api.addCls(changeObj, 'aui-bg-success');
+                // }
+                // return false;
+                api.ajax({
+                    url: appUrl+'Change/gongziQianshouByQiantai',
+                    method: 'post',
+                    data: {
+                        values: { 
+                            gongzi_liushui_id: liushuiId
+                        }
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        var changeObj = $api.byId('gongzi'+liushuiId);
+                        $api.attr(changeObj, 'hasQueren','1');
+                        if(userQueren == 1){
+                            api.toast({
+                                msg: userName + '已完成签收！'
+                            });
+                            $api.removeCls(changeObj, 'aui-bg-info');
+                            $api.addCls(changeObj, 'aui-bg-success');
+                        }else{
+                            api.toast({
+                                msg: userName + '已确认签收，请提醒该员工在手机端提交签收情况！'
+                            });
+                            $api.addCls(changeObj, 'aui-bg-warning');
+                        } 
+                        innerStr = $api.html($api.byId('viewBox'));
+                    } else {
+                        api.toast({
+                            msg: '网络错误'
+                        });
+                    }
+                });
+            }
+        }
+    });
+}
+function openDetail(userType,userName,liushuiIdStr){
+    api.openWin({
+        name: 'showGongziDetail',
+        url: './gongzi_detail_win.html',
+        pageParam: {
+            userType:userType,
+            userName:userName,
+            liushuiIdStr:liushuiIdStr
+        }
+    });
+}
+function showQuerenMenu(userType,userName,liushuiId,liushuiIdStr,userQueren){
+    if(showType == 0){
+        api.actionSheet({
+            destructiveTitle: '查看详情'
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    openDetail(userType,userName,liushuiIdStr);
+                }
+            }
+        });
+    }else{
+        api.actionSheet({
+            destructiveTitle: '确认签收',
+            buttons: ['查看详情']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    querenQianshou(userType,userName,liushuiId,liushuiIdStr,userQueren);
+                }
+                if(ret.buttonIndex == 2){
+                    openDetail(userType,userName,liushuiIdStr)
+                }
+            }
+        });
+    }
+    
+}
+function queren(userType,userName,liushuiId,liushuiIdStr,userQueren){
+    var changeObj = $api.byId('gongzi'+liushuiId);
+    var hasQueren = parseInt($api.attr(changeObj, 'hasQueren'));
+    //alert(hasQueren)
+    if(hasQueren == 0){
+        showQuerenMenu(userType,userName,liushuiId,liushuiIdStr,userQueren)
+    }else{
+        alert('已经确认，不必重复操作！');
+        return false;
+    }
+}
+function addEvent(){
+    api.addEventListener({
+        name:'scrolltobottom',
+        extra:{
+            threshold:0            //设置距离底部多少距离时触发，默认值为0，数字类型
+        }
+    },function(ret,err){
+        addData()
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    gongziId = api.pageParam.gongziId;
+    showType = api.pageParam.showType;
+    buildPageByJson();
+    addEvent();
+    shuaxin();
+}
+    
+</script>
+</html>

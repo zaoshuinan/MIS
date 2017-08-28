@@ -1,0 +1,618 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    
+    <div class="aui-content" style="padding-top:30px;">
+        <div class="aui-card">
+            <p style="font-size: 16px" class="aui-padded-10">服务活动管理</p>
+            <ul class="aui-grid-sixteen">
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenChongzhi()">
+                    <span class="aui-iconfont aui-icon-pay aui-text-danger"></span>
+                    <p>充值优惠管理</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenHuodong()">
+                    <span class="aui-iconfont aui-icon-redpacket aui-text-danger"></span>
+                    <p>活动优惠管理</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenConfig()">
+                    <span class="aui-iconfont aui-icon-ticket aui-text-danger"></span>
+                    <p>其他参数设置</p>
+                </li>
+            </ul>
+        </div>
+        <div class="aui-card">
+            <p style="font-size: 16px" class="aui-padded-10">服务活动管理</p>
+            <ul class="aui-grid-sixteen">
+                <li class="aui-col-xs-3 aui-text-center" tapmode onclick="fnOpenFuwu()">
+                    <span class="aui-iconfont aui-icon-choiceness aui-text-danger"></span>
+                    <p>主营服务管理</p>
+                </li>
+                <li class="aui-col-xs-3 aui-text-center" tapmode onclick="fnOpenChongzhi()">
+                    <span class="aui-iconfont aui-icon-pay aui-text-danger"></span>
+                    <p>充值优惠管理</p>
+                </li>
+                <li class="aui-col-xs-3 aui-text-center" tapmode onclick="fnOpenHuodong()">
+                    <span class="aui-iconfont aui-icon-redpacket aui-text-danger"></span>
+                    <p>活动优惠管理</p>
+                </li>
+                <li class="aui-col-xs-3 aui-text-center" tapmode onclick="fnOpenConfig()">
+                    <span class="aui-iconfont aui-icon-ticket aui-text-danger"></span>
+                    <p>其他参数设置</p>
+                </li>
+            </ul>
+        </div>
+        <div class="aui-card">
+            <p style="font-size: 16px" class="aui-padded-10">班次人员管理</p>
+            <ul class="aui-grid-sixteen">
+                <li class="aui-col-xs-3 aui-text-center"  tapmode onclick="fnOpenBanci()">
+                    <span class="aui-iconfont aui-icon-time aui-text-warning"></span>
+                    <p>班次管理</p>
+                </li>
+                <li class="aui-col-xs-3 aui-text-center" tapmode onclick="fnOpenJingli()">
+                    <span class="aui-iconfont aui-icon-profile aui-text-warning"></span>
+                    <p>经理管理</p>
+                </li>
+                <li class="aui-col-xs-3 aui-text-center" tapmode onclick="fnOpenJishi()">
+                    <span class="aui-iconfont aui-icon-friendfavor aui-text-warning"></span>
+                    <p>技师管理</p>
+                </li>
+                <li class="aui-col-xs-3 aui-text-center" tapmode onclick="fnOpenHuiyuan()">
+                    <span class="aui-iconfont aui-icon-friendfamous aui-text-warning"></span>
+                    <p>会员管理</p>
+                </li>
+            </ul>
+        </div>
+        <div class="aui-card">
+            <p style="font-size: 16px" class="aui-padded-10">产品管理</p>
+            <ul class="aui-grid-sixteen">
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenMianfei()">
+                    <span class="aui-iconfont aui-icon-baby aui-text-primary"></span>
+                    <p>免费产品管理</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenShoufei()">
+                    <span class="aui-iconfont aui-icon-recharge aui-text-primary"></span>
+                    <p>收费产品管理</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenPeitao()">
+                    <span class="aui-iconfont aui-icon-tag aui-text-primary"></span>
+                    <p>配套产品管理</p>
+                </li>
+            </ul>
+        </div>
+        <div class="aui-card" id="systemOpenBox">
+            
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+function showOpen(){
+    $api.html($api.byId('systemOpenBox'), '<p style="font-size: 16px" class="aui-padded-10 aui-text-danger">系统状态：系统正在运行</p><ul class="aui-grid-sixteen"><li class="aui-col-xs-12 aui-text-center aui-bg-danger" tapmode onclick="fnCloseSystem()"><span class="aui-iconfont aui-icon-radiobox aui-text-warning"></span><p class="aui-text-warning">系统正在运行，点击关闭系统，谨慎操作！</p></li></ul><p style="font-size: 16px" class="aui-padded-10 aui-text-danger">系统状态：系统正在运行</p>');
+}
+function showOpening(){
+    $api.html($api.byId('systemOpenBox'), '<p style="font-size: 16px" class="aui-padded-10 aui-text-warning">系统状态：系统正在开启中</p><ul class="aui-grid-sixteen"><li class="aui-col-xs-12 aui-text-center aui-bg-warning""><span class="aui-iconfont aui-icon-loading aui-text-danger"></span><p class="aui-text-danger">系统正在开启中，请勿做其他操作！</p></li></ul><p style="font-size: 16px" class="aui-padded-10 aui-text-warning">系统状态：系统正在开启中</p>');
+}
+function showClose(){
+    $api.html($api.byId('systemOpenBox'), '<p style="font-size: 16px" class="aui-padded-10 aui-text-info">系统状态：系统已经关闭</p><ul class="aui-grid-sixteen"><li class="aui-col-xs-12 aui-text-center aui-bg-info" tapmode onclick="fnOpenSystem()"><span class="aui-iconfont aui-icon-videofill aui-text-danger"></span><p class="aui-text-danger">系统已经关闭，点击开启系统！</p></li></ul><p style="font-size: 16px" class="aui-padded-10 aui-text-info">系统状态：系统已经关闭</p>');
+}
+function showCloseing(){
+    $api.html($api.byId('systemOpenBox'), '<p style="font-size: 16px" class="aui-padded-10 aui-text-warning">系统状态：系统正在关闭中</p><ul class="aui-grid-sixteen"><li class="aui-col-xs-12 aui-text-center aui-bg-warning""><span class="aui-iconfont aui-icon-loading aui-text-danger"></span><p class="aui-text-danger">系统正在关闭中，请勿做其他操作！</p></li></ul><p style="font-size: 16px" class="aui-padded-10 aui-text-warning">系统状态：系统正在关闭中</p>');
+}
+function reSetCache(){
+    api.ajax({
+        url: appUrl+'Get/checkCache',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            var cacheData = ret.cache;
+            var cacheJishi = JSON.parse(cacheData.cache_jishi);
+            var cacheRoom = JSON.parse(cacheData.cache_room);
+            var cacheService = JSON.parse(cacheData.cache_service);
+            var cacheBanci = JSON.parse(cacheData.cache_banci);
+            var cacheYouhui = JSON.parse(cacheData.cache_youhuiduan);
+            var cacheCompany = JSON.parse(cacheData.cache_company);
+            var cacheCheckStr = cacheData.cache_check_str;
+            var cachePeitao = JSON.parse(cacheData.cache_peitao);
+            $api.setStorage('cachePeitao', cachePeitao);
+            $api.setStorage('cacheCheckStr', cacheCheckStr);
+            $api.setStorage('cacheJishi', cacheJishi);
+            $api.setStorage('cacheRoom', cacheRoom);
+            $api.setStorage('cacheService', cacheService);
+            $api.setStorage('cacheYouhui', cacheYouhui);
+            $api.setStorage('cacheBanci', cacheBanci);
+            $api.setStorage('cacheCompany', cacheCompany); 
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function showcompanyStatus(){
+    //alert($api.getStorage('companyStatus'))
+    if($api.getStorage('companyStatus') == 0){
+        showClose();
+    }else{
+        showOpen();
+    }
+}
+function fnCloseSystem(){
+    api.confirm({
+        title: '确认信息',
+        msg: '确认要关闭系统吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                showCloseing()
+                checkSystem();
+            }
+            //alert(JSON.stringify(ret));
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+}
+
+function checkSystem(){
+    api.ajax({
+        url: appUrl+'Get/checkSystemByQiantai',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                mission_day:missionDay
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                closeSystem();
+            }
+            if(ret.has == 0){
+                showOpen();
+                alert('还有订单正在进行中，无法关闭系统')
+                return false;
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+
+function openSystemWin(index){
+    var winName = 'system_switch';
+    api.openWin({
+        name: winName,
+        url: './' + winName + '_win.html',
+        pageParam: {
+            showType: index
+        }
+    });
+}
+function fnOpenSystem(){
+    api.confirm({
+        title: '确认信息',
+        msg: '确认要开启系统吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                openSystemWin(1);
+                // showOpening();
+                // if($api.getStorage('changeCache') == 1){
+                //     api.toast({
+                //         msg: '更新缓存'
+                //     });
+                //     updataCacheAndOpenSystem()
+                // }else{
+                //     openSystem();
+                // }
+            }
+            //alert(JSON.stringify(ret));
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+            //alert(JSON.stringify(err));
+        }
+    });
+}
+function openSystem(){
+    api.ajax({
+        url: appUrl+'Change/openSystem',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                mission_day:missionDay
+            },
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            showOpen();
+            $api.setStorage('companyStatus', '1');
+        } else {
+            api.toast({
+                msg: '网络出错'
+            });
+        }
+    });
+}
+function updataCacheAndOpenSystem(){
+    api.ajax({
+        url: ipUrl + 'Admin/Cache/updateCacheByQiantai',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                creat_cache: $api.getStorage('changeCache'),
+                mission_day:missionDay
+            },
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            reSetCache();
+            showOpen();
+            $api.setStorage('companyStatus', '1');
+        } else {
+            api.toast({
+                msg: '网络出错'
+            });
+        }
+    });
+}
+function fnOpenFuwu(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        buttons: ['添加沐足服务','添加按摩服务','管理服务']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1 || ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'addFuwu',
+                    url: './add_fuwu_win.html',
+                    pageParam: {
+                        fuwuLeixingId: ret.buttonIndex - 1
+                    }
+                });
+            }
+            if(ret.buttonIndex == 3){
+                api.openWin({
+                    name: 'showFuwu',
+                    url: './show_fuwu_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenConfig(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.openWin({
+        name: 'setConfig',
+        url: './set_config_win.html',
+        pageParam: {
+            name: 'value'
+        }
+    });
+}
+function fnOpenChongzhi(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加充值优惠',
+        buttons: ['管理充值优惠']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addChongzhi',
+                    url: './add_chongzhi_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showChongzhi',
+                    url: './show_chongzhi_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenHuodong(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加活动优惠',
+        buttons: ['管理活动优惠']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addHuodong',
+                    url: './add_huodong_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showHuodong',
+                    url: './show_huodong_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenShoufei(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加收费产品',
+        buttons: ['管理收费产品']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addShoufei',
+                    url: './add_shoufei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showShoufei',
+                    url: './show_shoufei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenMianfei(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加免费产品',
+        buttons: ['管理免费产品']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addMianfei',
+                    url: './add_mianfei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showMianfei',
+                    url: './show_mianfei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenPeitao(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加配套产品',
+        buttons: ['管理配套产品']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addPeitao',
+                    url: './add_peitao_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showPeitao',
+                    url: './show_peitao_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenBanci(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加班次',
+        buttons: ['管理班次']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addBanci',
+                    url: './add_banci_win.html',
+                    pageParam: {
+                        action: 'add'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showBanci',
+                    url: './show_banci_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenJingli(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加经理',
+        buttons: ['经理列表']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addJingli',
+                    url: './add_jingli_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showJingli',
+                    url: './show_jingli_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenHuiyuan(){
+    api.openWin({
+        name: 'showHuiyuan',
+        url: './show_huiyuan_win.html',
+        pageParam: {
+            name: 'value'
+        }
+    });
+}
+function fnOpenJishi(){
+    if($api.getStorage('companyStatus') == 1){
+        alert('系统目前处于运行状态，不允许操作，请先关闭系统！');
+        return false;
+    }
+    api.actionSheet({
+        title: '选择操作内容',
+        destructiveTitle: '添加技师',
+        buttons: ['技师列表']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'addJishi',
+                    url: './add_jishi_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'showJishi',
+                    url: './show_jishi_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function changeStatus(){
+    alert(1)
+}
+apiready = function(){
+
+    showcompanyStatus();
+    
+    api.addEventListener({
+        name: 'systemSwitchOver'
+    }, function(ret, err) {
+        if (ret) {
+            changeStatus()
+        }
+    });
+}
+    
+</script>
+</html>

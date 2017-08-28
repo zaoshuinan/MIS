@@ -1,0 +1,145 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder">       
+        <div class="aui-form">
+            <div class="aui-input-row">
+                <span class="aui-input-addon">手机</span>
+                <input type="text" class="aui-input" id="mobile" placeholder="18028681556（不可修改）" value="" readonly />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">牌号</span>
+                <input type="text" class="aui-input" id="mobile" placeholder="096（不可修改）" value="" readonly />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">昵称</span>
+                <input type="text" class="aui-input" id="nickname" placeholder="昵称"/>
+            </div>
+
+            <div class="aui-input-row">
+                <span class="aui-input-addon">性别</span>
+                <div class="aui-pull-left">
+                    <input class="aui-radio aui-radio-info" type="radio" name="sex" id="man" value="0"> <span class="aui-radio-name">男</span>
+                    <input class="aui-radio aui-radio-danger" type="radio" name="sex" id="woman" value="1" checked=""> <span class="aui-radio-name">女</span>
+                </div>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">生日</span>
+                <input type="text" class="aui-input" placeholder="点击选择生日日期" id="birthday" readonly tapmode onclick="openPicker()" />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">输入新密码</span>
+                <input type="password" class="aui-input" placeholder="输入你的新密码(6位以上)" id="newPassword"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">确认新密码</span>
+                <input type="password" class="aui-input" placeholder="再次输入你的新密码(6位以上)" id="rePassword"/>
+            </div>
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="saveInfo()">修改信息</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+function openPicker(){
+    api.openPicker({
+        type: 'date',
+        date: '1990-01-01',
+        title:'选择日期'
+    },function(ret,err){
+        var year = ret.year;
+        var month = ret.month;
+        var day = ret.day;
+        $api.val($api.byId("birthday"),''+year+'/'+month+'/'+day+'');
+    });
+}
+function saveInfo(){
+    var canSend = 1;
+    var tel = $api.val($api.byId('tel'));
+    var nickName = $api.val($api.byId('nickName'));
+    var birthday = $api.val($api.byId('birthday'));
+    var newPassword = $api.val($api.byId('newPassword'));
+    var rePassword = $api.val($api.byId('rePassword'));
+    if(newPassword != ''){
+        if(newPassword.length < 6){
+            api.toast({
+                msg: '你输入的密码小于6位',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+            return false;
+        }else{
+            if(rePassword != newPassword){
+                api.toast({
+                    msg: '你两次输入的密码不一致',
+                    duration: 2000,
+                    location: 'bottom'
+                });
+                canSend = 0;
+                return false;
+            }
+        }
+    }
+    if(canSend == 1){
+        if(newPassword == ''){
+            api.toast({
+                msg: '已经为你更新了个人信息',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }else{
+            api.confirm({
+                title: '确认',
+                msg: '你确定要修改你的密码吗？',
+                buttons:['确定', '取消']
+            },function(ret,err){
+                if(ret.buttonIndex == 1){
+                    api.toast({
+                        msg: '修改密码成功',
+                        duration: 2000,
+                        location: 'bottom'
+                    });
+                }
+            });
+        }
+        
+        
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+}
+        
+</script>
+</html>

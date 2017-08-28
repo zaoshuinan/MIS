@@ -1,0 +1,121 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-searchbar-wrap demo" id="search">
+        <div class="aui-searchbar aui-border-radius" tapmode onclick="doSearch()">
+            <i class="aui-iconfont aui-icon-search"></i>
+            <div class="aui-searchbar-text">请输入搜索内容</div>
+            <div class="aui-searchbar-input">
+                <input type="text" placeholder="请输入搜索内容" id="search-input">
+            </div>
+            <i class="aui-iconfont aui-icon-roundclosefill" tapmode onclick="clearInput()"></i>
+        </div>
+        <div class="aui-searchbar-cancel aui-text-info" tapmode onclick="cancelSearch()">取消</div>
+    </div>
+    <div class="aui-content-padded icons">
+        <script type="text" id="tplBox">
+        {{# 
+            for(var i = 0, len = d.length; i < len; i++){ 
+        }}
+            <div class="aui-col-xs-6" style="border: 1px solid #c8c7cc;" tapmode onclick="selectJishi({{d[i].jishiId}},'{{d[i].jishiPaihao}}')">
+                <img style="width:100%" src="../image/{{d[i].jishiImg}}">
+                <p style="text-align: center">{{d[i].jishiPaihao}}号</p>
+            </div>
+        {{# } }}
+        </script>
+        <div id="viewBox">
+
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var dingdanId,jishiIdStr,jishiTichengStr,tichengJson,jishiJson;
+var selectJishiId,selectJishiPaihao,selectJishiTicheng;
+var userId = $api.getStorage('userId');
+function doSearch(){
+    $api.addCls($api.dom(".aui-searchbar-wrap"),"focus");
+    $api.dom('.aui-searchbar-input input').focus();
+}
+function cancelSearch(){
+    $api.removeCls($api.dom(".aui-searchbar-wrap.focus"),"focus");
+    $api.val($api.byId("search-input"),'');
+    $api.dom('.aui-searchbar-input input').blur();
+}
+function clearInput(){
+    $api.val($api.byId("search-input"),'');
+}
+function selectJishi(sJishiId,sJishiPaihao){
+    selectJishiId = sJishiId;
+    selectJishiPaihao = sJishiPaihao;
+    api.actionSheet({
+        title: '选择技师',
+        buttons: ['确定选择该技师']
+    },function(ret,err){
+        if(ret.buttonIndex == 1){
+            jishiImgUrl = 'jishi.png';
+            jishiTel = '18023456531';
+            api.sendEvent({
+                name: 'showYuyueJishiPaihao',
+                extra: {
+                    'jishiId':selectJishiId,
+                    'jishiImgUrl':jishiImgUrl,
+                    'jishiTel':jishiTel,
+                    'jishiPaihao':selectJishiPaihao
+                }
+            });
+            api.closeWin();
+        }
+        
+    });
+}
+function buildPage(){
+    jishiJson = [
+        {
+            'jishiId':'1',
+            'jishiPaihao':'021',
+            'jishiImg':'jishi.png'
+        },{
+            'jishiId':'8',
+            'jishiPaihao':'037',
+            'jishiImg':'jishi.png'
+        },{
+            'jishiId':'16',
+            'jishiPaihao':'096',
+            'jishiImg':'jishi.png'
+        }
+    ]
+    var tplStr = $api.html($api.byId('tplBox'));
+    var viewBox = $api.byId('viewBox');
+    laytpl(tplStr).render(jishiJson, function(render){
+        $api.html(viewBox, render);
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    //alert(tichengJson);
+    buildPage();
+}
+        
+</script>
+</html>

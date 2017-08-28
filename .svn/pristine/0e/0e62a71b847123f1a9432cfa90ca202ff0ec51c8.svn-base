@@ -1,0 +1,495 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-btn-danger aui-pull-left">
+            
+        </a>
+        <div class="aui-title">新沐足</div>
+    </header>
+    
+    <div class="aui-tab aui-tab-danger">
+        <ul class="aui-tab-nav" id="frameGroupButtonBox">
+            <li class="active" tapmod onclick="changeFrameGroup(0)">未上单</li>
+            <li tapmod onclick="changeFrameGroup(1)">正上钟</li>
+            <li tapmod onclick="changeFrameGroup(2)">已完钟</li>
+        </ul>
+    </div>
+    <div class="aui-toast aui-hidden"  id="loading">
+        <div class="aui-toast-loading"></div>
+        <div class="aui-toast-content">加载中。。。</div>
+    </div>
+    <footer class="aui-nav" id="misFooter">
+        <ul class="aui-bar-tab">
+            <li class="active-danger" id="tabbar0" tapmode onclick="fnOpen(0)">
+                <span class="aui-iconfont aui-icon-favor"></span>
+                <p>业务</p>
+            </li>
+            <li id="tabbar1" tapmode onclick="fnOpen(1)">
+                <span class="aui-iconfont aui-icon-list"></span>
+                <p>订单</p>
+            </li>
+            <li id="tabbar2" tapmode onclick="fnOpen(2)">
+                <span class="aui-iconfont aui-icon-people"></span>
+                <p>我</p>
+            </li>
+        </ul>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest.js"></script>
+<script type="text/javascript" src="../script/APICloud-rest-SHA1.js"></script>
+<script type="text/javascript" src="../script/SHA1.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var frameStart,frameHeight,frameGroupStart,frameGroupHeight,frameGroupButtonBoxHeight,headerHeight,headerHeight1,frameHeight,frameHeight1,footerHeight;
+var dingdanIndex = 0;
+var shebeiId = '';
+var pushCode = '';
+var appId = 'A6908494336341';
+var appKey = "54094443-FDD9-6436-DF54-B2C1EA5AAC7D";
+var framesJson = [
+    {
+        'id':0,
+        'type':'frame',
+        'frameName':'yewu'
+    },{
+        'id':1,
+        'type':'frameGroup',
+        'frameGroupName':'dingdan',
+        'groupJson':[{
+            name: 'dingdan_waiting', 
+            url: 'dingdan_waiting.html'
+        },{
+            name: 'dingdan_doing', 
+            url: 'dingdan_doing.html'
+        },{
+            name: 'dingdan_done', 
+            url: 'dingdan_done.html'
+        }]
+    },{
+        'id':2,
+        'type':'frame',
+        'frameName':'my'
+    }
+]
+function changeFrameGroup(index){
+    api.setFrameGroupIndex({
+        name: 'dingdan',
+        index: index,
+        scroll: true
+    });
+    changeGroupButtonStyle(index);
+    groupIndex = index;
+}
+function fnOpen(index){
+    var thisDate = new Date();
+    var thisTime = thisDate.getTime(); 
+    
+    if(index == 1){
+        if($api.getStorage('companyStatu') == 1){
+            if($api.getStorage('hasSaoma') == 1){
+                // alert($api.attr($api.byId('frameGroupButtonBox'), 'class'));
+                $api.removeCls($api.byId('frameGroupButtonBox'), 'aui-hidden');
+                api.openFrameGroup({
+                    name: framesJson[index].frameGroupName,
+                    scrollEnabled: true,
+                    bounces:false,
+                    slidBackEnabled:false,
+                    rect: {
+                        x:0,
+                        y:frameGroupStart,
+                        w:'auto',
+                        h:frameGroupHeight
+                    },
+                    index: dingdanIndex,
+                    frames: framesJson[index].groupJson
+                }, function(ret, err){
+                   var name  = ret.name;
+                   var index = ret.index;
+                   dingdanIndex = index;
+                   //changeFrameGroup(0);
+                   changeGroupButtonStyle(index);
+                });
+                //changeFrameGroup(0);
+            }else{
+                headerHeight1 = headerHeight;
+                frameHeight1 = frameHeight;
+                //alert(headerHeight1)
+                api.openFrame({
+                    name: 'saoma',
+                    url: './saoma.html',
+                    rect: {
+                        x: 0,
+                        y: headerHeight1,
+                        w: 'auto',
+                        h: frameHeight1
+                    },
+                    pageParam: {
+                        name: 'saoma'
+                    },
+                    bounces: false,
+                    bgColor: 'rgba(0,0,0,0)',
+                    vScrollBarEnabled: true,
+                    hScrollBarEnabled: true
+                });
+            }
+            
+        }else{
+            headerHeight1 = headerHeight;
+            frameHeight1 = frameHeight;
+            //alert(frameHeight1);
+            api.openFrame({
+                name: 'waitting',
+                url: './waitting.html',
+                rect: {
+                    x: 0,
+                    y: headerHeight1,
+                    w: 'auto',
+                    h: frameHeight1
+                },
+                pageParam: {
+                    name: 'waitting'
+                },
+                bounces: false,
+                bgColor: 'rgba(0,0,0,0)',
+                vScrollBarEnabled: true,
+                hScrollBarEnabled: true
+            });
+        }
+    }else{
+        $api.addCls($api.byId('frameGroupButtonBox'), 'aui-hidden');
+        // api.sendEvent({
+        //     name: 'refrehDingdan',
+        //     extra: {
+        //         canRefresh: 0
+        //     }
+        // });
+        if(index == 2){
+            headerHeight1 = 0;
+            frameHeight1 = api.winHeight - footerHeight;
+            api.openFrame({
+                name: framesJson[index].frameName,
+                url: './' + framesJson[index].frameName + '_frame.html',
+                bounces: false,
+                slidBackEnabled:false,
+                rect: {
+                    x: 0,
+                    y: headerHeight1,
+                    w: 'auto',
+                    h: frameHeight1
+                }
+            });
+        }else{
+            //alert($api.getStorage('companyStatu'));
+            headerHeight1 = headerHeight;
+            frameHeight1 = frameHeight;
+            if($api.getStorage('companyStatu') == 1){
+                if($api.getStorage('hasSaoma') == 1){
+                    api.openFrame({
+                        name: framesJson[index].frameName,
+                        url: './' + framesJson[index].frameName + '_frame.html',
+                        bounces: false,
+                        slidBackEnabled:false,
+                        rect: {
+                            x: 0,
+                            y: headerHeight1,
+                            w: 'auto',
+                            h: frameHeight1
+                        }
+                    });
+                }else{
+                    api.openFrame({
+                        name: 'saoma',
+                        url: './saoma.html',
+                        rect: {
+                            x: 0,
+                            y: headerHeight1,
+                            w: 'auto',
+                            h: frameHeight1
+                        },
+                        pageParam: {
+                            name: 'saoma'
+                        },
+                        bounces: false,
+                        bgColor: 'rgba(0,0,0,0)',
+                        vScrollBarEnabled: true,
+                        hScrollBarEnabled: true
+                    });
+                }
+                
+            }else{
+                api.openFrame({
+                    name: 'waitting',
+                    url: './waitting.html',
+                    rect: {
+                        x: 0,
+                        y: headerHeight1,
+                        w: 'auto',
+                        h: frameHeight1
+                    },
+                    pageParam: {
+                        name: 'test'
+                    },
+                    bounces: false,
+                    bgColor: 'rgba(0,0,0,0)',
+                    vScrollBarEnabled: true,
+                    hScrollBarEnabled: true
+                });
+            }
+            
+        }
+    }
+    hideOther(index);
+    changeFootButton(index);
+}
+function changeFootButton(index){
+    var buttonsObj = $api.domAll(footer, 'ul li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active-danger');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active-danger');
+        }
+    }
+}
+function hideOther(index){
+    for(var i in framesJson){
+        if(i != index){
+            if(framesJson[i].type == 'frame'){
+                api.setFrameAttr({
+                    name: framesJson[i].frameName,
+                    hidden: true
+                }); 
+            }
+            if(framesJson[i].type == 'frameGroup'){
+                api.setFrameGroupAttr({
+                    name: framesJson[i].frameGroupName,
+                    hidden: true
+                });
+            }
+        }
+    }
+}
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll(frameGroupButtonBox, 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function checkSystem(){
+    //$api.removeCls($api.byId('loading'), 'aui-hidden');
+    var companyId = $api.getStorage('companyId');
+    //alert(companyId);
+    api.ajax({
+        url: ipUrl + 'Apps/Get/checkSystem',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            //$api.addCls($api.byId('loading'), 'aui-hidden');
+            if(ret.statu == 1){
+                var companyId = $api.getStorage('companyId');
+                $api.setStorage('companyStatu', '1');
+                //alert($api.getStorage('missionDay') + '-' + $api.getStorage('userId'));
+                //return false;
+                if($api.getStorage('hasLogin') == 1){
+                    api.ajax({
+                        url: ipUrl + 'Apps/Get/checkCache',
+                        method: 'post',
+                        data: {
+                            values: { 
+                                company_id: companyId,
+                                mission_day:$api.getStorage('missionDay'),
+                                user_id:$api.getStorage('userId'),
+                                user_name:$api.getStorage('userName'),
+                                user_tel:$api.getStorage('userTel')
+                            },
+                            files: { 
+                                file: 'fs://a.gif'
+                            }
+                        }
+                    },function(ret, err){
+                        if (ret) {
+                            //alert( JSON.stringify( ret ) );
+                            //return false;
+                            var tongjiId = ret.tongji_id;
+                            var kaoqinId = ret.kaoqin_id;
+                            $api.setStorage('tongjiId', tongjiId);
+                            $api.setStorage('kaoqinId', kaoqinId);
+                            var cacheData = ret.cache;
+                            if(cacheData.cache_check_str != $api.getStorage('cacheCheckStr')){
+                                //alert(ret.cache_check_str + $api.getStorage('cacheCheckStr'))
+                                
+                                var cacheGroup = JSON.parse(cacheData.cache_group);
+                                var cacheJishi = JSON.parse(cacheData.cache_jishi);
+                                var cacheRoom = JSON.parse(cacheData.cache_room);
+                                var cacheService = JSON.parse(cacheData.cache_service);
+                                var cacheBanci = JSON.parse(cacheData.cache_banci);
+                                var cacheCompany = JSON.parse(cacheData.cache_company);
+                                var cacheCheckStr = cacheData.cache_check_str;
+                                //alert(cacheCheckStr);
+                                $api.setStorage('cacheCheckStr', cacheCheckStr);
+                                $api.setStorage('cacheJishi', cacheJishi);
+                                $api.setStorage('cacheGroup', cacheGroup);
+                                $api.setStorage('cacheRoom', cacheRoom);
+                                $api.setStorage('cacheService', cacheService);
+                                $api.setStorage('cacheBanci', cacheBanci);
+                                $api.setStorage('cacheCompany', cacheCompany);
+                                //alert($api.getStorage('cacheCheckStr'));                                
+                            }
+                            fnOpen(0);
+                        } else {
+                             //$api.removeCls($api.byId('loading'), 'aui-hidden');
+                            api.toast({
+                                msg: '网络错误',
+                                duration: 2000,
+                                location: 'bottom'
+                            });
+                        }
+                    });
+                }else{
+                    
+                }
+                
+            }else{
+                $api.setStorage('companyStatu', '0');
+                fnOpen(0);
+            }
+        } else {
+            //$api.removeCls($api.byId('loading'), 'aui-hidden');
+           api.toast({
+               msg: '网络错误',
+               duration: 2000,
+               location: 'bottom'
+           });
+        }
+    });
+}
+function openAjPush(ajPushCode,fn){
+    ajpush = api.require('ajpush');
+    ajpush.init(function(ret) {
+        if (ret && ret.status){
+            //alert(ret.status)
+            //success
+        }
+    });
+    var param = {alias:ajPushCode,tags:['tag1','tag2']};
+    ajpush.bindAliasAndTags(param,function(ret) {
+            var statusCode = ret.statusCode;
+            //alert(statusCode)
+    });
+    //alert(ajpush);
+    ajpush.getRegistrationId(function(ret) {
+        var registrationId = ret.id;
+        //alert(registrationId);
+    });
+    ajpush.setListener(
+    function(ret) {
+         var id = ret.id;
+         var title = ret.title;
+         var content = ret.content;
+         var extra = ret.extra;
+         //alert(JSON.stringify(ret));
+         var index = ret.extra.index;
+         //toSee(index)
+         fn();
+    });
+}
+function afterPush(){
+    fnOpen(1);
+}
+function toSee(index){
+    //显示预约确认，开卡确认，充值确认，订单提成确认，提成按钮
+    if(index == 0){
+        api.openWin({
+            name: 'page1',
+            url: './page1.html',
+            pageParam: {
+                name: 'test'
+            }
+        });
+    }
+}
+
+apiready = function(){
+    api.parseTapmode();
+    shebeiId = api.deviceId;
+    pushCode = $api.getStorage('userTel') + $api.getStorage('companyHaoma');
+    openAjPush(pushCode,afterPush)
+    header = $api.byId('misHeader');
+    footer = $api.byId('misFooter');
+    frameGroupButtonBox = $api.byId('frameGroupButtonBox');
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    footerHeight = $api.offset(footer).h;
+    frameGroupButtonBoxHeight = $api.offset(frameGroupButtonBox).h;
+    frameStart = headerHeight;
+    frameHeight = api.winHeight - headerHeight - footerHeight;
+    frameGroupStart = headerHeight + frameGroupButtonBoxHeight;
+    frameGroupHeight = frameHeight - frameGroupButtonBoxHeight;
+    frameHeight -= 15;
+    frameGroupHeight -= 15;
+    $api.addCls($api.byId('frameGroupButtonBox'), 'aui-hidden');
+    // alert($api.getStorage('cacheCheckStr'));
+    // alert($api.getStorage('cacheJishi'));
+    // alert($api.getStorage('cacheGroup'));
+    // alert($api.getStorage('cacheRoom'));
+    // alert($api.getStorage('cacheService'));
+    // alert($api.getStorage('cacheBanci'));
+    // alert($api.getStorage('cacheCompany'));
+    // alert($api.getStorage('companyId'));
+    // alert($api.getStorage('userTypeName'));
+    // return false;
+    checkSystem();
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err){
+        //return false;
+        // window.location.href=document.referrer;
+         //alert('别按了!!!');
+        // api.closeWidget();
+        // 不做处理
+        
+    });
+    // api.addEventListener({
+    //     name: 'refrehDingdan'
+    // }, function(ret, err){
+    //     if( ret ){
+            
+    //         if(ret.value.canRefresh == 1){
+    //             changeFrameGroup(0);
+    //             changeGroupButtonStyle(0);
+    //          //alert( JSON.stringify( ret ) );
+    //         }
+    //     }else{
+    //          alert( JSON.stringify( err ) );
+    //     }
+    // });
+    //setInterval(test,10000);
+
+    //testPush();
+    
+    //alert('公司ID：'+$api.getStorage('companyId')+'，工作日：'+$api.getStorage('missionDay')+'，考勤ID：'+$api.getStorage('kaoqinId')+'，统计ID：'+$api.getStorage('tongjiId')+'，姓名：'+$api.getStorage('userName')+'，电话：'+$api.getStorage('userTel')+'，USERID：'+$api.getStorage('userId')+ '，USERTYPE：'+$api.getStorage('userType')+'，USERTYPEURL：'+$api.getStorage('userTypeUrl')+'，头像：'+$api.getStorage('userTouxiang')) ;
+}
+</script>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-success" id="aui-header">
+        <a class="aui-btn aui-btn-success aui-pull-left">
+        </a>
+        <div class="aui-title" id="header-title">全部订单</div>
+    </header>
+    <div class="aui-tab" id="select-box">
+        <ul class="aui-tab-nav" id="shangzhong-button-box">
+            <li class="active" tapmode onclick="fnSetFrameGroup(0)">全部</li>
+            <li tapmode onclick="fnSetFrameGroup(1)">待上钟</li>
+            <li tapmode onclick="fnSetFrameGroup(2)">正上钟</li>
+            <li tapmode onclick="fnSetFrameGroup(3)">已上钟</li>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript">
+    var header,selectBox;
+    apiready = function () {
+        header = $api.byId('aui-header');
+        selectBox = $api.byId('select-box');
+        $api.fixStatusBar(header);
+        headerHeight = $api.offset(header).h;
+        selectBoxHeight = $api.offset(selectBox).h;
+        startHeight = headerHeight + selectBoxHeight;
+        frameHeight = api.winHeight - 50 - startHeight;
+        api.parseTapmode();
+        fnOpenFrame('dingdan_group_all_frame');
+    }
+    function fnOpenFrame(frameName){
+        api.openFrame({
+            name: frameName,
+            url: frameName + '.html',
+            bounces: true,
+            rect: {
+                x: 0,
+                y: startHeight,
+                w: 'auto',
+                h: frameHeight
+            }
+        });
+    }
+    function fnSetFrameGroup(frameIndex){
+        api.setFrameGroupIndex({
+            name: 'dingdan_group',
+            index: frameIndex,
+            scroll: true
+        });
+    }
+</script>
+</html>

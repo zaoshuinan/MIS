@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP首页</title>
+    <link rel="stylesheet" type="text/css" href="./css/aui.css" />
+</head>
+<body>
+    
+</body>
+<script type="text/javascript" src="./script/api.js"></script>
+<script type="text/javascript" src="./script/mis.js"></script>
+<script type="text/javascript">
+var jumpUrl;
+// $api.setStorage('hasLogin',0);
+// $api.setStorage('hasSaoma',0);
+// $api.setStorage('lanuchCheckStr',0);
+function checkLanuch(){
+    var lanuchCheckStr = $api.getStorage('lanuchCheckStr');
+    //alert(lanuchCheckStr);
+    api.ajax({
+        url: ipUrl + 'App/Get/checkLanuch',
+        method: 'post',
+        data: {
+            values: { 
+                name: 'haha'
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            //alert(ret.lanuch_check_str);
+            if(lanuchCheckStr != ret.lanuch_check_str){
+                jumpUrl = 'lanuch';
+                $api.setStorage('lanuchCheckStr', ret.lanuch_check_str);
+                //alert($api.getStorage('lanuchCheckStr'));
+                jumpTo(jumpUrl);
+            }else{
+                checkLogin()
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+            //alert( JSON.stringify( err ) );
+        }
+    });
+}
+//检测用户是否登录
+function checkLogin(){
+    //$api.setStorage('hasLogin', null);
+    if($api.getStorage('hasLogin') == null || $api.getStorage('hasLogin') == 0){
+        jumpUrl = 'login';
+    }else{
+        var userTel = $api.getStorage('userTel');
+        var companyHaoma = $api.getStorage('companyHaoma');
+        var ajPushCode = userTel + companyHaoma;
+        //alert(ajPushCode);
+        //return false;
+        openAjPush(ajPushCode);
+        jumpUrl = $api.getStorage('userTypeUrl');
+    }
+    //jumpUrl = 'login';
+    //alert(jumpUrl);
+    //alert($api.getStorage('readLanuch'))
+    jumpTo(jumpUrl);
+}
+function openAjPush(ajPushCode){
+    ajpush = api.require('ajpush');
+    ajpush.init(function(ret) {
+        if (ret && ret.status){
+            //alert(ret.status)
+            //success
+        }
+    });
+    var param = {alias:ajPushCode,tags:['tag1','tag2']};
+    ajpush.bindAliasAndTags(param,function(ret) {
+            var statusCode = ret.statusCode;
+            //alert(statusCode)
+    });
+    //alert(ajpush);
+    ajpush.getRegistrationId(function(ret) {
+        var registrationId = ret.id;
+        //alert(registrationId);
+    });
+    ajpush.setListener(
+    function(ret) {
+         var id = ret.id;
+         var title = ret.title;
+         var content = ret.content;
+         var extra = ret.extra;
+         //alert(extra)
+    });
+}
+//根据登录用户的类型，打开相对应的用户主界面
+function jumpTo(jumpUrl){
+    var openWinName = jumpUrl + '_win';
+    var openUrl = './' + jumpUrl + '/index.html';
+    //openUrl = './jingli/index.html';
+    api.openWin({
+        name: openWinName,
+        url: openUrl,
+        slidBackEnabled:false,
+        bounces: false,
+        pageParam: {key : 'value'}
+    });
+}
+
+function checkRun(){
+
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err){
+        //return false;
+        window.location.href=document.referrer;
+        // alert('别按了');
+        api.closeWidget();
+        // 不做处理
+    });
+    api.addEventListener({
+        name:'offline'
+    }, function(ret, err){
+        $api.setStorage('offline', '1');
+        alert('检测到你的网络异常，请检查') ;
+    });
+    api.addEventListener({
+        name:'online'
+    }, function(ret, err){
+        //alert($api.getStorage('offline')) 
+        if($api.getStorage('offline') == 1){
+            $api.setStorage('offline', '1');
+            alert('亲！你重新连上网络了');           
+        }
+    });
+    api.addEventListener({
+        name:'pause'
+    }, function(ret, err){  
+        var thisDate = new Date();
+        var thisTime = thisDate.getTime();      
+        //alert(myDate);
+        $api.setStorage('pauseTime', thisTime);
+
+    });
+    api.addEventListener({
+        name:'resume'
+    }, function(ret, err){        
+        var pauseTime = $api.getStorage('pauseTime');
+        var backTime = new Date().getTime();
+        var chaSecond = (backTime - pauseTime)/1000;
+        //alert(pauseTime + '-' + backTime);
+        //alert(chaTime);
+        var setSecond = 30;
+        if(chaSecond > setSecond){
+            alert('你离线太久，请重新登陆');
+        }else{
+
+        }
+        //alert('应用在后台逗留时间为' + chaTime + '毫秒');
+    });
+}
+apiready = function(){
+    checkRun();
+    checkLanuch();
+}   
+</script>
+</html>

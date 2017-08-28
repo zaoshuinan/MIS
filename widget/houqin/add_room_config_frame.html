@@ -1,0 +1,189 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder">       
+        <div class="aui-form" style="margin-top:20px;">
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">房间类型名称</span>
+                <input type="text" class="aui-input" id="typeName" placeholder="房间类型名称" value="" />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">房间行数</span>
+                <input type="number" class="aui-input" id="typeHang" placeholder="房间行数"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon aui-text-danger">房间列数</span>
+                <input type="number" class="aui-input" id="typeLie" placeholder="房间列数"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">排序</span>
+                <input type="number" class="aui-input" id="typeOrder" placeholder="输入数字" />
+            </div>
+            <p class="aui-padded-10 aui-text-danger">
+                请填写房间类型信息
+            </p>
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="saveCheck()" id="saveButton">增加房间类型</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var fanweiId,showType,configId,typeName,typeHang,typeLie,typeOrder;
+var companyId = $api.getStorage('companyId');
+var configArr = new Array();
+function saveCheck(){
+    typeName = $api.val($api.byId('typeName'));
+    typeHang = $api.val($api.byId('typeHang'));
+    typeLie = $api.val($api.byId('typeLie'));
+    typeOrder = $api.val($api.byId('typeOrder'));
+    if(typeName == ''){
+        alert('务必输入房间类型名称');
+        return false;
+    }
+    if(typeHang == '' || typeLie == ''){
+        alert('务必输入房间行、列信息');
+        return false;
+    }
+    if(typeLie > 6){
+        alert('最多只能有6列');
+        return false;
+    }
+    if(showType == 0){
+        addInfo();
+    }else{
+        saveInfo();
+    }
+}
+function sendEvent(){
+    api.sendEvent({
+        name: 'reFlashRoomTypeList',
+        extra: {
+            ok: '1'
+        }
+    });
+}
+function saveInfo(){
+    var valueJson = { 
+        config_id:configId,
+        company_id: companyId,
+        room_type:fanweiId,
+        type_name:typeName,
+        type_hang:typeHang,
+        type_lie:typeLie,
+        type_order:typeOrder
+    }
+    api.ajax({
+        url: appUrl+'Change/roomConfig',
+        method: 'post',
+        data: {
+            values: valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            sendEvent()
+            alert('成功修改房间类型');
+            api.closeWin({
+                name: 'add_room_config'
+            });
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function addInfo(){
+    api.ajax({
+        url: appUrl+'Add/roomConfig',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                room_type:fanweiId,
+                type_name:typeName,
+                type_hang:typeHang,
+                type_lie:typeLie,
+                type_order:typeOrder
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            alert('成功添加房间类型');
+            api.closeWin({
+                name: 'add_room_config'
+            });
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/roomConfigById',
+        method: 'post',
+        data: {
+            values: { 
+                config_id: configId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            configArr = ret.data;
+            buildPage()
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function buildPage(){
+    $api.val($api.byId('typeName'),configArr['type_name']);
+    $api.val($api.byId('typeHang'),configArr['type_hang']);
+    $api.val($api.byId('typeLie'),configArr['type_lie']);
+    $api.val($api.byId('typeOrder'),configArr['type_order']);
+}
+apiready = function(){
+    api.parseTapmode();
+    fanweiId = api.pageParam.fanweiId;
+    showType = api.pageParam.showType;
+    configId = api.pageParam.configId;
+    if(showType == 1){
+        $api.html($api.byId('saveButton'), '修改房间类型');
+        getData();
+    }
+}
+        
+</script>
+</html>

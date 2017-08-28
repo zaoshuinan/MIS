@@ -1,0 +1,175 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-accordion.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-slide.css" />
+    
+</head>
+<body>
+    <div id="chartBox" class="aui-col-xs-12"; style="height:500px;">
+        
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript" src="../script/aui-accordion.js"></script>
+<script type="text/javascript" src="../script/aui-tap.js" ></script>
+<script type="text/javascript" src="../script/aui-slide.js"></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var headerHeight,frameHeight,buttonBoxHeight,startDate,endDate;
+var companyId = $api.getStorage('companyId');
+var tongjiData;
+var lirunAllMoney = 0;
+var lirunMoneyArr = new Array();
+var shouruMoneyArr = new Array();
+var zhichuMoneyArr = new Array();
+var dayArr = new Array();
+function buildChart(){
+    var chartBox = $api.byId('chartBox');
+    var tongjiChart = echarts.init(chartBox);
+    var option = {
+        title:{
+            text: '利润统计（共'+lirunAllMoney+'元）',
+            x:'left'
+        },
+        tooltip : {
+            trigger: 'axis',
+            axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+            }
+        },
+        legend: {
+            data:['利润', '支出', '收入'],
+            x:'center',
+            y:'bottom'
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis : [
+            {
+                type : 'value'
+            }
+        ],
+        yAxis : [
+            {
+                type : 'category',
+                axisTick : {show: false},
+                data : dayArr
+            }
+        ],
+        series : [
+            {
+                name:'利润',
+                type:'bar',
+                label: {
+                    normal: {
+                        show: true,
+                        position: 'inside'
+                    }
+                },
+                markPoint: {
+                    data: [
+                        {type: 'max', name: '最大值'},
+                        {type: 'min', name: '最小值'}
+                    ]
+                },
+                markLine: {
+                    data: [
+                        {type: 'average', name: '平均值'}
+                    ]
+                },
+                data:lirunMoneyArr
+            },
+            {
+                name:'收入',
+                type:'bar',
+                stack: '总量',
+                label: {
+                    normal: {
+                        show: true
+                    }
+                },
+                data:shouruMoneyArr
+            },
+            {
+                name:'支出',
+                type:'bar',
+                stack: '总量',
+                label: {
+                    normal: {
+                        show: true,
+                        position: 'left'
+                    }
+                },
+                data:zhichuMoneyArr
+            }
+        ]
+    };
+    tongjiChart.setOption(option, true);
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/companyTongjiDuanByBoss',
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId,
+                start_day:startDate,
+                end_day:endDate,
+                type:3   
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            //alert(JSON.stringify(ret));
+            if(ret.has){
+                tongjiData = ret.data;
+            }
+            reBuildData();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function reBuildData(){
+    var tongjiNum = tongjiData.length;
+    var canBuildChart = 0;
+    for(var i = 0;i < tongjiNum;i++){
+        var thisTongji = tongjiData[i];
+        var thisShouruMoney = parseFloat(thisTongji['all_in_money']);
+        shouruMoneyArr[i] = thisShouruMoney;
+        var thisZhichuMoney = parseFloat(thisTongji['all_out_money']) * -1;
+        zhichuMoneyArr[i] = thisZhichuMoney;
+        var thisLirunMoney = parseFloat(thisTongji['all_lirun_money']);
+        lirunMoneyArr[i] = thisLirunMoney;
+        var thisDay = thisTongji['tongji_day'].substring(8);
+        dayArr[i] = thisDay;
+        lirunAllMoney += thisLirunMoney;
+        //alert(thisDay + '日全部收入为'+thisAllMoney+'元，其中服务'+thisService+'元，充值'+thisChongzhi+'元，买钟'+thisMaizhong+'元，销售'+thisShoufei+'元');
+    }
+    canBuildChart = 1;
+    if(canBuildChart == 1){
+        setTimeout("buildChart()",500);
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+    startDate = api.pageParam.startDate;
+    endDate = api.pageParam.endDate;
+    getData();
+}
+    
+</script>
+</html>

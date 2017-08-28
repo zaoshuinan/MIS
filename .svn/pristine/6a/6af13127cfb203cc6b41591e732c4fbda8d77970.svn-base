@@ -1,0 +1,135 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <div class="aui-content-padded icons" style="padding-top: 20px;">
+        <ul class="aui-grid-nine" id="viewBox1">
+            
+        </ul>
+    </div>
+    <div class="aui-content-padded icons" style="padding-top: 20px;">
+        <ul class="aui-grid-nine" id="viewBox">
+            
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var serviceJson = $api.getStorage('cacheService');
+function buildButtons(){
+    var viewBox = $api.byId('viewBox');
+    var innerStr1 = '<li class="aui-col-xs-4 aui-text-center" tapmode onclick="openYuyue()"><img src="../image/yuyue.png" style="width:60px"><p>预约</p></li><li class="aui-col-xs-4 aui-text-center" tapmode onclick="openKaika()"><img src="../image/kaika.png" style="width:60px"><p>开卡</p></li><li class="aui-col-xs-4 aui-text-center" tapmode onclick="openChongzhi()"><img src="../image/chongzhi.png" style="width:60px"><p>充值</p></li>';
+    var innerStr = '';
+    //alert(companyFanweiStr);
+    for(var i = 0; i < companyFanweiArr.length; i++){
+        var fanweiId = companyFanweiArr[i];
+        innerStr += '<li class="aui-col-xs-6 aui-text-center" tapmode onclick="openDetail('+fanweiId+')"><img src="../image/'+companyFanweiJson[fanweiId].icon+'.png" style="width:60px"><p>'+companyFanweiJson[fanweiId].zhName+'</p></li>';
+    }
+    $api.html(viewBox, innerStr);
+    $api.html($api.byId('viewBox1'), innerStr1);
+}
+function openYuyue(){
+    api.openWin({
+        name: 'yuyue',
+        url: './yuyue_win.html',
+        bounces: false,
+        slidBackEnabled:false,
+        pageParam: {key : 'value'}
+    });
+}
+function openKaika(){
+    api.openWin({
+        name: 'kaika',
+        url: './kaika_win.html',
+        bounces: false,
+        slidBackEnabled:false,
+        pageParam: {key : 'value'}
+    });
+}
+function openChongzhi(){
+    api.openWin({
+        name: 'chongzhi',
+        url: './chongzhi_win.html',
+        bounces: false,
+        slidBackEnabled:false,
+        pageParam: {key : 'value'}
+    });
+}
+function openDetail(index){
+    var yewuCode = companyYewuArr[index];
+    //alert(yewuCode);
+    //alert(serviceJson.yewuCode)
+    if(index == 0){
+        var listJson = serviceJson.muzu;        
+    }
+    if(index == 1){
+        var listJson = serviceJson.anmo;        
+    }
+    if(index == 2){
+        var listJson = serviceJson.sangna;        
+    }
+    if(index == 3){
+        var listJson = serviceJson.qipai;        
+    }
+    if(index == 4){
+        var listJson = serviceJson.kefang;        
+    }
+    //alert(JSON.stringify(listJson));
+    //return false;
+    if(!listJson){
+        api.toast({
+            msg: '该项目下没有具体服务',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }else{
+        //alert(listJson.nameList.length);
+        api.actionSheet({
+            title : '请选择具体项目',
+            buttons : listJson.nameList
+        }, function(ret, err) {
+            if(ret.buttonIndex <= listJson.nameList.length){
+                var indexNum = ret.buttonIndex - 1;
+                var fuwuDetailId = listJson.idList[indexNum];
+                //alert(ret.buttonIndex);
+                //alert(listJson.idList)
+                //return false;
+                //alert(fuwuDetailId);
+                api.openWin({
+                    name: 'fuwuDingdan',
+                    url: './fuwu_dingdan_win.html',
+                    bounces: false,
+                    slidBackEnabled:false,
+                    pageParam: {
+                        'fuwuDetailId':fuwuDetailId,
+                        'fanweiId':index,
+                        'dingdanId':''
+                    }
+                });
+            }
+        });
+    }
+}
+function buildListByTpl(){
+    var viewBox = $api.byId('viewBox');
+    var tplBox = $api.byId('tplBox');
+    var tplStr = $api.html(tplBox);
+    laytpl(tplStr).render(data, function(htmlStr){
+        $api.html(viewBox, htmlStr);
+    });
+}
+apiready = function(){
+    //alert(JSON.stringify(serviceJson));
+    api.parseTapmode();
+    buildButtons();
+}
+    
+</script>
+</html>

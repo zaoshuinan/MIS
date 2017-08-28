@@ -1,0 +1,369 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <p style="margin:10px 0px;" class="padded">请输入预约信息</p>
+    <div class="aui-content">       
+        <div class="aui-form">
+            <div class="aui-input-row">
+                <span class="aui-input-addon">手机后4位</span>
+                <input type="number" class="aui-input" placeholder="后4位号码" id="tel"/>
+                <span class="aui-input-addon">
+                    <div class="aui-btn" id="checkTel" status="1" tapmode onclick="checkYuyueTel()">预约验证</div>
+                </span>
+            </div>
+            <p style="margin:10px 0px;" class="padded" id="msgBox">请输入客户后4位电话号码，并验证当天是否有重复预约</p>
+            <ul class="aui-grid-nine aui-hidden" id="detailBox">
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="selectTime()">
+                    <span class="aui-iconfont aui-icon-countdown aui-text-primary"></span>
+                    <p id="time">来到时间</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="selectYuyueRenshu()">
+                    <span class="aui-iconfont aui-icon-friendadd aui-text-success"></span>
+                    <p id="renshu">客人人数</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="selectJishi()">
+                    <span class="aui-iconfont aui-icon-group aui-text-danger"></span>
+                    <p id="jishi">选择技师</p>
+                </li>
+            </ul>
+            <p style="margin:10px 0px;" class="padded aui-hidden" id="yuyueMsgBox"></p>
+        </div>
+    </div>
+    <footer class="aui-nav yincang" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="sendInfo()">提交预约信息</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var zengsongMoney = 0;
+var canYuyue = 0;
+var selectHour = 25;
+var selectMinute = 0;
+var selectRenshu = 0;
+var yewuId = $api.getStorage('userId');
+var yewuName = $api.getStorage('userName');
+var yewuTel = $api.getStorage('userTel');
+var jishiId,jishiTel,jishiPaihao;
+var msgBox = $api.byId('msgBox');
+var telBox = $api.byId('tel');
+function checkYuyueTel(){
+    //alert(canYuyue);
+    if(canYuyue == 0){
+        var tel = $api.val(telBox);
+        var canSend = 1;
+        if(tel == ''){
+            api.toast({
+                msg: '还没有将输入手机后四位号码',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+            return false;
+        }
+        if(tel.length != 4){
+            api.toast({
+                msg: '输入的不是四位号码',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+            return false;
+        }
+        if(canSend == 1){
+            api.ajax({
+                url: ipUrl + 'Apps/Get/checkYuyue',
+                method: 'post',
+                data: {
+                    values: { 
+                        tel:tel
+                    },
+                    files: { 
+                        file: 'fs://a.gif'
+                    }
+                }
+            },function(ret, err){
+                if (ret) {
+                    //alert( JSON.stringify( ret ) );
+                    if(ret.can == 0){
+                        api.toast({
+                            msg: '早上6：00-11：00不能进行预约',
+                            duration: 2000,
+                            location: 'bottom'
+                        });
+                    }else{
+                        if(ret.num == 1){
+                            var yuyueData = ret.data;
+                            var yuyueJingliName = yuyueData.yuyue_name;
+                            var yuyueJingliTel = yuyueData.yuyue_tel;
+                            $api.html(msgBox, '已有重复预约，预约经理是：'+yuyueJingliName+'（'+yuyueJingliTel+'），请前往前台沟通');
+                        }
+                        if(ret.num == 0){
+                            $api.html(msgBox, '没有重复预约，请继续添加预约信息');
+                            $api.html($api.byId('yuyueMsgBox'), '预约人：'+$api.getStorage('userName')+'（'+$api.getStorage('userTel')+'）');
+                            $api.removeCls($api.byId('yuyueMsgBox'), 'aui-hidden');
+                            $api.removeCls($api.byId('detailBox'), 'aui-hidden');
+                            canYuyue = 1;
+                            $api.attr(telBox, 'disabled', '');
+                        }
+                    }
+                } else {
+                    api.toast({
+                        msg: '网络错误',
+                        duration: 2000,
+                        location: 'bottom'
+                    });
+                }
+            });
+        }
+    }else{
+        api.toast({
+            msg: '已验证，无需重复操作',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }
+    
+}
+function selectYuyueRenshu(){
+    if(canYuyue == 1){
+        api.actionSheet({
+            title: '选择预约人数',
+            cancelTitle: '取消',
+            buttons: ['1人','2人','3人','4人']
+        }, function(ret, err){
+            if( ret ){
+                if(ret.buttonIndex == 1){
+                    selectRenshu = 1;
+                }
+                if(ret.buttonIndex == 2){
+                    selectRenshu = 2;
+                }
+                if(ret.buttonIndex == 3){
+                    selectRenshu = 3;
+                }
+                if(ret.buttonIndex == 4){
+                    selectRenshu = 4;
+                }
+                $api.html($api.byId('renshu'), selectRenshu+'人');
+            }
+        });
+    }else{
+        api.toast({
+            msg: '还没验证呢！',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }
+}
+
+function selectJishi(){
+    if(canYuyue == 1){
+        if(selectRenshu > 1){
+            api.toast({
+                msg: '预约人数大于1人，不建议预约技师',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }else{
+            api.openWin({
+                name: 'selectYuyueJishi',
+                url: './select_yuyue_jishi_win.html',
+                bounces: false,
+                slidBackEnabled:false
+            });
+        }
+        
+    }else{
+        api.toast({
+            msg: '还没验证呢！',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }
+}
+function selectTime(){
+    if(canYuyue == 1){
+        var myDate = new Date();
+        var year = myDate.getFullYear(); 
+        var month = myDate.getMonth()+1;
+        var day = myDate.getDate();
+        var hour = myDate.getHours();
+        var minute = myDate.getMinutes();
+        var second = myDate.getSeconds();  
+        //var typeStr = 'date_time';
+        //var styleStr = year + '-'+month+'-'+day+' '+hour+':'+minute;
+        var typeStr = 'time';
+        var styleStr = hour+':'+minute;
+        //alert(year + '-'+month+'-'+day+' 12:30');
+        api.openPicker({
+            type: typeStr,
+            date: styleStr,
+            title: '选择大概预约时间'
+        }, function(ret, err){
+            if( ret ){
+                 if(ret.hour >6 && ret.hour < 12){
+                    // selectHour = 0;
+                    // selectMinute = 0;
+                    api.toast({
+                        msg: '该时间段不属于预约时间段',
+                        duration: 2000,
+                        location: 'bottom'
+                    });
+                 }else{
+                    if(ret.hour >= 12 && ret.hour < hour){
+                        // selectHour = 0;
+                        // selectMinute = 0;
+                        api.toast({
+                            msg: '预定的时间不可以早于现在',
+                            duration: 2000,
+                            location: 'bottom'
+                        });
+                    }else{
+                        selectHour = ret.hour;
+                        selectMinute = ret.minute;
+                        var timeObj = $api.byId('time');
+                        $api.html(timeObj, selectHour + '时' + selectMinute + '分');
+                    }
+                 }
+                 
+            }else{
+                 api.toast({
+                     msg: '选择错误',
+                     duration: 2000,
+                     location: 'bottom'
+                 });
+            }
+        });
+    }else{
+        api.toast({
+            msg: '还没验证呢！',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }
+    
+}
+function sendInfo(){
+    if(canYuyue == 0){
+        api.toast({
+            msg: '请先验证客户手机号码',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }else{
+        var canSend = 1;
+        var tel = $api.val($api.byId('tel'));
+        if(selectHour == 25 || selectRenshu == 0){
+            api.toast({
+                msg: '还没有将预约信息输入完整',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+        }
+        if(canSend == 1){
+            var yuyueName = $api.getStorage('userName');
+            var yuyueId = $api.getStorage('userId');
+            var yuyueTel = $api.getStorage('userTel');
+            api.confirm({
+                title: '请确认预约信息',
+                msg: '预约客户手机尾号为'+tel+',客人有'+selectRenshu+'位，大约在'+selectHour+'时'+selectMinute+'分到来，预约人：'+yuyueName + ',确认吗？',
+                buttons:['确定', '取消']
+            },function(ret,err){
+                if(ret.buttonIndex == 1){
+                    //alert(jishiId);
+                    api.ajax({
+                        url: ipUrl + 'Apps/Add/jishiYuyue',
+                        method: 'post',
+                        data: {
+                            values: { 
+                                company_id: $api.getStorage('companyId'),
+                                kehu_tel:tel,
+                                kehu_num:selectRenshu,
+                                yuyue_hour:selectHour,
+                                yuyue_minute:selectMinute,
+                                jishi_id:jishiId,
+                                jishi_tel:jishiTel,
+                                jishi_paihao:jishiPaihao,
+                                yuyue_name:yuyueName,
+                                yuyue_tel:yuyueTel,
+                                yuyue_type:0,
+                                work_day:$api.getStorage('missionDay')
+                            },
+                            files: { 
+                                file: 'fs://a.gif'
+                            }
+                        }
+                    },function(ret, err){
+                        if (ret) {
+                            //alert( JSON.stringify( ret ) );
+                            if(ret.id != ''){
+                                api.alert({
+                                    title: '预约成功', 
+                                    msg: '前台已登记，请等待客户到来'
+                                });
+                                api.closeWin();
+                            }
+                        } else {
+                            api.toast({
+                                msg: '网络错误',
+                                duration: 2000,
+                                location: 'bottom'
+                            });
+                        }
+                    });
+                    
+                }
+            });
+        }
+    }
+    
+}
+
+function eventListen(){
+    api.addEventListener({
+        name: 'showYuyueJishiPaihao'
+    }, function(ret, err){
+        jishiId = ret.value.jishiId;
+        jishiPaihao = ret.value.jishiPaihao;
+        jishiTel = ret.value.jishiTel;
+        $api.html($api.byId('jishi'), jishiPaihao);
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    eventListen();
+    $api.addCls($api.byId('chongzhiMoney'), 'yincang');
+    $api.addCls($api.byId('zengsongBtn'), 'yincang');
+}
+        
+</script>
+</html>

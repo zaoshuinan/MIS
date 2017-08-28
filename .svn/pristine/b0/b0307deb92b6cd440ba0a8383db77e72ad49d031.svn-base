@@ -1,0 +1,119 @@
+var ipUrl = 'http://192.168.1.106/';
+var systemUrl = 'http://www.xinmuzu.com/';
+var userTypeJson = {
+    '1':{
+        'typeName':'大堂经理',
+        'typeUrl':'jingli'
+    },'2':{
+        'typeName':'技师',
+        'typeUrl':'jishi'
+    },'3':{
+        'typeName':'清洁人员',
+        'typeUrl':'qingjie'
+    },'4':{
+        'typeName':'老板',
+        'typeUrl':'boss'
+    }
+}
+var zimuArr = ['A','B','C','D','E','F'];
+var roomAllJson = [
+    {
+        'id':0,
+        'zhName':'沐足房间',
+        'roomLie':6,
+        'roomNum':12
+    },{
+        'id':1,
+        'zhName':'按摩房间',
+        'roomLie':6,
+        'roomNum':12
+    },{
+        'id':2,
+        'zhName':'桑拿房间',
+        'roomLie':6,
+        'roomNum':12
+    },{
+        'id':3,
+        'zhName':'棋牌房间',
+        'roomLie':6,
+        'roomNum':12
+    },{
+        'id':4,
+        'zhName':'客房房间',
+        'roomLie':6,
+        'roomNum':12
+    },{
+        'id':9,
+        'zhName':'休息厅座位',
+        'roomLie':6,
+        'roomNum':12
+    },
+];
+var roomLieClassJson = {
+    '1':'aui-col-xs-12',
+    '2':'aui-col-xs-6',
+    '3':'aui-col-xs-4',
+    '4':'aui-col-xs-3',
+    '5':'aui-col-5',
+    '6':'aui-col-xs-2',
+}
+var roomStatusColorJson = {
+    '0':'success',
+    '1':'warning',
+    '2':'danger',
+    '3':'danger',
+    '4':'info'
+}
+var companyYewuArr = ['muzu','anmo','sangna','qipai','kefang'];
+var companyYewuNameArr = ['沐足','按摩','桑拿','棋牌','客房'];
+var companyFanweiJson = [
+    {
+        'id':0,
+        'zhName':'沐足',
+        'icon':'muzu',
+        'color':'danger'
+    },{
+        'id':1,
+        'zhName':'按摩',
+        'icon':'anmo',
+        'color':'danger'
+    },{
+        'id':2,
+        'zhName':'桑拿',
+        'icon':'sangna',
+        'color':'danger',
+        'detailListName':'',
+        'detailJson':''
+    },{
+        'id':3,
+        'zhName':'棋牌',
+        'icon':'qipai',
+        'color':'danger',
+        'detailListName':'',
+        'detailJson':''
+    },{
+        'id':4,
+        'zhName':'客房',
+        'icon':'kefang',
+        'color':'info',
+        'detailListName':'',
+        'detailJson':''
+    },{
+        'id':5,
+        'zhName':'其他',
+        'icon':'other',
+        'color':'danger',
+        'detailListName':'',
+        'detailJson':''
+    }
+];
+var header,footer,frameGroupButtonBox,headerHeight,footerHeight,frameGroupButtonBoxHeight,frameStart,frameHeight,frameGroupStart,frameGroupHeight;
+
+var colorArr = ['info','danger','success','warning','primary','dark','default','blue'];
+var companyFanweiStr = '0,1,3,4';
+var companyFanweiArr = companyFanweiStr.split(',');
+var userTypeId = null;
+$api.setStorage('userTypeId', userTypeId);
+
+
+

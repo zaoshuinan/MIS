@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons">
+        <div class="aui-grid-nine"  id="viewBox">
+
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var selectJishiId,selectJishiPaihao,selectJishiTicheng,selectJishiImgUrl;
+var userId = $api.getStorage('userId');
+var jishiStatus;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson(jishiStatus);
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(jishiStatus){
+    //alert(jishiIdStr);
+    $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">加载数据中......</p>');
+    api.ajax({
+        url: ipUrl + 'Apps/Get/jishiJsonByStatus',
+        method: 'post',
+        data: {
+            values: { 
+                jishi_status: jishiStatus
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            var jishiJson = ret.jishi_data;
+            var innerStr = '';
+            var viewBox = $api.byId('viewBox');
+            if(ret.check == 0){
+                innerStr = '<p style="margin-top:10px;" class="aui-text-center">没有找到数据</p>';
+            }else{
+                for(var i = 0;i < jishiJson.length;i++){
+                    var thisJishiJson = jishiJson[i];
+                    var imgUrl;
+                    if(thisJishiJson.jishi_touxiang_url == ''){
+                        imgUrl = '../image/jishi.png';
+                    }else{
+                        imgUrl = ipUrl + thisJishiJson.jishi_touxiang_url;
+                    }
+                    //alert(thisJishiJson);
+                    var thisStr = '<li class="aui-col-xs-4 aui-text-center"><img src="'+imgUrl+'" style="width:50px;height:50px;border-radius: 50%;"><p>'+thisJishiJson.jishi_paihao+'号,<span style="color:green">等待中<span></p></li>';
+                    var thisStatus = thisJishiJson.jishi_status;
+                    if(thisStatus == jishiStatus){
+                        innerStr += thisStr;
+                    }
+                }
+            }
+            $api.html(viewBox, innerStr);
+            
+        } else {
+            //alert( JSON.stringify( err ) );
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    jishiStatus = 2;
+    buildPageByJson(jishiStatus);
+    shuaxin();
+}
+        
+</script>
+</html>

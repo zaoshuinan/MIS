@@ -1,0 +1,246 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <div class="aui-content" style="padding-top:30px;">
+        <div class="aui-card" id="managerBox">
+            <p style="font-size: 16px" class="aui-padded-10">产品管理</p>
+            <ul class="aui-grid-sixteen">
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenMianfei()">
+                    <span class="aui-iconfont aui-icon-baby aui-text-danger"></span>
+                    <p>免费产品管理</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenShoufei()">
+                    <span class="aui-iconfont aui-icon-recharge aui-text-danger"></span>
+                    <p>收费产品管理</p>
+                </li>
+                <li class="aui-col-xs-4 aui-text-center" tapmode onclick="fnOpenPeitao()">
+                    <span class="aui-iconfont aui-icon-tag aui-text-danger"></span>
+                    <p>配套产品管理</p>
+                </li>
+            </ul>
+        </div>
+        <div class="aui-content aui-card" id="passwordBox"> 
+            <p style="font-size: 16px" class="aui-padded-10">输入密码才能进入管理页面</p>      
+            <div class="aui-form">
+                <div class="aui-input-row">
+                    <i class="aui-input-addon aui-iconfont aui-icon-lock aui-text-warning"></i>
+                    <input type="password" id="password" class="aui-input" placeholder="请输入密码"/>
+                    <i class="aui-input-addon aui-iconfont aui-icon-attention aui-text-default" tapmode onclick="showPassword();" id="showpass-btn"></i>
+                </div>
+                <div class="aui-btn-row">
+                    <div class="aui-btn aui-btn-block aui-btn-danger" onclick="checkPassword()">验证密码</div>
+                </div>
+                <p style="text-align: center;" tapmode onclick="openWin(0)">修改密码</p>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var shebeiType = parseInt($api.getStorage('shebeiType'));
+var shebeiId = $api.getStorage('shebeiId');
+var shebeiPassword = $api.getStorage('shebeiPassword');
+var cacheCompany = $api.getStorage('cacheCompany');
+var companyFanwei = cacheCompany.company_fanwei;
+var companyFanweiArr = companyFanwei.split(',');
+var companyFanweiNameArr = ['沐足','按摩','桑拿'];
+var roomConfigNameArr = new Array();
+var roomConfigKeyArr = new Array();
+for(var i = 0;i < companyFanweiArr.length;i++){
+    var key = companyFanweiArr[i];
+    roomConfigNameArr[i] = '新增'+companyFanweiNameArr[key]+'房间类型';
+    roomConfigKeyArr[i] = key;
+}
+//alert(shebeiPassword)
+var canShow = 0;
+function openWin(index){
+    var winNameArr = ['change_shebei_password'];
+    api.openWin({
+        name: winNameArr[index],
+        url: './' + winNameArr[index] + '_win.html',
+        pageParam: {
+            name: 'value'
+        }
+    });
+}
+function checkPassword(){
+    var password = $api.val($api.byId('password'));
+    if(password == ''){
+        alert('请输入密码');
+        return false;
+    }
+    if(shebeiPassword == password){
+        canShow = 1;
+        changeShow()
+    }else{
+        alert('输入密码不正确，请重新输入')
+    }
+}
+function changeShow(){
+    if(canShow == 0){
+        $api.removeCls($api.byId('passwordBox'), 'aui-hidden');
+        $api.addCls($api.byId('managerBox'), 'aui-hidden');
+    }
+    if(canShow == 1){
+        $api.removeCls($api.byId('managerBox'), 'aui-hidden');
+        $api.addCls($api.byId('passwordBox'), 'aui-hidden');
+    }
+}
+function showPassword(){
+    $api.attr($api.byId('password'),'type','text');
+    $api.removeCls($api.byId('showpass-btn'),'aui-icon-attention');
+    $api.addCls($api.byId('showpass-btn'),'aui-icon-attentionfill');
+    $api.attr($api.byId('showpass-btn'),'onclick','hidePassword();');
+    api.parseTapmode();
+}
+function hidePassword(){
+    $api.attr($api.byId('password'),'type','password');
+    $api.removeCls($api.byId('showpass-btn'),'aui-icon-attentionfill');
+    $api.addCls($api.byId('showpass-btn'),'aui-icon-attention');
+    $api.attr($api.byId('showpass-btn'),'onclick','showPassword();');
+    api.parseTapmode();
+}
+function fnOpenShoufei(){
+    if($api.getStorage('companyStatus') == 1){
+        api.confirm({
+            msg: '修改的产品将在下次系统启动时生效，仍要修改吗？',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    showShoufeiMenu();
+                }
+            }
+        });
+    }else{
+        showShoufeiMenu()
+    }
+}
+function showShoufeiMenu(){
+    api.actionSheet({
+        destructiveTitle: '管理收费产品',
+        buttons: ['添加收费产品']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'addShoufei',
+                    url: './add_shoufei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'showShoufei',
+                    url: './show_shoufei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenMianfei(){
+    if($api.getStorage('companyStatus') == 1){
+        api.confirm({
+            msg: '修改的产品将在下次系统启动时生效，仍要修改吗？',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    showMianfeiMenu();
+                }
+            }
+        });
+    }else{
+        showMianfeiMenu()
+    }
+}
+function showMianfeiMenu(){
+    api.actionSheet({
+        destructiveTitle: '管理免费产品',
+        buttons: ['添加免费产品']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'addMianfei',
+                    url: './add_mianfei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'showMianfei',
+                    url: './show_mianfei_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+function fnOpenPeitao(){
+    if($api.getStorage('companyStatus') == 1){
+        api.confirm({
+            msg: '修改的产品将在下次系统启动时生效，仍要修改吗？',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    showPeitaoMenu();
+                }
+            }
+        });
+    }else{
+        showPeitaoMenu()
+    }
+}
+function showPeitaoMenu(){
+    api.actionSheet({
+        destructiveTitle: '管理配套产品',
+        buttons: ['添加配套产品']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 2){
+                api.openWin({
+                    name: 'addPeitao',
+                    url: './add_peitao_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+            if(ret.buttonIndex == 1){
+                api.openWin({
+                    name: 'showPeitao',
+                    url: './show_peitao_win.html',
+                    pageParam: {
+                        name: 'value'
+                    }
+                });
+            }
+        } 
+    });
+}
+apiready = function(){
+    //$api.setStorage('companyStatus', '0');
+    changeShow()
+}
+    
+</script>
+</html>

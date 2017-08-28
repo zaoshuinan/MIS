@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,headerHeight,payMoney,dingdanId,jingliLiushuiId,jishiLiushuiId,shoufeiIdStr,shoufeiMoney,peitaoIdStr,peitaoMoney;
+function closeWin(){
+    api.confirm({
+        title: '确认信息',
+        msg: '你确定要返回重新选择其他收银方式吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.closeWin();
+            }
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), '现金买单');
+    fixStatusBar(header);
+    payMoney = api.pageParam.payMoney;
+    dingdanId = api.pageParam.dingdanId;
+    jingliLiushuiId = api.pageParam.jingliLiushuiId;
+    jishiLiushuiId = api.pageParam.jishiLiushuiId;
+    shoufeiMoney = api.pageParam.shoufeiMoney
+    shoufeiIdStr = api.pageParam.shoufeiIdStr;
+    peitaoMoney = api.pageParam.peitaoMoney;
+    peitaoIdStr = api.pageParam.peitaoIdStr;
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    frameHeight = api.winHeight - headerHeight;
+    api.openFrame({
+        name: 'payByCash',
+        url: './pay_by_cash_frame.html',
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            payMoney: payMoney,
+            dingdanId:dingdanId,
+            jingliLiushuiId:jingliLiushuiId,
+            jishiLiushuiId:jishiLiushuiId,
+            shoufeiIdStr:shoufeiIdStr,
+            shoufeiMoney:shoufeiMoney,
+            peitaoMoney:peitaoMoney,
+            peitaoIdStr:peitaoIdStr
+        },
+        bounces: false
+    });
+};
+</script>
+</html>

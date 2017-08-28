@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+    <style type="text/css">
+        .aui-grid-sixteen:after {
+            border:none;
+        }
+        .aui-grid-sixteen li:after {
+            border:none;
+        }
+        .aui-grid-sixteen li .aui-iconfont {
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            line-height: 38px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div class="aui-content aui-card" style="margin-top: 5px;" id="showBox">
+        <div style="text-align: center;padding-top:50px; padding-bottom: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,headerHeight,frameHeight,buttonBoxHeight,showDate,titleStr;
+var isToday;
+var qingjiaArr = new Array();
+var qingjiaHas;
+var missionDay = $api.getStorage('missionDay');
+var companyId = $api.getStorage('companyId');
+function closeWin(){
+    api.closeWin();
+}
+function getQingjia(){
+    api.ajax({
+        url: appUrl+'Get/qingjiaByBoss',
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId,
+                mission_day:showDate
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has_qingjia == 1){
+                qingjiaArr = ret.qingjia_data;
+                qingjiaHas = 1;
+            }else{
+                qingjiaHas = 0;
+            }
+            setTimeout("buildPage()",300);
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function buildPage(){
+    if(qingjiaHas == 0){
+        $api.html($api.byId('showBox'), '<p style="padding:10px;text-align:center">没有人员请假</p>');
+    }else{
+        var qingjiaStr = '<ul class="aui-list-view aui-in">';
+        var qingjiaNum = qingjiaArr.length;
+        for(var i = 0;i < qingjiaNum;i++){
+            var kouqian = parseInt(qingjiaArr[i]['kouqian']);
+            var userType = parseInt(qingjiaArr[i]['user_type']);
+            var userTel = qingjiaArr[i]['user_tel'];
+            if(userType == 0){
+                var userIcon = 'friendfamous';
+                var userColor = 'primary';
+                var userName = qingjiaArr[i]['user_name']+'号技师';
+            }else{
+                var userIcon = 'profile';
+                var userColor = 'danger';
+                var userName = qingjiaArr[i]['user_name'];
+            }
+            if(kouqian == 1){
+                var kouqianStr = '<b style="color:red">非正常假，扣钱</b>';
+            }else{
+                var kouqianStr = '<b style="color:green">正常价，不扣钱</b>';
+            }
+            qingjiaStr += '<li class="aui-list-view-cell"><i class="aui-iconfont aui-icon-'+userIcon+' aui-bg-'+userColor+'"></i>'+userName+'，'+kouqianStr+'</li>';
+        }
+        qingjiaStr += '</ul>';
+        $api.html($api.byId('showBox'), qingjiaStr);
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+    isToday = api.pageParam.isToday;
+    if(isToday == 0){
+        showDate = api.pageParam.showDate
+        titleStr = showDate+ '日请假情况';
+    }else{
+        showDate = missionDay;
+        titleStr = '今日'+ '请假情况';
+    }
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    header = $api.byId('misHeader');
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), titleStr);
+    fixStatusBar(header);
+    headerHeight = $api.offset($api.byId('misHeader')).h;
+    getQingjia();
+};
+</script>
+</html>

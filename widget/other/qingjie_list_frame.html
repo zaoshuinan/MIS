@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var missionDay = $api.getStorage('missionDay');
+var userId = $api.getStorage('userId');
+var userName = $api.getStorage('userName');
+var userTel = $api.getStorage('userTel');
+var showNum = 15;
+var startNum = 0;
+var innerStr = '';
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        innerStr = '';
+        startNum = 0;
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function addData(){
+    startNum += 15;
+    buildPageByJson();
+}
+function buildPageByJson(){
+    api.ajax({
+        url: appUrl+'Get/qingjieList',
+        method: 'post',
+        data: {
+            values: { 
+                company_id:companyId,
+                mission_day:missionDay,
+                user_id:userId,
+                show_num:showNum,
+                start_num:startNum
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            listData = new Array();
+            if(ret.has == 1){
+                qingjieArr = ret.data;
+                 buildPage();
+            }else{
+                if(startNum == 0){
+                    $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+                }else{
+                    alert('已显示所有数据');
+                } 
+            }
+           
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function buildPage(){
+    for(var i = 0;i < qingjieArr.length;i++){
+        var thisLiushui = qingjieArr[i];
+        var liushuiId = thisLiushui.id;
+        var roomId = thisLiushui.room_id;
+        var roomName = thisLiushui.room_name;
+        var liushuiStatus = thisLiushui.status;
+        var time = thisLiushui.time.substr(11);
+        if(liushuiStatus == 0){
+            var statusStr = '<b style="color:red">还未打扫</b>';
+            var clickStr =  'tapmode onclick="selectRoom('+roomId+','+liushuiId+',\''+roomName+'\')"';
+        }else{
+            var statusStr = '<b style="color:green">打扫完毕</b>';
+            var clickStr = '';
+        }
+        var tplStr = '<li class="aui-list-view-cell aui-img"'+clickStr+'><div class="aui-img-body">房间：<span class="aui-text-danger">'+roomName+'</span>，'+statusStr+'<br>开始时间：'+time+'</div></li>';
+        innerStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), innerStr);
+}
+function selectRoom(roomId,liushuiId,roomName){
+    api.actionSheet({
+        destructiveTitle: '清洁'+roomName+'房间完毕',
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                openRoom(roomId,liushuiId,roomName);
+            }
+        }
+    });
+}
+function openRoom(roomId,liushuiId,roomName){
+    var valueJson = { 
+        room_id:roomId,
+        qingjie_liushui_id:liushuiId
+    }
+    api.ajax({
+        url: appUrl+'Change/qingjieRoom',
+        method: 'post',
+        data: {
+            values: valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                alert(roomName+'房间清洁完毕');
+            }
+            buildPageByJson();
+        } else {
+            //alert(JSON.stringify(err));
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function addEvent(){
+    api.addEventListener({
+        name:'scrolltobottom',
+        extra:{
+            threshold:0            //设置距离底部多少距离时触发，默认值为0，数字类型
+        }
+    },function(ret,err){
+        addData()
+    });
+}
+apiready = function () {
+    api.parseTapmode();
+    buildPageByJson();
+    addEvent();
+    shuaxin();
+}
+</script>
+</html>

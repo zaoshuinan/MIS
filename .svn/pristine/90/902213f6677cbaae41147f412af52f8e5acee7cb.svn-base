@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui-win.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav" id="misHeader">
+        <a class="aui-btn aui-pull-left" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var header,headerHeight,frameHeight;
+var fuwuDetailId,fanweiId;
+var serviceJson = $api.getStorage('cacheService');
+function closeWin(){
+    api.closeWin();
+}
+apiready = function(){
+    api.parseTapmode();
+    fuwuDetailId = api.pageParam.fuwuDetailId;
+    fanweiId = api.pageParam.fanweiId;
+    dingdanId = api.pageParam.dingdanId;
+    header = $api.byId('misHeader');
+    var className1 = 'aui-bar-'+companyFanweiJson[fanweiId].color;
+    var className2 = 'aui-btn-'+companyFanweiJson[fanweiId].color;
+
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    // //alert(className1 + className2);
+    // alert(JSON.stringify(serviceJson));
+    // alert(serviceJson.info[5]);
+    // return false;
+    $api.html($api.byId('zhName'), serviceJson.info[fuwuDetailId].service_name);
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    frameHeight = api.winHeight - headerHeight
+    api.openFrame({
+        name: 'fuwu_dingdan_frame',
+        url: 'fuwu_dingdan_frame.html',
+        bounces: false,
+        rect: {
+            x: 0,
+            y: headerHeight,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            'fuwuDetailId' : fuwuDetailId,
+            'fanweiId':fanweiId,
+            'dingdanId':dingdanId
+        }
+    })
+
+};
+</script>
+</html>

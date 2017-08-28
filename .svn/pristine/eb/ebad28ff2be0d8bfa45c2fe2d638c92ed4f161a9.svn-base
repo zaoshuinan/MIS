@@ -1,0 +1,211 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons">
+        <script type="text" id="tplBox">
+        {{# 
+            for(var i = 0, len = d.length; i < len; i++){ 
+        }}
+            <div class="aui-col-xs-6" style="border: 1px solid #c8c7cc;" tapmode onclick="selectJishi({{d[i].id}},'{{d[i].jishi_paihao}}')">
+                <img style="width:100%" src="../image/{{d[i].jishi_touxiang_url}}">
+                <p style="text-align: center">{{d[i].jishi_paihao}}号</p>
+            </div>
+        {{# } }}
+        </script>
+        <div id="viewBox">
+
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var dingdanId,jishiIdStr,jishiTichengStr,tichengJson,jishiJson;
+var selectJishiId,selectJishiPaihao,selectJishiTicheng;
+var userId = $api.getStorage('userId');
+var jishiStatus;
+function selectJishi(jishiId,jishiPaihao){
+    // alert(jishiPaihao);
+    // return false;
+    selectJishiId = jishiId;
+    selectJishiPaihao = jishiPaihao;
+    selectJishiTicheng = tichengJson[jishiId];
+    api.actionSheet({
+        title: '选择技师',
+        buttons: ['确定选择该技师']
+    },function(ret,err){
+        //alert(selectJishiTicheng +'-'+ selectJishiId + '-'+selectJishiPaihao);
+        if(ret.buttonIndex == 1){
+            api.ajax({
+                url: ipUrl + 'Apps/Change/selectJishi',
+                method: 'post',
+                data: {
+                    values: { 
+                        jishi_id: jishiId,
+                        jishi_paihao:jishiPaihao,
+                        dingdan_id:dingdanId
+                    },
+                    files: { 
+                        file: 'fs://a.gif'
+                    }
+                }
+            },function(ret, err){
+                if (ret) {
+                    //alert( JSON.stringify( ret ) );
+                    //return false;
+                    api.sendEvent({
+                        name: 'showJishiPaihao',
+                        extra: {
+                            'jishiId':selectJishiId,
+                            'jishiTicheng':selectJishiTicheng,
+                            'jishiPaihao':selectJishiPaihao
+                        }
+                    });
+                    api.closeWin();
+                } else {
+                    alert( JSON.stringify( err ) );
+                }
+            });
+            
+        }
+        
+    });
+    
+}
+function buildPage(){
+    jishiJson = [
+        {
+            'jishiId':'1',
+            'jishiPaihao':'021',
+            'jishiImg':'jishi.png'
+        },{
+            'jishiId':'8',
+            'jishiPaihao':'037',
+            'jishiImg':'jishi.png'
+        },{
+            'jishiId':'16',
+            'jishiPaihao':'096',
+            'jishiImg':'jishi.png'
+        }
+    ]
+    var tplStr = $api.html($api.byId('tplBox'));
+    var viewBox = $api.byId('viewBox');
+    laytpl(tplStr).render(jishiJson, function(render){
+        $api.html(viewBox, render);
+    });
+}
+function creatJson(){
+    jishiIdArr = jishiIdStr.split(',');
+    jishiTichengArr = jishiTichengStr.split(',');
+    jsonStr = '{';
+    for(var i = 0;i < jishiIdArr.length;i++){
+        if(i != 0){
+            jsonStr += ',';
+        }
+        jsonStr += '"'+jishiIdArr[i]+'":"'+jishiTichengArr[i]+'"';
+    }
+    jsonStr += '}';
+    return JSON.parse(jsonStr);
+}
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson(jishiStatus);
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(jishiStatus){
+    //alert(jishiIdStr);
+    $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">加载数据中......</p>');
+    api.ajax({
+        url: ipUrl + 'Apps/Get/jishiJson',
+        method: 'post',
+        data: {
+            values: { 
+                jishi_id_str: jishiIdStr
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            var jishiJson = ret.jishi_data;
+            var innerStr = '';
+            for(var i = 0;i < jishiJson.length;i++){
+                var thisJishiJson = jishiJson[i];
+                //alert(thisJishiJson);
+                var thisStr = '<div class="aui-col-xs-6" style="border: 1px solid #c8c7cc;" tapmode onclick="selectJishi('+thisJishiJson.id+',\''+thisJishiJson.jishi_paihao+'\')"><img style="width:100%" src="'+thisJishiJson.jishi_touxiang_url+'"><p style="text-align: center">'+thisJishiJson.jishi_paihao+'号</p></div>';
+                var thisStatus = thisJishiJson.jishi_status;
+                if(thisStatus == jishiStatus){
+                    innerStr += thisStr;
+                }
+            }
+            //alert(innerStr);
+            var viewBox = $api.byId('viewBox');
+            $api.html(viewBox, innerStr);
+            
+        } else {
+            //alert( JSON.stringify( err ) );
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+function tichengStrToJson(jishiTichengStr){
+    jishiTichengArr = jishiTichengStr.split(',');
+    var jishiTichengJson = {};
+    for(var i = 0; i < jishiTichengArr.length; i++){
+        var thisJishiTichengStr = jishiTichengArr[i];
+        var thisJishiTichengArr = thisJishiTichengStr.split(':');
+        var thijishiId = thisJishiTichengArr[0];
+        var thisJishiTicheng = thisJishiTichengArr[1];
+        jishiTichengJson[thijishiId] = thisJishiTicheng;
+    }
+    //alert(JSON.stringify(jishiTichengJson));
+    return jishiTichengJson;
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    jishiIdStr = api.pageParam.jishiIdStr;
+    jishiTichengStr = api.pageParam.jishiTichengStr;
+    tichengJson = tichengStrToJson(jishiTichengStr);
+    jishiStatus = 2;
+    buildPageByJson(jishiStatus);
+    shuaxin();
+}
+        
+</script>
+</html>

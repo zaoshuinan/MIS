@@ -1,0 +1,227 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view aui-in" id="viewBox" style="margin-top: 10px;">
+            <div style="text-align: center;padding: 50px;">
+                <div class="loading-2">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+                <p>读取数据中....</p>
+            </div>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var missionDay = $api.getStorage('missionDay');
+var companyId = $api.getStorage('companyId');
+var ticheng = 10;
+var chongzhiJson;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    api.ajax({
+        url: appUrl+'Get/chongzhiListByQiantai',
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId,
+                mission_day:missionDay
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            if(ret.has == 0){
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }else{
+                //alert(JSON.stringify(ret))
+                chongzhiJson = ret.data;
+                chongzhiJson.sort(downByTypeAndIdDesc);
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+
+function downByTypeAndIdDesc(x,y){
+    var xTemp =  x.status + '-' + x.id;
+    var yTemp =  y.status + '-' + y.id;
+    return (xTemp < yTemp) ? 1 : -1
+}
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < chongzhiJson.length;i++){
+        var thisJson = chongzhiJson[i];
+        var chongzhiId = thisJson.id;
+        var huiyuanTel = thisJson.huiyuan_tel;
+        var huiyuanId = thisJson.huiyuan_id;
+        var huiyuanName = thisJson.huiyuan_name;
+        var jingliName = thisJson.jingli_name;
+        var chongzhiTime = thisJson.chongzhi_time;
+        chongzhiTime = chongzhiTime.substring(11);
+        var chongzhiStatus = thisJson.status;
+        var chongzhiMoney = thisJson.all_money;
+        var huiyuankaId = thisJson.huiyuanka_id;
+        //alert('fnSend('+thisJson.id+','+thisJson.huiyuanka_id+','+thisJson.all_money+')');
+        if(chongzhiStatus == 2){
+            var typeClass = 'aui-icon-countdown aui-bg-warning';
+        }
+        if(chongzhiStatus == 1){
+            var typeClass = 'aui-icon-activity aui-bg-success';
+        }
+        if(chongzhiStatus == 0){
+            var typeClass = 'aui-icon-deletefill aui-bg-danger';
+        }
+        var tplStr = '<li  class="aui-list-view-cell" tapmode onclick="checkChongzhi('+chongzhiId+','+huiyuankaId+','+chongzhiMoney+','+chongzhiStatus+')"><div class="aui-swipe-handle"><i id="notice-icon' + thisJson.id+'" class="aui-iconfont '+typeClass+'"></i>客户：'+huiyuanName+'(<span class="aui-text-danger">'+huiyuanTel+'</span>)，经理：'+jingliName+'<br>    充值：'+thisJson.all_money+'元（赠送'+thisJson.zengsong_money+'），实收'+thisJson.chongzhi_money+'元，下单时间：'+chongzhiTime+'</div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+function checkChongzhi(chongzhiId,huiyuankaId,chongzhiMoney,chongzhiStatus){
+    if(chongzhiStatus != 2){
+        alert('该单已经充值成功');
+        return false;
+    }else{
+        api.actionSheet({
+            destructiveTitle: '进行充值',
+            buttons: ['取消充值']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    fnSend(chongzhiId,huiyuankaId,chongzhiMoney);
+                }
+                if(ret.buttonIndex == 2){
+                    fnCancel(chongzhiId);
+                }
+            } 
+        });
+    }
+}
+function fnCancel(chongzhiId){
+    var changeObj1 = $api.byId('notice-icon' + chongzhiId);
+    api.confirm({
+        title: '确认取消',
+        msg: '你确认取消本次充值吗？',
+        buttons: ['确定', '取消']
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.buttonIndex == 1){
+                api.ajax({
+                    url: appUrl+'Change/cancelChongzhi',
+                    method: 'post',
+                    data: {
+                        values: {
+                            chongzhi_id:chongzhiId
+                        }
+                    }
+                }, function(ret, err) {
+                    if (ret) {
+                        $api.removeCls(changeObj1, 'aui-icon-countdown');
+                        $api.removeCls(changeObj1, 'aui-bg-warning');
+                        $api.removeCls(changeObj1, 'aui-icon-activity');
+                        $api.removeCls(changeObj1, 'aui-bg-success');
+                        $api.addCls(changeObj1, 'aui-icon-deletefill');
+                        $api.addCls(changeObj1, 'aui-bg-danger');
+                        alert('已取消本次充值记录');
+                        buildPageByJson()
+                    } else {
+                        api.toast({
+                            msg: '网络错误'
+                        });
+                    }
+                });
+            }
+        }
+    });
+}
+
+function fnSend(chongzhiId,huiyuankaId,chongzhiMoney){
+    var valueJson = { 
+        chongzhi_id:chongzhiId,
+        huiyuanka_id:huiyuankaId,
+        chongzhi_money:chongzhiMoney,
+        company_id:companyId,
+        mission_day:missionDay
+    }
+    var changeObj1 = $api.byId('notice-icon' + chongzhiId);
+    api.ajax({
+        url: appUrl+'Change/querenChongzhi',
+        method: 'post',
+        data: {
+            values: valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.huiyuanka_status == 0){
+                alert('会员卡还没有启用！')
+                return false;
+            }
+            if(ret.huiyuanka_status == 2){
+                alert('会员卡已作废！')
+                return false;
+            }
+            if(ret.huiyuanka_status == 1){
+                $api.removeCls(changeObj1, 'aui-icon-countdown');
+                $api.removeCls(changeObj1, 'aui-bg-warning');
+                $api.addCls(changeObj1, 'aui-icon-activity');
+                $api.addCls(changeObj1, 'aui-bg-success');
+                alert('充值成功，目前余额为'+ret.new_money+'元');
+                buildPageByJson();
+            }
+            
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+            //alert(JSON.stringify(err));
+        }
+    });
+}
+apiready = function () {
+    showType = api.pageParam.showType;
+    api.parseTapmode();
+    buildPageByJson();
+    shuaxin();
+    
+}
+</script>
+</html>

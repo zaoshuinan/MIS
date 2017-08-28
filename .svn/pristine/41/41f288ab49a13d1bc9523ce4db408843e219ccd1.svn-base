@@ -1,0 +1,197 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <p style="margin:10px 0px;" class="padded">请输入会员信息和充值信息</p>
+    <div class="aui-content">       
+        <div class="aui-form">
+            <div class="aui-input-row">
+                <span class="aui-input-addon">客户手机</span>
+                <input type="number" class="aui-input" placeholder="手机号码" id="tel"/>
+            </div>
+            <div class="aui-input-row aui-col-xs-12" id="huiyuanka">
+                <button class="aui-btn aui-btn-danger aui-btn-block" tapmode onclick="checkHuiyuan()">验证会员信息</button>
+            </div>
+            <div class="yincang" id="checkHuiyuan">
+                <div class="aui-input-row">
+                    <span class="aui-input-addon">充值金额</span>
+                    <input type="number" class="aui-input" placeholder="充值金额" id="chongzhiMoney"/>
+                </div>
+                <div class="aui-input-row">
+                    <span class="aui-input-addon">是否赠送</span>
+                    <input type="checkbox" class="aui-switch aui-pull-right" id="zengsongBtn" status="0" onclick="showZengsong()">
+                </div>
+                <div class="yincang" id="zengsongList" style="padding-bottom: 55px;">
+                    <div class="aui-input-row">
+                        <label class="aui-input-addon">充500，送50</label>
+                        <input class="aui-pull-right aui-radio aui-radio-success" tapmode onclick="changeZengsongMoney(50)" type="radio" name="zengsongMoney">
+                    </div>
+                    <div class="aui-input-row">
+                        <label class="aui-input-addon">充1000，送150</label>
+                        <input class="aui-pull-right aui-radio aui-radio-success" tapmode onclick="changeZengsongMoney(150)" type="radio" name="zengsongMoney">
+                    </div>
+                    <div class="aui-input-row">
+                        <label class="aui-input-addon">充2000，送400</label>
+                        <input class="aui-pull-right aui-radio aui-radio-success" tapmode onclick="changeZengsongMoney(400)" type="radio" name="zengsongMoney">
+                    </div>
+                    <div class="aui-input-row">
+                        <label class="aui-input-addon">充3000，送800</label>
+                        <input class="aui-pull-right aui-radio aui-radio-success" tapmode onclick="changeZengsongMoney(800)" type="radio" name="zengsongMoney">
+                    </div>
+                    <div class="aui-input-row">
+                        <label class="aui-input-addon">充5000，送1200</label>
+                        <input class="aui-pull-right aui-radio aui-radio-success" tapmode onclick="changeZengsongMoney(1200)" type="radio" name="zengsongMoney">
+                    </div>
+                    <div class="aui-input-row">
+                        <label class="aui-input-addon">充10000，送3000</label>
+                        <input class="aui-pull-right aui-radio aui-radio-success" tapmode onclick="changeZengsongMoney(3000)" type="radio" name="zengsongMoney">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="aui-nav yincang" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-success aui-btn-block" tapmode onclick="sendInfo()">提交充值信息</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var zengsongMoney = 0;
+var yewuId = $api.getStorage('myId');
+var yewuName = $api.getStorage('myName');
+var yewuTel = $api.getStorage('myTel');
+var zengsongBtn = $api.byId('zengsongBtn');
+function changeZengsongMoney(money){
+    zengsongMoney = money;
+}
+function checkHuiyuan(){
+    var canSend = 1;
+    var tel = $api.val($api.byId('tel'));
+    if(tel == ''){
+        api.toast({
+            msg: '还没有将输入手机号码',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(checkPhone(tel) == false){
+        api.toast({
+            msg: '输入的手机号码不正确',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(canSend == 1){
+        $api.removeCls($api.byId('checkHuiyuan'), 'yincang');
+        $api.html($api.byId('huiyuanka'), '<button class="aui-btn aui-btn-default aui-btn-block">王先生，卡号：201601003</button>');
+        $api.removeCls($api.byId('aui-footer'), 'yincang');
+    }
+}
+function showZengsong(){
+    thisStatus = $api.attr(zengsongBtn, 'status');
+    if(thisStatus == 0){
+        $api.removeCls($api.byId('zengsongList'), 'yincang');
+        $api.attr(zengsongBtn, 'status',1);
+    }else{
+        $api.addCls($api.byId('zengsongList'), 'yincang');
+        $api.attr(zengsongBtn, 'status',0);
+    }
+}
+function sendInfo(){
+    var canSend = 1;
+    var tel = $api.val($api.byId('tel'));
+    var chongzhiMoney = $api.val($api.byId('chongzhiMoney'));
+    var zengsongStatus = $api.attr(zengsongBtn, 'status');
+    if(chongzhiMoney == '' || tel == ''){
+        api.toast({
+            msg: '还没有将信息输入完整',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(checkPhone(tel) == false){
+        api.toast({
+            msg: '输入的手机号码不正确',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(checkNum(chongzhiMoney) == false){
+        api.toast({
+            msg: '输入的充值金额不正确',
+            duration: 2000,
+            location: 'bottom'
+        });
+        canSend = 0;
+        return false;
+    }
+    if(zengsongStatus == 1){
+        if(zengsongMoney == 0){
+            api.toast({
+                msg: '你还没有选择赠送金额',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+            return false;
+        }
+    }
+    if(canSend == 1){
+        api.confirm({
+            title: '请确认充值信息',
+            msg: '确认给手机号为'+tel+'的会员充值：'+chongzhiMoney+'元，并赠送'+zengsongMoney+'元吗？',
+            buttons:['确定', '取消']
+        },function(ret,err){
+            if(ret.buttonIndex == 1){
+                api.alert({
+                    title: '预充值成功', 
+                    msg: '请前往前台支付并确认'
+                });
+                api.closeWin();
+            }
+        });
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+    $api.addCls($api.byId('chongzhiMoney'), 'yincang');
+    $api.addCls($api.byId('zengsongBtn'), 'yincang');
+}
+        
+</script>
+</html>

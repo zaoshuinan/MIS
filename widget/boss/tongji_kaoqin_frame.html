@@ -1,0 +1,148 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    
+</head>
+<body>
+    
+    <div class="aui-card" id="showBox">
+
+        <ul class="aui-list-view">
+            <li class="aui-list-view-cell">
+                <a>
+                    王经理
+                    <span class="aui-badge aui-badge-warning">18:35</span>
+                </a>
+            </li>
+            <li class="aui-list-view-cell">
+                <a>带有角标和箭头的列表</a>
+            </li>
+        </ul>
+    </div>
+    <div class="aui-card">
+        <ul class="aui-list-view">
+            <li class="aui-list-view-cell aui-fold">
+                <div class="aui-arrow-right aui-text-info">列表</div>
+                <div class="aui-fold-content">
+                    <!-- <div class="aui-content"> -->
+                        <ul class="aui-list-view">
+                            <li class="aui-list-view-cell">
+                                <a class="aui-arrow-right">带有角标和箭头的列表</a>
+                            </li>
+                            <li class="aui-list-view-cell">
+                                <a class="aui-arrow-right">带有角标和箭头的列表</a>
+                            </li>
+                            <li class="aui-list-view-cell">
+                                <a class="aui-arrow-right">带有角标和箭头的列表</a>
+                            </li>
+                        </ul>
+                    <!-- </div> -->
+                </div>
+            </li>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var headerHeight,frameHeight,buttonBoxHeight;
+var banciJson = $api.getStorage('cacheBanci');
+var missionDay = $api.getStorage('missionDay');
+var companyId = $api.getStorage('companyId');
+var banciNameArr = banciIdArr = new Array();
+
+function getBanci(){
+    for(var key in banciJson){
+        //alert(banciJson[key])
+        var thisBanciJson = banciJson[key];
+        //alert(JSON.stringify(thisBanciJson))
+        var thisBanciName = thisBanciJson.banci_name;
+        var thisBanciId = thisBanciJson.id;
+        // banciNameArr[] = thisBanciName;
+        // banciIdArr[] = thisBanciId;
+    }
+}
+function showBanciKaoqin(index){
+    api.ajax({
+        url: appUrl+'Get/banciKaoqinByBoss',
+        method: 'post',
+        data: {
+            values: { 
+                banci: index,
+                company_id:companyId,
+                mission_day:missionDay
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 0){
+                showStr = '<p>没有找到数据</p>'
+            }else{
+                
+            }
+            $('#showBox').html(showStr);
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+
+
+
+function showBox(index){
+    if(index == 2){
+        var banciArr = ['按钮1','按钮2','按钮3'];
+        api.actionSheet({
+            title: '选择查看的班次',
+            cancelTitle: '取消按钮',
+            buttons: banciArr
+        }, function(ret, err) {
+            if (ret) {
+                showBanciKaoqin(ret.buttonIndex);
+            }
+        });
+    }else{
+        var showStr = '';
+        var getActionNameArr = ['jingliKaoqinByBoss','jishiKaoqinByBoss','banciKaoqinByBoss','yichangKaoqinByBoss'];
+        api.ajax({
+            url: appUrl+'Get/' + getActionNameArr[index],
+            method: 'post',
+            data: {
+                values: { 
+                    company_id:companyId,
+                    mission_day:missionDay
+                }
+            }
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.has == 0){
+                    showStr = '<p>没有找到数据</p>'
+                }else{
+                    
+                }
+                $('#showBox').html(showStr);
+            } else {
+                api.toast({
+                    msg: '网络错误'
+                });
+            }
+        });
+    }
+}
+
+
+apiready = function(){
+    api.parseTapmode();
+    getBanci()
+
+}
+    
+</script>
+</html>

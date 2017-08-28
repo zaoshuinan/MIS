@@ -1,0 +1,618 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+.buy {
+    background: #df9c63;
+    height: 55px;
+}
+.ask {
+    height: 55px;
+    background: #797571;
+}
+</style>
+<body>
+    <div class="aui-content-padded icons">
+        <div id="dingdanId" class="yincang"></div>
+        <div id="roomHaoma" class="yincang"></div>
+        <ul class="aui-user-view">
+            <li class="aui-user-view-cell aui-img" id="fuwuShowBox">
+            </li>
+        </ul>
+        <ul class="aui-grid-nine" id="viewBox">
+        </ul>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn"></div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var dingdanJson,fuwuDetailId,fanweiId;
+var dingdanId,dingdanBianma,dingdanStatus,xiadanTime,nowStatus;
+var myId,myName,myTel;
+var jishiIdStr,jishiTichengStr,jingliTicheng;
+var selectJishiId,selectJishiPaihao,selectJishiTicheng;
+selectJishiPaihao = '';
+var selectRoomId,selectRoomHaoma;
+var companyId = $api.getStorage('companyId');
+var serviceJson = $api.getStorage('cacheService');
+var viewBox = $api.byId('viewBox');
+var fuwuShowBox = $api.byId('fuwuShowBox');
+var dingdanButtonJson = [
+    {
+        'id':0,
+        'zhName':'付费产品',
+        'icon':'shoufei'
+    },{
+        'id':1,
+        'zhName':'免费产品',
+        'icon':'mianfei'
+    },{
+        'id':2,
+        'zhName':'选择房间',
+        'icon':'fangjian'
+    },{
+        'id':3,
+        'zhName':'选择技师',
+        'icon':'jishi'
+    }
+];
+var fuwuJiage,fuwuName;
+myId = $api.getStorage('userId');
+myName = $api.getStorage('userName');
+myTel = $api.getStorage('userTel');
+myId = '1845';
+myName = '王利民';
+myTel = '18028681556';
+//************************创建页面函数开始************************
+//创建信息模块，获取项目基本信息及技师ID字符串信息
+function buildMsgBox(index){
+    var fuwuImg = companyFanweiJson[fanweiId].icon;
+    var thisJson = serviceJson.info[fuwuDetailId];
+    fuwuName = thisJson.service_name;
+    //alert(fuwuName);
+    //return false;
+    fuwuJiage = thisJson.service_price;
+    if(index == 0){
+        var fuwuShichang = '服务时长：' + thisJson.service_shichang + '分钟';
+        var dingdanBianmaStr = '房间未开启';
+    }else{
+        var fuwuShichang = '下单时间：' + xiadanTime ;
+        var dingdanBianmaStr = '#' + dingdanBianma;
+    }
+    
+    jishiIdStr = thisJson.service_jishi_id_str;
+    jishiTichengStr = thisJson.service_jishi_ticheng_str;
+    //jingliTicheng = companyFanweiJson[fanweiId].detailJson[fuwuDetailId].jingliTicheng;
+   
+    var fuwuShowStr = '<img class="aui-img-object aui-pull-left" src="../image/'+fuwuImg+'.png"><div class="aui-img-body"><span>'+fuwuName+'<em id="dingdanBianma">'+dingdanBianmaStr+'</em></span><p class="aui-ellipsis-1">收费：'+fuwuJiage+'元，'+fuwuShichang+'</p></div>';
+    $api.html(fuwuShowBox, fuwuShowStr);
+    //alert(jingliTicheng);
+}
+//首次打开空白订单
+function buildEmptyPage(){
+    var innerStr = '';
+    for(var i = 0; i < dingdanButtonJson.length; i++){
+        innerStr += '<li class="aui-col-xs-6 aui-text-center" tapmode onclick="fnSelect('+i+')"><img src="../image/'+dingdanButtonJson[i].icon+'.png" style="width:60px"><p id="showName'+i+'">'+dingdanButtonJson[i].zhName+'</p></li>';
+    }
+    $api.html(viewBox, innerStr);
+    $api.html($api.byId('saveBtn'), '<button class="aui-btn aui-btn-default aui-btn-block" tapmode onclick="unSetDingdan()">点击房间生成订单</button>');
+    dingdanStartTime = '';
+    buildMsgBox(0);
+}
+//根据订单ID，获取订单数据，根据订单状态判断房间、技师按钮点击对应动作
+function buildPage(index){
+    var innerStr = '';
+    for(var i = 0; i < dingdanButtonJson.length; i++){
+        if(i == 0 || i == 1){
+            innerStr += '<li class="aui-col-xs-6 aui-text-center" tapmode onclick="fnSelect('+i+')"><img src="../image/'+dingdanButtonJson[i].icon+'.png" style="width:60px"><p>'+dingdanButtonJson[i].zhName+'</p></li>';
+        }
+        if(i == 2){
+            innerStr += '<li class="aui-col-xs-6 aui-text-center" tapmode onclick="fnSelect('+i+')"><img src="../image/'+dingdanButtonJson[i].icon+'.png" style="width:60px"><p id="showName'+i+'">'+selectRoomHaoma+'</p></li>';
+        }
+        if(i == 3){
+            if(selectJishiPaihao == undefined || selectJishiPaihao == ''){
+                var jishiStr = dingdanButtonJson[i].zhName;
+            }else{
+                var jishiStr = selectJishiPaihao + '号';
+            }
+            innerStr += '<li class="aui-col-xs-6 aui-text-center" tapmode onclick="fnSelect('+i+')"><img src="../image/'+dingdanButtonJson[i].icon+'.png" style="width:60px"><p id="showName'+i+'">'+jishiStr+'</p></li>';
+        }
+    }
+    //alert(innerStr);
+    $api.html(viewBox, innerStr);
+    if(dingdanStatus == 0){
+        if(selectJishiPaihao == undefined || selectJishiPaihao == ''){
+            $api.html($api.byId('saveBtn'), '<button class="aui-btn aui-btn-warning aui-btn-block" tapmode">请选择技师并发送订单</button>');
+        }else{
+            $api.html($api.byId('saveBtn'), '<button class="aui-btn aui-btn-success aui-btn-block" tapmode onclick="sendDingdan()">发送订单</button>');
+        } 
+    }else{
+        $api.html($api.byId('saveBtn'), '<button class="aui-btn aui-btn-default aui-btn-block">等待技师到来</button>');
+    }
+    buildMsgBox(index);
+}
+//从数据库获取订单的具体信息，根据实际情况创建页面
+function buildPageByJson(){
+    api.ajax({
+        url: ipUrl + 'Apps/Get/dingdanDetail',
+        method: 'post',
+        data: {
+            values: { 
+                dingdan_id:dingdanId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            nowStatus = ret.dingdan_status;
+            if(nowStatus ==2 || nowStatus == 3){
+                dingdanStatus = 0;
+            }else{
+                dingdanStatus = 1;
+            }
+            fuwuDetailId = ret.service_id;
+            fanweiId = ret.dingdan_type;
+            selectRoomId = ret.dingdan_room_id;
+            selectRoomHaoma = ret.dingdan_room_name;
+            dingdanBianma = ret.dingdan_haoma;
+            xiadanTime = ret.xiadan_time;
+            selectJishiPaihao = ret.dingdan_jishi_paihao;
+            selectJishiId = ret.dingdan_jishi_id;
+            var hasSend = ret.dingdan_has_send;
+            if(selectJishiId == 0){
+                selectJishiId = '';
+            }
+            //alert(hasSend)
+            if(selectJishiPaihao != ''){
+                if(hasSend == 0){
+                    dingdanStatus = 0;
+                }else{
+                    dingdanStatus = 1;
+                }
+                
+            }
+            //alert(selectJishiPaihao);
+            //alert(selectJishiId + '-' + selectRoomId);
+            
+            buildPage(1);
+        } else {
+            //alert( JSON.stringify( err ) );
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+//************************创建页面函数结束************************
+
+
+//************************主界面四大按钮对应函数开始************************
+//点击页面各个按钮触发对应的函数
+function fnSelect(index){
+    //付费产品
+    if(index == 0){
+        fnOpenShoufei();
+    }
+    //免费产品
+    if(index == 1){
+        fnOpenMianfei();
+    }
+    //选择房间
+    if(index == 2){
+        fnOpenRoom();
+    }
+    //选择技师
+    if(index == 3){
+        fnOpenJishi();
+    }
+}
+//点击收费产品动作
+function fnOpenShoufei(){
+    //必须有订单ID才可以选择产品
+    if(dingdanId == ''){
+        api.toast({
+            msg: '请开启房间生成订单',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }else{
+        api.actionSheet({
+            title: '付费产品',
+            buttons: ['选择付费产品', '查看已选列表']
+        },function(ret,err){
+            var winName,winUrl;
+            if(ret.buttonIndex == 1){
+                winName = 'selectShoufei';
+                winUrl = './select_shoufei_win.html';
+            }
+            if(ret.buttonIndex == 2){
+                winName = 'showShoufei';
+                winUrl = './show_shoufei_win.html';
+            }
+            //alert(winName + winUrl + dingdanId);
+            api.openWin({
+                name: winName,
+                url: winUrl,
+                bounces: false,
+                slidBackEnabled:false,
+                pageParam: {
+                    'dingdanId':dingdanId,
+                    'roomId':selectRoomId,
+                    'roomHaoma':selectRoomHaoma,
+                    'myId':myId,
+                    'myName':myName,
+                    'myTel':myTel
+                }
+            });
+        });
+    }
+}
+//点击免费产品动作
+function fnOpenMianfei(){
+    //必须有订单ID才可以选择产品
+    if(dingdanId == ''){
+        api.toast({
+            msg: '请开启房间生成订单',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }else{
+        api.actionSheet({
+            title: '免费产品',
+            buttons: ['选择免费产品', '查看已选列表']
+        },function(ret,err){
+            var winName,winUrl;
+            if(ret.buttonIndex == 1){
+                winName = 'selectMianfei';
+                winUrl = './select_mianfei_win.html';
+            }
+            if(ret.buttonIndex == 2){
+                winName = 'showMianfei';
+                winUrl = './show_mianfei_win.html';
+            }
+            //alert(winName + winUrl + dingdanId);
+            api.openWin({
+                name: winName,
+                url: winUrl,
+                bounces: false,
+                slidBackEnabled:false,
+                pageParam: {
+                    'dingdanId':dingdanId,
+                    'roomId':selectRoomId,
+                    'roomHaoma':selectRoomHaoma,
+                    'myId':myId,
+                    'myName':myName,
+                    'myTel':myTel
+                }
+            });
+        });
+    }
+}
+//点击选择房间动作
+function fnOpenRoom(){
+    if(dingdanId == ''){
+        //alert(fuwuDetailId);
+        api.openWin({
+            name: 'selectRoom',
+            url: './select_room_win.html',
+            bounces: false,
+            slidBackEnabled:false,
+            pageParam: {
+                'fanweiId':fanweiId,
+                'service_name':fuwuName,
+                'service_price':fuwuJiage,
+                'service_id':fuwuDetailId
+            }
+        });
+    }else{
+        //判断订单状态
+        if(dingdanStatus == 0){
+            //没确定技师前，可修改房间
+            api.actionSheet({
+                title: '请针对房间进行操作',
+                buttons: ['关闭房间/送客']
+            },function(ret,err){
+                if(ret.buttonIndex == 1){
+                    api.confirm({
+                        title: '你确认关闭房间吗',
+                        msg: '关闭房间将会取消本次订单，你确定要这样做吗？',
+                        buttons:['确定', '取消']
+                    },function(ret,err){
+                        if(ret.buttonIndex == 1){
+                            //alert(dingdanId + '-' + roomId);
+                            var dataName = 'room_'+companyYewuArr[fanweiId];
+                            //alert(selectJishiId + '-' + selectRoomId);
+                            if(selectJishiId != '' || selectJishiId != undefined){
+                                var postJson = { 
+                                                            dingdan_id: dingdanId,
+                                                            room_id:selectRoomId,
+                                                            data_name:dataName,
+                                                            jishi_id:selectJishiId
+                                                        };
+                            }else{
+                                var postJson = { 
+                                                            dingdan_id: dingdanId,
+                                                            room_id:selectRoomId,
+                                                            data_name:dataName
+                                                        };
+                            }
+                            
+                            api.ajax({
+                                url: ipUrl + 'Apps/Change/closeRoom',
+                                method: 'post',
+                                data: {
+                                    values: postJson,
+                                    files: { 
+                                        file: 'fs://a.gif'
+                                    }
+                                }
+                            },function(ret, err){
+                                if (ret) {
+                                    //alert( JSON.stringify( ret ) );
+                                    dingdanId = '';
+                                    selectJishiPaihao = '';
+                                    selectRoomHaoma = '';
+                                    selectRoomId = '';
+                                    selectJishiId = '';
+                                    dingdanStatus = 0;
+                                    dingdanBianma = undefined;
+                                    buildEmptyPage();
+                                    var todayNum = parseInt($api.getStorage('todayNum'));
+                                    todayNum = todayNum - 1;
+                                    $api.setStorage('todayNum', todayNum);
+                                    api.sendEvent({
+                                        name: 'changeTodayNum',
+                                        extra: {
+                                        }
+                                    });
+                                    api.alert({msg: '订单取消，请送客'});
+                                } else {
+                                    //alert( JSON.stringify( err ) );
+                                    api.toast({
+                                        msg: '网络错误',
+                                        duration: 2000,
+                                        location: 'bottom'
+                                    });
+                                }
+                            });
+                            
+                        }
+                    });
+                }
+            });
+        }else{
+            api.toast({
+                msg: '已选定技师，不可修改信息',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    }
+}
+//点击选择及时动作
+function fnOpenJishi(){
+    if(dingdanId == ''){
+        api.toast({
+            msg: '请开启房间生成订单',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }else{
+        //判断订单状态
+        if(dingdanStatus == 0){
+            //打开选择技师窗口
+            //alert(jishiIdStr + jishiTichengStr);
+            //alert(selectJishiId);
+            if(selectJishiPaihao != ''){
+                api.confirm({
+                    title: '重选技师',
+                    msg: '你已经选择了'+selectJishiPaihao+'号技师，确定重新选择吗？',
+                    buttons: ['确定', '取消']
+                }, function(ret, err){
+                    if( ret ){
+                         //alert( JSON.stringify( ret ) );
+                         //alert( ipUrl + 'Apps/Change/resetSelectJishi+'+selectJishiId);
+                         api.ajax({
+                             url: ipUrl + 'Apps/Change/resetSelectJishi',
+                             method: 'post',
+                             data: {
+                                 values: { 
+                                     jishi_id: selectJishiId
+                                 },
+                                 files: { 
+                                     file: 'fs://a.gif'
+                                 }
+                             }
+                         },function(ret, err){
+                             if (ret) {
+                                 //alert( JSON.stringify( ret ) );
+                                 api.openWin({
+                                     name: 'selectJishi',
+                                     url: './select_jishi_win.html',
+                                     bounces: false,
+                                     slidBackEnabled:false,
+                                     pageParam: {
+                                         'dingdanId':dingdanId,
+                                         'jishiIdStr':jishiIdStr,
+                                         'jishiTichengStr':jishiTichengStr
+                                     }
+                                 });
+                             } else {
+                                 api.toast({
+                                     msg: '网络错误',
+                                     duration: 2000,
+                                     location: 'bottom'
+                                 });
+                             }
+                         });
+                    }else{
+                         alert( JSON.stringify( err ) );
+                    }
+                });
+            }else{
+                //alert(dingdanId + jishiIdStr + jishiTichengStr);
+                api.openWin({
+                    name: 'selectJishi',
+                    url: './select_jishi_win.html',
+                    bounces: false,
+                    slidBackEnabled:false,
+                    pageParam: {
+                        'dingdanId':dingdanId,
+                        'jishiIdStr':jishiIdStr,
+                        'jishiTichengStr':jishiTichengStr
+                    }
+                });
+            }
+            
+        }else{
+            api.toast({
+                msg: '已选定技师，不可修改信息',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    }
+}
+//************************主界面四大按钮对应函数结束************************
+
+
+//************************提交按钮函数开始************************
+//当前还没有选择并开启房间，提示没有创建订单
+function unSetDingdan(){
+    api.toast({
+        msg: '请选择房间与技师',
+        duration: 2000,
+        location: 'bottom'
+    });
+}
+//当前已经选择房子并选择了技师，发送订单，通知技师到来
+function sendDingdan(){
+    if(selectJishiPaihao != undefined){
+        api.confirm({
+            title: '生成订单确认',
+            msg: '你确定选择的技师牌号为:'+selectJishiPaihao+'号，房间信息为：'+selectRoomHaoma+'吗？',
+            buttons:['确定', '取消']
+        },function(ret,err){
+            if(ret.buttonIndex == 1){
+                api.ajax({
+                    url: ipUrl + 'Apps/Add/newZhongfang',
+                    method: 'post',
+                    data: {
+                        values: { 
+                            dingdan_id:dingdanId,
+                            jishi_id: selectJishiId,
+                            jishi_paihao:selectJishiPaihao,
+                            room_id:selectRoomId,
+                            room_haoma:selectRoomHaoma,
+                            company_id:companyId,
+                            jingli_name:$api.getStorage('userName'),
+                            jingli_tel:$api.getStorage('userTel')
+                        },
+                        files: { 
+                            file: 'fs://a.gif'
+                        }
+                    }
+                },function(ret, err){
+                    if (ret) {
+                        //alert( JSON.stringify( ret ) );
+                        dingdanStatus = 1;
+                        buildPage(1);
+                    } else {
+                        alert( JSON.stringify( err ) );
+                    }
+                });
+                dingdanStatus = 1;
+                api.toast({
+                    msg: '你的订单已生效，钟房正在通知技师到来',
+                    duration: 2000,
+                    location: 'bottom'
+                });
+                $api.html($api.byId('saveBtn'), '<button class="aui-btn aui-btn-default aui-btn-block">等待技师到来</button>');
+            }
+        });
+    }else{
+        api.toast({
+            msg: '你还没有选择技师呢!',
+            duration: 2000,
+            location: 'bottom'
+        });
+    } 
+}
+//************************提交按钮函数结束************************
+
+
+//************************整体页面函数开始************************
+//房间选择和技师选择的监听动作，回调选择结果并重新建立页面
+function eventListen(){
+    api.addEventListener({
+        name: 'showJishiPaihao'
+    }, function(ret, err){
+        selectJishiId = ret.value.jishiId;
+        selectJishiPaihao = ret.value.jishiPaihao;
+        selectJishiTicheng = ret.value.jishiTicheng;
+        dingdanStatus = 0;
+        buildPage(1);
+    });
+    api.addEventListener({
+        name: 'showRoomHaoma'
+    }, function(ret, err){
+        selectRoomId = ret.value.roomId;
+        dingdanId = ret.value.dingdanId;
+        dingdanBianma = ret.value.dingdanBianma;
+        dingdanStatus = 0;
+        selectRoomHaoma = ret.value.roomHaoma;
+        roomId = ret.value.roomId;
+        xiadanTime = ret.value.xiadanTime;
+        buildPage(1);
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    //alert(dingdanId);
+    if(dingdanId == ''){
+        fuwuDetailId = api.pageParam.fuwuDetailId;
+        fanweiId = api.pageParam.fanweiId;
+        eventListen();
+        buildEmptyPage();
+        
+    }else{
+        eventListen();
+        buildPageByJson();
+    }
+    //test(3);
+    //alert(fuwuDetailId);
+    
+}
+//************************整体页面函数结束************************     
+</script>
+</html>

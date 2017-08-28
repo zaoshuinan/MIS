@@ -1,0 +1,187 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 55px;
+}
+</style>
+<body>
+    <div class="aui-content">
+        <ul class="aui-list-view" id="viewBox">
+            
+        </ul>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12 aui-bg-danger" id="saveBtn" onclick="saveChanpin()">选择收费产品</div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var chanpinJson,myId,myName,myTel,dingdanId;
+var peisongJson;
+chanpinJson = [
+    {
+        'id':547,
+        'zhName':'红塔山',
+        'price':88,
+        'ticheng':20,
+        'imgUrl':'../image/demo2.png'
+    },{
+        'id':596,
+        'zhName':'中华',
+        'price':68,
+        'ticheng':15,
+        'imgUrl':'../image/demo1.png'
+    }
+];
+
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < chanpinJson.length;i++){
+        var thisJson = chanpinJson[i];
+        var chanpinId = thisJson.id;
+        var chanpinZhName = thisJson.zhName;
+        var chanpinPrice = thisJson.price;
+        var chanpinTicheng = thisJson.ticheng;
+        var chanpinImgUrl = thisJson.imgUrl;
+        var tplStr = '<li id="chanpin'+chanpinId+'" hasSelect="0" chanpinId="'+chanpinId+'" class="chanpinBox aui-list-view-cell aui-img aui-counter-list"><img class="aui-img-object aui-pull-left" src="'+chanpinImgUrl+'"><div class="aui-img-body"><b id="chanpinName'+chanpinId+'">'+chanpinZhName+'</b><div class="aui-counter-box"><div class="aui-pull-left aui-text-danger">¥ <span id="chanpinPrice'+chanpinId+'">'+chanpinPrice+'</span>元<span class="yincang" id="chanpinTicheng'+chanpinId+'">'+chanpinTicheng+'</span></div><div class="aui-counter aui-pull-right"><div class="aui-counter-minus aui-disabled" tpamode onclick="delNum('+chanpinId+')"></div><input id="chanpinNum'+chanpinId+'" class="aui-counter-input" type="text" value="0"><div tpamode onclick="addNum('+chanpinId+')" class="aui-counter-plus"></div></div></div></div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+function addNum(chanpinId){
+    var numObj = $api.byId('chanpinNum'+chanpinId);
+    var numNow = parseInt($api.val(numObj));
+    var chanpinBox = $api.byId('chanpin'+chanpinId);
+    var hasSelect = $api.attr(chanpinBox, 'hasSelect');
+    if(hasSelect == 0){
+        $api.addCls(chanpinBox, 'aui-bg-blue');
+        $api.attr(chanpinBox, 'hasSelect', 1);
+        $api.val(numObj, 1);
+    }else{
+        var innerNum = numNow + 1;
+        $api.val(numObj, innerNum);
+    }
+}
+function delNum(chanpinId){
+    var numObj = $api.byId('chanpinNum'+chanpinId);
+    var numNow = parseInt($api.val(numObj));
+    if(numNow == 0){
+        api.toast({
+            msg: '都没有选择该产品',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }else{
+        if(numNow == 1){
+            var chanpinBox = $api.byId('chanpin'+chanpinId);
+            $api.removeCls(chanpinBox, 'aui-bg-blue');
+            $api.attr(chanpinBox, 'hasSelect', 0);
+        }else{
+
+        }
+        var innerNum = numNow - 1;
+        $api.val(numObj, innerNum);
+    }
+}
+function saveChanpin(){
+    chanpinBoxObjs = $api.domAll('.chanpinBox');
+    var jsonStr = '';
+    var alertStr = '';
+    for(var i = 0;i < chanpinBoxObjs.length;i++){
+        var hasSelect = $api.attr(chanpinBoxObjs[i], 'hasSelect');
+        if(hasSelect == 1){
+            var chanpinId = $api.attr(chanpinBoxObjs[i], 'chanpinId');
+            var chanpinNum = $api.val($api.byId('chanpinNum'+chanpinId));
+            var chanpinName = $api.html($api.byId('chanpinName'+chanpinId));
+            var chanpinPrice = parseInt($api.html($api.byId('chanpinPrice'+chanpinId)));
+            var chanpinTicheng = parseInt($api.html($api.byId('chanpinTicheng'+chanpinId)));
+            if(chanpinNum == 1){
+                var thisJsonStr = '{"dingdan_id":"'+dingdanId+'","yewu_id":"'+myId+'","yewu_name":"'+myName+'","yewu_tel":"'+myTel+'","chanpin_id":"'+chanpinId+'","chanpin_name":"'+chanpinName+'","chanpin_price":"'+chanpinPrice+'","day":"'+thisYear4 + '-' + (thisMonth+1) + '-' + thisDay + '","time":"'+thisAllTime+'"}';
+            }else{
+                var thisJsonStr1 = '{"dingdan_id":"'+dingdanId+'","yewu_id":"'+myId+'","yewu_name":"'+myName+'","yewu_tel":"'+myTel+'","chanpin_id":"'+chanpinId+'","chanpin_name":"'+chanpinName+'","chanpin_price":"'+chanpinPrice+'","day":"'+thisYear4 + '-' + (thisMonth+1) + '-' + thisDay + '","time":"'+thisAllTime+'"}';
+                var thisJsonStr = '';
+                for(var j = 0; j < chanpinNum ; j++){
+                    if(thisJsonStr == ''){
+                        thisJsonStr = thisJsonStr1;
+                    }else{
+                        thisJsonStr += ',' + thisJsonStr1;
+                    }
+                } 
+            }
+            var thisAlertStr = chanpinName + ':' + chanpinNum + '份';
+            if(jsonStr == ''){
+                jsonStr = thisJsonStr;
+                alertStr = thisAlertStr;
+            }else{
+                jsonStr += ',' + thisJsonStr;
+                alertStr += ',' + thisAlertStr;
+            }
+        }
+    }
+    jsonStr = '[' + jsonStr + ']';
+    //$api.html($api.byId('show'), jsonStr);
+    peisongJson = JSON.parse(jsonStr);
+    api.confirm({
+        title: '确认配送如下产品吗？',
+        msg: alertStr,
+        buttons:['确定', '取消']
+    },function(ret,err){
+        if(ret.buttonIndex == 1){
+            //sendToPeisong();
+            //alert(jsonStr);
+            //alert(peisongJson[0].dingdan_id);
+            api.closeWin();
+        }
+    });
+}
+function sendToPeisong(){
+    var url = '';
+    api.ajax({
+        url: url,
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data:peisongJson,
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            api.closeWin();
+        } else {
+            api.alert({
+                msg:('错误码：'+err.code+'；错误信息：'+err.msg+'网络状态码：'+err.statusCode)
+            });
+        };
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    myId = api.pageParam.myId;
+    myName = api.pageParam.myName;
+    myTel = api.pageParam.myTel;
+    buildPage();
+}
+    
+</script>
+</html>

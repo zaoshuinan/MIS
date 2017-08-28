@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-content-padded">
+            <ul>
+                <li class="aui-list-view" style="margin-top:30px;">
+                    <div class="aui-user-view-cell aui-img">
+                        <div class="aui-img-body">
+                            <span>系统信息</span>
+                        </div>
+                    </div>
+                    <div class="aui-padded-10 content">
+                        请前往考勤地点扫码上班
+                    </div>
+                    
+                </li>
+            </ul>
+            <p><div class="aui-btn aui-btn-primary aui-btn-block" onclick="saoma()">点击扫码</div></p>
+        </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+function saoma(){
+    var FNScanner = api.require('FNScanner');
+    FNScanner.openScanner({
+        autorotation: true,
+    },function( ret, err ){        
+        if( ret ){
+            if(ret.eventType == 'success'){
+                //alert( JSON.stringify( ret ) );
+                var checkStr = ret.content;
+                checkSaoma(checkStr);
+                FNScanner.closeView();
+            } 
+        }else{
+            //alert( JSON.stringify( err ) );
+        }
+    });
+}
+function checkSaoma(checkStr){
+    api.ajax({
+        url: ipUrl + 'App/Get/checkSaoma',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            if(ret.check_saoma == checkStr){
+                //alert('验证成功');
+                $api.setStorage('hasSaoma', '1');
+                alert('验证成功，现在的时间是：'+ret.saoma_time+'，请开始你的工作吧！');
+                api.openWin({
+                    name: 'jingli_win1',
+                    url: './index.html',
+                    pageParam: {
+                        name: 'test'
+                    }
+                });
+                
+                api.closeWin({
+                    name: 'jingli_win'
+                });
+                
+            }else{
+                alert('验证失败，请重新验证');
+            }
+        } else {
+            //alert( JSON.stringify( err ) );
+        }
+    });
+}
+</script>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-accordion.css" />
+    <link rel="stylesheet" type="text/css" href="../css/aui-slide.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <div id="chartBox" class="aui-col-xs-12" style="padding-left: 10px;padding-right: 10px;">
+        <div style="text-align: center;padding-top: 50px;">
+            <div class="loading-2">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+            <p>读取数据中....</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript" src="../script/aui-accordion.js"></script>
+<script type="text/javascript" src="../script/aui-tap.js" ></script>
+<script type="text/javascript" src="../script/aui-slide.js"></script>
+<script type="text/javascript" src="../script/echarts.min.js" ></script>
+<script type="text/javascript">
+var headerHeight,frameHeight,buttonBoxHeight,startDate,endDate,jingliId,jingliName,jingliTel;
+var companyId = $api.getStorage('companyId');
+var kaoqinData;
+var dayNum = 0;
+var dayArr = new Array();
+var getAction = 'kaoqinDetailByBoss';
+function reBuildData(){
+    dayArr = buildDayArr(startDate,endDate);
+    var innerStr = '<ul class="aui-grid-nine">';
+    for(var i = 0;i < dayNum;i++){
+        var thisDay = dayArr[i];
+        var dayStr = thisDay.substring(5);
+        var thisStatus = 0;
+        var thisShangbanStr = '';
+        var thisShangBanciStr = '';
+        var thisStr = '<li class="aui-col-xs-2 aui-text-center aui-bar-danger">'+dayStr+'<p style="color:#FFF">无</li>';
+        for(var j = 0;j < kaoqinData.length;j++){
+            var thisKaoqin = kaoqinData[j];
+            var thisKaoqinDay = thisKaoqin['mission_day'];
+            var thisKaoqinBanciId = thisKaoqin['banciId'];
+            var thisKaoqinZhengchang = parseInt(thisKaoqin['zhengchang']);
+            if(thisKaoqinDay == thisDay){
+                thisStatus = 1;
+                if(thisKaoqinZhengchang == 0){
+                    thisStr = '<li class="aui-col-xs-2 aui-text-center aui-bar-warning">'+dayStr+'<p style="color:#FFF">迟到</li>';
+                }else{
+                    thisStr = '<li class="aui-col-xs-2 aui-text-center aui-bar-success">'+dayStr+'<p style="color:#FFF">正常</li>';
+                }
+            }
+        }
+        innerStr += thisStr;
+    }
+    innerStr += '</ul>';
+    $api.html($api.byId('chartBox'), innerStr);
+}
+function buildDayArr(day1,day2){
+    var d1=new Date(day1);
+    var d2=new Date(day2);
+    dayNum = (d2-d1)/(24*60*60*1000) + 1;
+    var arr = new Array();
+    for(var i = 0; i < dayNum;i++){
+        if(i == 0){
+            arr[i] = day1;
+        }else{
+            arr[i] = addDate(day1,i);
+        }
+    }
+    return arr;
+}
+function addDate(date, days) {
+    if (days == undefined || days == '') {
+        days = 1;
+    }
+    var date = new Date(date);
+    date.setDate(date.getDate() + days);
+    var month = date.getMonth() + 1;
+    var day = date.getDate();
+    if(month < 10){
+        month = '0'+month;
+    }
+    if(day < 10){
+        day = '0'+day;
+    }
+    return date.getFullYear() + '-' + month + '-' + day;
+}
+function getData(){
+    api.ajax({
+        url: appUrl+'Get/'+getAction,
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                start_day:startDate,
+                end_day:endDate,
+                user_id:jingliId,
+                type:2,
+                user_type:1
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            //alert(JSON.stringify(ret));
+            // return false;
+            if(ret.has == 0){
+                $api.html($api.byId('chartBox'),'<p style="text-align: center;padding-top: 30px;padding-bottom: 30px;">没有请假数据</p>');
+            }else{
+                kaoqinData = ret.data;
+                setTimeout("reBuildData()",300);
+            }  
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    jingliId = api.pageParam.jingliId;
+    jingliName = api.pageParam.jingliName;
+    jingliTel = api.pageParam.jingliTel;
+    startDate = api.pageParam.startDate;
+    endDate = api.pageParam.endDate;
+   getData();
+}  
+</script>
+</html>

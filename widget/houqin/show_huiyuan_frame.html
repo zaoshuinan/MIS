@@ -1,0 +1,194 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    
+    <div style="margin-top:20px;" class="aui-content">  
+        <p class="aui-padded-10 aui-text-danger">输入会员手机号码，查看信息</p>     
+        <div class="aui-form">
+            <div class="aui-input-row">
+                <span class="aui-input-addon">输入客户手机</span>
+                <input type="number" class="aui-input" placeholder="手机号码" id="tel"/>
+                <span class="aui-input-addon">
+                    <div class="aui-btn" id="checkTel" status="1" tapmode onclick="checkTel()">验证手机</div>
+                </span>
+            </div>
+            <div class="aui-hidden" id="infoBox">
+                <div class="aui-input-row">
+                    <span class="aui-input-addon">查看会员消费流水</span>
+                    <input type="checkbox" class="aui-switch aui-pull-right" id="showButton" status="0" onclick="showLiushui()">
+                </div>
+                <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var companyId = $api.getStorage('companyId');
+var telBox = $api.byId('tel');
+var huiyuanName = '';
+var yanzhengNum = 0;
+var huiyuanId;
+var buttonStatus;
+
+function showLiushui(){
+    var buttonObj = $api.byId('showButton');
+    buttonStatus = $api.attr(buttonObj, 'status');
+    //alert(buttonStatus);
+    if(buttonStatus == 0){
+        $api.attr(buttonObj, 'status','1');
+        getLiushui()
+    }
+    if(buttonStatus == 1){
+        $api.attr(buttonObj, 'status','0');
+        hideBox();
+    }
+}
+function showBox(){
+    $api.removeCls($api.byId('viewBox'), 'aui-hidden');
+}
+function hideBox(){
+    $api.addCls($api.byId('viewBox'), 'aui-hidden');
+}
+function getLiushui(){
+    api.ajax({
+        url: appUrl+'Get/huiyuankaLiushui',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                huiyuanka_id:huiyuanId
+            },
+            files: { 
+                fileName: 'filePath'
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            alert(JSON.stringify(ret))
+            var listData = ret.data;
+            var innerStr = '';
+            for(var i = 0;i < listData.length;i++){
+                var thisJson = listData[i];
+                var tplStr = '<li class="aui-list-view-cell aui-img"><div class="aui-img-body">房间：<span class="aui-text-success"></span>，技师：<p class="aui-ellipsis-2">服务：，房间开启时间：</p></div></li>';
+                innerStr += tplStr;
+            }
+            //alert(innerStr);
+            $api.html($api.byId('viewBox'), innerStr);
+            showBox();
+        } else {
+            alert(JSON.stringify(err));
+        }
+    });
+}
+function checkTel(){
+    var tel = $api.val(telBox);
+    var canSend = 1;
+    if(yanzhengNum == 1){
+        api.toast({
+            msg: '无需重复验证',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }else{
+        if(tel == ''){
+            api.toast({
+                msg: '还没有将输入客户手机号码',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+            return false;
+        }
+        if(tel.length != 11){
+            api.toast({
+                msg: '输入的11位号码',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+            return false;
+        }
+        var checkTel = parseInt(tel);
+        if(checkTel < 10000000000){
+            api.toast({
+                msg: '输入号码有误',
+                duration: 2000,
+                location: 'bottom'
+            });
+            canSend = 0;
+            return false;
+        }
+        if(canSend == 1){
+            api.ajax({
+                url: appUrl+'Get/checkHuiyuanTel',
+                method: 'post',
+                data: {
+                    values: { 
+                        company_id: $api.getStorage('companyId'),
+                        huiyuan_tel:tel
+                    },
+                    files: { 
+                        file: 'fs://a.gif'
+                    }
+                }
+            },function(ret, err){
+                if (ret) {
+                    if(ret.check == 0){
+                        api.toast({
+                            msg: '没有找到该会员数据，请重新输入',
+                            duration: 2000,
+                            location: 'bottom'
+                        });
+                    }
+                    if(ret.check == 1){
+                        yanzhengNum = 1;
+                        huiyuanId = ret.data.id;
+                        huiyuanName = ret.data.huiyuan_name;
+                        $api.attr(telBox, 'disabled', '');
+                        $api.removeCls($api.byId('infoBox'), 'aui-hidden');
+                        $api.html($api.byId('checkTel'), huiyuanName);
+                    }
+                } else {
+                    api.toast({
+                        msg: '网络错误',
+                        duration: 2000,
+                        location: 'bottom'
+                    });
+                }
+            });
+        }
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+}
+        
+</script>
+</html>

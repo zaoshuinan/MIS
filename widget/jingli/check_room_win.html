@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/loading.css" />
+</head>
+<body>
+    <header class="aui-bar aui-bar-nav aui-bar-danger" id="misHeader">
+        <a class="aui-btn aui-pull-left aui-bar-danger" id="backBtn" tapmode onclick="closeWin()">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </a>
+        <div class="aui-title" id="zhName"></div>
+        <a class="aui-iconfont aui-icon-menu aui-pull-right"></a>
+    </header>
+    <div class="aui-content-padded" id="buttonBox" style="margin-top: 5px;">
+        <div class="aui-tab aui-tab-danger">
+            <ul class="aui-tab-nav aui-tab-border" id="buttons">
+                
+            </ul>
+        </div>
+    </div>
+    <div class="aui-content-padded icons">
+        <ul class="aui-grid-nine" id="viewBox">
+            <p style="margin: 20px;color: black;font-size: 20px;text-align: center;">点击按钮查看数据</p>
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/mis.js"></script>
+<script type="text/javascript" src="../script/function.js"></script>
+<script type="text/javascript">
+var fanweiId;
+var cacheRoom = $api.getStorage('cacheRoom');
+var roomConfigArr = cacheRoom.config_data;
+//alert(JSON.stringify(cacheRoom))
+function closeWin(){
+    api.closeWin();
+}
+function changeGroupButtonStyle(index){
+    var buttonsObj = $api.domAll($api.byId('buttonBox'), 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+function reBuildData(){
+    var innerStr = '';
+    for(var i = 0;i < roomConfigArr.length;i++){
+        var thisConfig = roomConfigArr[i];
+        var thisConfigId = thisConfig.id;
+        var thisConfigType = thisConfig.room_type;
+        var thisConfigName = thisConfig.type_name;
+        var thisConfigLie = thisConfig.type_lie;
+        var thisConfigHang = thisConfig.type_hang;
+        if(thisConfigType == fanweiId){
+            var thisStr = '<li tapmode onclick="openFrame('+i+','+thisConfigId+','+thisConfigHang+','+thisConfigLie+')">'+thisConfigName+'</li>';
+            innerStr += thisStr;
+        }
+    }
+    $api.html($api.byId('buttons'), innerStr);
+}
+function innerLoading(){
+    $api.html($api.byId('viewBox'), '<div style="text-align: center;padding: 50px;"><div class="loading-2"><i></i><i></i><i></i><i></i><i></i></div><p>点击查看房间数据</p></div>');
+}
+function openFrame(index,configId,configHang,configLie){
+    changeGroupButtonStyle(index);
+    //innerLoading()
+    api.closeFrame({
+        name: 'check_room_frame'
+    });
+    api.openFrame({
+        name: 'check_room_frame',
+        url: 'check_room_frame.html',
+        bounces: false,
+        rect: {
+            x: 0,
+            y: headerHeight + buttonBoxHeight + 10,
+            w: 'auto',
+            h: frameHeight
+        },
+        pageParam: {
+            fanweiId:fanweiId,
+            configId:configId,
+            configHang:configHang,
+            configLie:configLie
+        }
+    })
+}
+apiready = function(){
+    api.parseTapmode();
+    fanweiId = api.pageParam.fanweiId;
+    var header = $api.byId('misHeader');
+    var className1 = 'aui-bar-danger';
+    var className2 = 'aui-btn-danger';
+    $api.addCls(header, className1);
+    $api.addCls($api.byId('backBtn'), className2);
+    $api.html($api.byId('zhName'), companyYewuNameArr[fanweiId] + '查看房间选择');
+    fixStatusBar(header);
+    headerHeight = $api.offset(header).h;
+    buttonBoxHeight = $api.offset($api.byId('buttonBox')).h;
+    frameHeight = api.winHeight - headerHeight - buttonBoxHeight - 10;
+    reBuildData();
+};
+</script>
+</html>

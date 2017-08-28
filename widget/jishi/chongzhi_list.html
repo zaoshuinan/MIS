@@ -1,0 +1,126 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style>
+html { background: #f7f9f8;}
+</style>
+<body>
+    <div class="aui-card aui-noborder">
+        <ul class="aui-list-view" id="viewBox" style="margin-top: 10px;">
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript">
+var workDay = $api.getStorage('missionDay');
+var userTel = $api.getStorage('userTel');
+var companyId = $api.getStorage('companyId');
+var showType;
+var ticheng = 10;
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+function buildPageByJson(){
+    $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">加载数据中......</p>');
+    var url = appUrl+'Get/chongzhiList';
+    var hasQueren;
+    if(showType == 0){
+        hasQueren = 0;
+    }else{
+        hasQueren = 1;
+    }
+    api.ajax({
+        url: url,
+        method: 'post',
+        data: {
+            values: {
+                company_id:companyId,
+                jingli_tel:userTel,
+                has_queren:hasQueren
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert( JSON.stringify( ret ) );
+            if(ret.check == 0){
+                
+                $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">没有找到数据</p>');
+            }else{
+                //alert(JSON.stringify(ret))
+                var listData = ret.list_data;
+                var innerStr = '';
+                //alert(listData.length);
+                for(var i = 0;i < listData.length;i++){
+                    //alert(i);
+                    var thischongzhiJson = listData[i];
+                    //alert(thischongzhiJson.chongzhi_haoma);
+                    var chongzhiId = thischongzhiJson.id;
+                    var chongzhiKehuTel = thischongzhiJson.huiyuan_tel;
+                    var chongzhiKehuName = thischongzhiJson.huiyuan_name;
+                    var chongzhiTime = thischongzhiJson.chongzhi_time;
+                    var chongzhiAllMoney = thischongzhiJson.all_money;
+                    var chongzhiZengsongMoney = thischongzhiJson.zengsong_money;
+                    if(chongzhiZengsongMoney !=0){
+                        var moneyStr = '充值金额：' + chongzhiAllMoney + '(赠送'+chongzhiZengsongMoney+')';
+                    }else{
+                        var moneyStr = '充值金额：' + chongzhiAllMoney;
+                    }
+                    if(showType == 0){
+                        var tplStr = '<li class="aui-list-view-cell aui-img" onclick="gotochongzhi('+chongzhiId+')"><div class="aui-img-body">客户：'+chongzhiKehuName+'<span class="aui-text-success">('+chongzhiKehuTel+')</span><p class="aui-ellipsis-2">'+moneyStr+' 下单时间：'+chongzhiTime+'</p></div></li>';
+                    }else{
+                        var tichengMoney = thischongzhiJson.ticheng_money;
+                        var tplStr = '<li class="aui-list-view-cell aui-img" onclick="gotochongzhi('+chongzhiId+')"><div class="aui-img-body">提成：'+tichengMoney+'元，客户：'+chongzhiKehuName+'<span class="aui-text-success">('+chongzhiKehuTel+')</span><p class="aui-ellipsis-2">'+moneyStr+' 下单时间：'+chongzhiTime+'</p></div></li>';
+                    }
+                    
+                    innerStr += tplStr;
+                }
+                //alert(innerStr);
+                $api.html($api.byId('viewBox'), innerStr);
+            }
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    });
+}
+
+function gotochongzhi(chongzhiId){
+    api.toast({
+        msg: '别点了，好痛~',
+        duration: 2000,
+        location: 'bottom'
+    });
+}
+apiready = function () {
+    showType = api.pageParam.showType;
+    api.parseTapmode();
+    buildPageByJson();
+    shuaxin();
+    
+}
+</script>
+</html>

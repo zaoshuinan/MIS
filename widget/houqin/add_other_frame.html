@@ -1,0 +1,382 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content aui-card aui-noborder">       
+        <div class="aui-form" style="margin-top:20px;">
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">人员手机</span>
+                <input type="number" class="aui-input" id="userTel" placeholder="手机号码" value="" />
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">人员名称</span>
+                <input type="text" class="aui-input" id="userName" placeholder="人员姓名"/>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon">性别</span>
+                <div class="aui-pull-left">
+                    <input class="aui-radio aui-radio-info" type="radio" name="sex" id="man" onclick="changeSex(0)"> <span class="aui-radio-name">男</span>
+                    <input class="aui-radio aui-radio-danger" type="radio" name="sex" id="women" checked onclick="changeSex(1)"> <span class="aui-radio-name">女</span>
+                </div>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">人员类型</span>
+                <div class="aui-pull-left">
+                    <input class="aui-radio aui-radio-info" type="radio" name="jobType" id="qiantai" checked onclick="changeType(3)"> <span class="aui-radio-name">前台</span>
+                    <input class="aui-radio aui-radio-danger" type="radio" name="jobType" id="peisong" onclick="changeType(4)"> <span class="aui-radio-name">配送</span>
+                    <input class="aui-radio aui-radio-success" type="radio" name="jobType" id="qingjie"  onclick="changeType(5)"> <span class="aui-radio-name">清洁</span>
+                    <input class="aui-radio aui-radio-warning" type="radio" name="jobType" id="zhongfang"  onclick="changeType(6)"> <span class="aui-radio-name">钟房</span>
+                    <input class="aui-radio aui-radio-info" type="radio" name="jobType" id="qita"  onclick="changeType(7)"> <span class="aui-radio-name">其他</span>
+                </div>
+            </div>
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">人员工资</span>
+                <input type="number" class="aui-input" id="userGongzi" placeholder="请输入人员工资" value="" />
+            </div>
+            <div class="aui-input-row aui-hidden" hasSelect="0" id="passwordBox">
+                <span class="aui-input-addon  aui-text-danger">初始化密码</span>
+                <li class="aui-list-view-cell aui-switch-body">
+                    <input type="checkbox" class="aui-switch aui-switch-danger" onclick="changePassword()" id="passwordBtn">
+                </li>
+            </div>
+            <input type="hidden" id="oldPassword" value="e10adc3949ba59abbe56e057f20f883e">
+            <div class="aui-input-row">
+                <span class="aui-input-addon  aui-text-danger">选择操作人员</span>
+                <div class="aui-pull-left" id="zhongfangRenyuan">
+                    
+                </div>
+            </div>
+            <p class="aui-padded-10  aui-text-danger">
+                初始密码为“123456”，提醒用户登录后修改密码！
+            </p>
+        </div>
+    </div>
+    <footer class="aui-nav" id="aui-footer">
+        <div class="aui-col-xs-12" id="saveBtn">
+            <button class="aui-btn aui-btn-danger aui-btn-block" id="buttonBox" canClick="1" tapmode onclick="saveCheck()">增加技师账号</button>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/md5.js" ></script>
+<script type="text/javascript">
+var showType,userId;
+var companyId = $api.getStorage('companyId');
+var sex = 1;
+var jobType = 0;
+var userArr = new Array();
+var oldGongzi = 0;
+var shenpi = 0;
+var selectRenyuanId = 0;
+var selectRenyuanName = '';
+var userPassword = 'e10adc3949ba59abbe56e057f20f883e';
+var oldPassword = '';
+function changePassword(){
+    var hasSelect = parseInt($api.attr($api.byId('passwordBox'), 'hasSelect'));
+    if(hasSelect == 0){
+        alert('此操作将初始化用户密码为“123456”，请谨慎操作！')
+        $api.attr($api.byId('passwordBox'), 'hasSelect','1');
+        $api.val($api.byId('oldPassword'), userPassword);
+    }else{
+        $api.attr($api.byId('passwordBox'), 'hasSelect','0');
+        $api.val($api.byId('oldPassword'), oldPassword);
+    }
+}
+function changeSex(index){
+    sex = index;
+}
+function changeRenyuan(renyuanId,renyuanName){
+    selectRenyuanId = renyuanId;
+    selectRenyuanName = renyuanName;
+}
+function changeType(index){
+    jobType = index;
+}
+function saveCheck(){
+    var canClick = $api.attr($api.byId('buttonBox'), 'canClick');
+    if(canClick == 0){
+        alert('正在获取数据中')
+        return false;
+    }
+    var userName = $api.val($api.byId('userName'));
+    var userTel = $api.val($api.byId('userTel'));
+    var userGongzi = $api.val($api.byId('userGongzi'));
+    if(userTel == ''){
+        alert('还没有输入电话号码！');
+        return false;
+    }
+    if(userTel.length != 11){
+        alert('请输入11位手机号码！')
+        return false;
+    }
+    if(parseInt(userTel) < 10000000000){
+        alert('手机号码输入有误！');
+        return false;
+    }
+    if(userName == ''){
+        alert('还没有输入员工名称！');
+        return false;
+    }
+    if(userGongzi == ''){
+        alert('如经理无基本工资，请在基本工资中输入“0”');
+        return false;
+    }
+    if(selectRenyuanId == 0){
+        alert('请选择操作人员！');
+        return false;
+    }
+    if(userGongzi == oldGongzi){
+        shenpi = 0;
+        if(showType == 0){
+            addInfo(userTel,userName,userGongzi);
+        }else{
+            saveInfo(userTel,userName,userGongzi);
+        }
+    }else{
+        api.confirm({
+            msg: '工资金额发生变动，需要通过审核',
+            buttons: ['确定', '取消']
+        }, function(ret, err) {
+            if (ret) {
+                if(ret.buttonIndex == 1){
+                    shenpi = 1;
+                    if(showType == 0){
+                        addInfo(userTel,userName,userGongzi);
+                    }else{
+                        saveInfo(userTel,userName,userGongzi);
+                    }
+                }
+            }
+        });
+    }
+}
+function sendEvent(){
+    api.sendEvent({
+        name: 'otherList',
+        extra: {
+            showType: showType
+        }
+    });
+}
+function saveInfo(userTel,userName,userGongzi){
+    userPassword = $api.val($api.byId('oldPassword'));
+    var valueJson =  {
+        user_name:userName,
+        user_sex:sex,
+        user_tel:userTel,
+        user_password:userPassword,
+        user_type:jobType,
+        company_id:companyId,
+        user_id:userId,
+        user_gongzi:userGongzi,
+        shenpi:shenpi,
+        old_gongzi:oldGongzi,
+        send_user_id:selectRenyuanId,
+        send_user_name:selectRenyuanName
+    }
+    api.ajax({
+        url: appUrl+'Change/otherInfo',
+        method: 'post',
+        data: {
+            values:valueJson
+        }
+    }, function(ret, err) {
+        if (ret) {
+            sendEvent();
+            alert('修改人员成功');
+            api.closeWin();
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function addInfo(userTel,userName,userGongzi){
+    api.ajax({
+        url: appUrl+'Add/otherInfo',
+        method: 'post',
+        data: {
+            values: {
+                user_name:userName,
+                user_sex:sex,
+                user_tel:userTel,
+                user_password:userPassword,
+                user_gongzi:userGongzi,
+                user_type:jobType,
+                company_id:companyId,
+                shenpi:shenpi,
+                old_gongzi:oldGongzi,
+                send_user_id:selectRenyuanId,
+                send_user_name:selectRenyuanName
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                alert('已有重复数据！');
+                return false;
+            }
+            if(ret.has == 0){
+                $api.setStorage('changeCache', '1');
+                alert('新增人员成功');
+                api.closeWin();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function buildPage(){
+    oldGongzi = userArr['user_gongzi'];
+    oldPassword = userArr['user_password'];
+    sex = parseInt(userArr['user_sex']);
+    jobType = parseInt(userArr['user_type']);
+    $api.val($api.byId('userTel'), userArr['user_tel']);
+    $api.val($api.byId('userName'), userArr['user_name']);
+    $api.val($api.byId('userGongzi'), oldGongzi);
+    $api.val($api.byId('oldPassword'),oldPassword);
+    if(sex == 0){
+        $api.attr($api.byId('man'), 'checked', 'checked');
+        $api.removeAttr($api.byId('women'), 'checked');
+    }else{
+        $api.attr($api.byId('women'), 'checked', 'checked');
+        $api.removeAttr($api.byId('man'), 'checked');
+    }
+    if(jobType == 3){
+        $api.attr($api.byId('qiantai'), 'checked', 'checked');
+        $api.removeAttr($api.byId('peisong'), 'checked');
+        $api.removeAttr($api.byId('qingjie'), 'checked');
+        $api.removeAttr($api.byId('zhongfang'), 'checked');
+        $api.removeAttr($api.byId('qita'), 'checked');
+    }
+    if(jobType == 4){
+        $api.attr($api.byId('peisong'), 'checked', 'checked');
+        $api.removeAttr($api.byId('qiantai'), 'checked');
+        $api.removeAttr($api.byId('qingjie'), 'checked');
+        $api.removeAttr($api.byId('zhongfang'), 'checked');
+        $api.removeAttr($api.byId('qita'), 'checked');
+    }
+    if(jobType == 5){
+        $api.attr($api.byId('qingjie'), 'checked', 'checked');
+        $api.removeAttr($api.byId('peisong'), 'checked');
+        $api.removeAttr($api.byId('qiantai'), 'checked');
+        $api.removeAttr($api.byId('zhongfang'), 'checked');
+        $api.removeAttr($api.byId('qita'), 'checked');
+    }
+    if(jobType == 6){
+        $api.attr($api.byId('zhongfang'), 'checked', 'checked');
+        $api.removeAttr($api.byId('peisong'), 'checked');
+        $api.removeAttr($api.byId('qingjie'), 'checked');
+        $api.removeAttr($api.byId('qiantai'), 'checked');
+        $api.removeAttr($api.byId('qita'), 'checked');
+    }
+    if(jobType == 7){
+        $api.attr($api.byId('qita'), 'checked', 'checked');
+        $api.removeAttr($api.byId('peisong'), 'checked');
+        $api.removeAttr($api.byId('qingjie'), 'checked');
+        $api.removeAttr($api.byId('zhongfang'), 'checked');
+        $api.removeAttr($api.byId('qiantai'), 'checked');
+    }
+    $api.attr($api.byId('buttonBox'), 'canClick','1')
+}
+function buildPageByJson(){
+    api.ajax({
+        url: appUrl+'Get/otherInfoByZhongfang',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId,
+                user_id:userId
+            }
+        }
+    }, function(ret, err) {
+        //alert(JSON.stringify(ret))
+        if (ret) {
+            if(ret.has == 1){
+                userArr = ret.data;
+                buildPage();
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+function getZhongfangRenyuan(){
+    var buttonObj = $api.byId('buttonBox');
+    if(showType == 1){
+        $api.removeCls($api.byId('passwordBox'), 'aui-hidden');
+        $api.attr($api.byId('buttonBox'), 'canClick','0')
+        $api.html(buttonObj, '正在获取数据');
+    }
+    api.ajax({
+        url: appUrl+'Get/zhongfangRenyuan',
+        method: 'post',
+        data: {
+            values: { 
+                company_id: companyId
+            }
+        }
+    }, function(ret, err) {
+        if (ret) {
+            if(ret.has == 1){
+                var renyuanArr = ret.data;
+                var renyuanStr = '';
+                for(var i = 0;i < renyuanArr.length;i++){
+                    var renyuanId = renyuanArr[i].id;
+                    var renyuanName = renyuanArr[i].user_name;
+                    var thisRenyuanStr = '<input class="aui-radio aui-radio-danger" type="radio" name="zhongfangRen" id="zhongfang'+renyuanId+'" onclick="changeRenyuan('+renyuanId+',\''+renyuanName+'\')"> <span class="aui-radio-name">'+renyuanName+'</span>';
+                    renyuanStr += thisRenyuanStr;
+                }
+                $api.html($api.byId('zhongfangRenyuan'), renyuanStr);
+                if(showType == 0){
+                    $api.html(buttonObj, '增加工作人员');
+                }else{
+                    buildPageByJson();
+                    $api.html(buttonObj, '修改工作人员信息');
+                }
+            }
+        } else {
+            api.toast({
+                msg: '网络错误'
+            });
+        }
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    showType = api.pageParam.showType;
+    userId = api.pageParam.userId;
+    getZhongfangRenyuan();
+}
+        
+</script>
+</html>

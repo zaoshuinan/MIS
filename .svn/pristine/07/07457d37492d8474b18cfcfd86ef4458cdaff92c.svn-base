@@ -1,0 +1,126 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content">
+        <ul class="aui-list-view" id="viewBox">
+            
+        </ul>
+    </div></body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var chanpinJson,myId,myName,myTel,dingdanId;
+var peisongJson;
+chanpinJson = [
+    {
+        'id':547,
+        'zhName':'红塔山',
+        'price':88,
+        'ticheng':20,
+        'imgUrl':'../image/demo2.png',
+        'status':1
+    },{
+        'id':596,
+        'zhName':'中华',
+        'price':68,
+        'ticheng':15,
+        'imgUrl':'../image/demo1.png',
+        'status':0
+    },{
+        'id':596,
+        'zhName':'中华',
+        'price':68,
+        'ticheng':15,
+        'imgUrl':'../image/demo1.png',
+        'status':0
+    }
+];
+function buildPageByJson(){
+    var url = '';
+    api.ajax({
+        url: url,
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            chanpinJson = ret;
+            buildPage(); 
+        } else {
+            api.alert({
+                msg:('错误码：'+err.code+'；错误信息：'+err.msg+'网络状态码：'+err.statusCode)
+            });
+        };
+    });
+}
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < chanpinJson.length;i++){
+        var thisJson = chanpinJson[i];
+        var chanpinId = thisJson.id;
+        var chanpinZhName = thisJson.zhName;
+        var chanpinPrice = thisJson.price;
+        var chanpinTicheng = thisJson.ticheng;
+        var chanpinImgUrl = thisJson.imgUrl;
+        var chanpinStatus = thisJson.status;
+        if(chanpinStatus == 0){
+            var zhuangtaiStr = '<b class="aui-text-danger">等待配送</b>';
+        }
+        if(chanpinStatus == 1){
+            var zhuangtaiStr = '<b class="aui-text-success">配送完毕</b>';
+        }
+        var tplStr = '<li id="chanpin'+chanpinId+'" hasSelect="0" chanpinId="'+chanpinId+'" class="chanpinBox aui-list-view-cell aui-img aui-counter-list"><img class="aui-img-object aui-pull-left" src="'+chanpinImgUrl+'"><div class="aui-img-body"><b id="chanpinName'+chanpinId+'">'+chanpinZhName+'</b><div class="aui-counter-box"><div class="aui-pull-left aui-text-danger">¥ <span id="chanpinPrice'+chanpinId+'">'+chanpinPrice+'</span>元<span class="yincang" id="chanpinTicheng'+chanpinId+'">'+chanpinTicheng+'</span></div><div class="aui-counter aui-pull-right">'+zhuangtaiStr+'</div></div></div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    buildPage();
+    shuaxin();
+}
+    
+</script>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+.aui-nav{
+    background-color: #3e6491;
+    color: #ffffff;
+    text-align: center;
+    line-height: 50px;
+}
+</style>
+<body>
+    <div class="aui-content">
+        <ul class="aui-list-view" id="viewBox">
+            
+        </ul>
+    </div></body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript">
+var chanpinJson,myId,myName,myTel,dingdanId,companyId;
+var peisongJson;
+function buildPageByJson(){
+    var url = '';
+    api.ajax({
+        url: ipUrl + 'Apps/Get/mianfeiByDingdanId',
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data: {
+            values: { 
+                company_id:companyId,
+                dingdan_id:dingdanId
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        },
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            //alert(JSON.stringify(ret));
+            //return false;
+            //alert(ret.length);
+            if(ret.length == 0){
+                $api.html($api.byId('viewBox'), '<li class="aui-list-view-cell aui-text-center">没有找到数据</li>');
+            }else{
+                chanpinJson = ret;
+                buildPage(); 
+            }
+        } else {
+            api.alert({
+                msg:('错误码：'+err.code+'；错误信息：'+err.msg+'网络状态码：'+err.statusCode)
+            });
+        };
+    });
+}
+function buildPage(){
+    var htmlStr = '';
+    for(var i = 0;i < chanpinJson.length;i++){
+        var thisJson = chanpinJson[i];
+        var chanpinId = thisJson.id;
+        var chanpinZhName = thisJson.chanpin_name;
+        var chanpinPrice = '0';
+        var chanpinTicheng = thisJson.chanpin_ticheng;
+        var chanpinImgUrl = '../image/mianfei1.png';
+        var xiadanTime = thisJson.xiadan_time;
+        var chanpinStatus = thisJson.peisong_status;
+        if(chanpinStatus == 0){
+            var zhuangtaiStr = '<b class="aui-text-danger">等待配送</b>';
+        }
+        if(chanpinStatus == 1){
+            var zhuangtaiStr = '<b class="aui-text-success">配送完毕</b>';
+        }
+        var tplStr = '<li id="chanpin'+chanpinId+'" hasSelect="0" chanpinId="'+chanpinId+'" class="chanpinBox aui-list-view-cell aui-img aui-counter-list"><img class="aui-img-object aui-pull-left" src="'+chanpinImgUrl+'"><div class="aui-img-body"><b id="chanpinName'+chanpinId+'">'+chanpinZhName+'</b>'+xiadanTime+'<div class="aui-counter-box"><div class="aui-pull-left aui-text-danger">¥ <span id="chanpinPrice'+chanpinId+'">'+chanpinPrice+'</span>元</div><div class="aui-counter aui-pull-right">'+zhuangtaiStr+'</div></div></div></li>';
+        htmlStr += tplStr;
+    }
+    $api.html($api.byId('viewBox'), htmlStr);
+}
+
+function shuaxin(){
+    api.setRefreshHeaderInfo({
+        visible: true,
+        loadingImg: 'widget://image/refresh.png',
+        bgColor: '#ccc',
+        textColor: '#fff',
+        textDown: '下拉刷新...',
+        textUp: '松开刷新...',
+        showTime: true,
+    }, function(ret, err){
+        buildPageByJson();
+        //从服务器加载数据，完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+        api.refreshHeaderLoadDone();
+    });
+}
+apiready = function(){
+    api.parseTapmode();
+    dingdanId = api.pageParam.dingdanId;
+    companyId = $api.getStorage('companyId');
+    //buildPage();
+    buildPageByJson();
+    shuaxin();
+}
+    
+</script>
+</html>

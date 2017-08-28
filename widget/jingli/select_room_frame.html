@@ -1,0 +1,291 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0"/>
+    <title>APP</title>
+    <link rel="stylesheet" type="text/css" href="../css/aui.css" />
+</head>
+<style type="text/css">
+body {
+    height: auto;
+}
+.aui-content-padded {
+    padding-top: 15px;
+}
+.aui-btn-block {
+    margin-bottom: 15px;
+}
+</style>
+<body>
+    <div class="aui-tab aui-tab-danger">
+        <ul class="aui-tab-nav" id="roomBox">
+            
+        </ul>
+    </div>
+    <div class="aui-content-padded icons">
+        <ul class="aui-grid-nine" id="viewBox">
+
+        </ul>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js" ></script>
+<script type="text/javascript" src="../script/mis.js" ></script>
+<script type="text/javascript" src="../script/function.js" ></script>
+<script type="text/javascript" src="../script/laytpl.js" ></script>
+<script type="text/javascript">
+var fanweiId,fuwuName,fuwuJiage,fuwuDetailId,missionDay,jingliLiushuiId;
+var companyId = $api.getStorage('companyId');
+var selectRoomHaoma,selectRoomId;
+var userId = $api.getStorage('userId');
+var userName = $api.getStorage('userName');
+var userTel = $api.getStorage('userTel');
+var cacheCompany = $api.getStorage('cacheCompany');
+var cacheRoom = $api.getStorage('cacheRoom');
+var showRoomJson;
+var lie;
+var roomTypeCode
+var roomConfigStr;
+function openRoom(roomId,roomName,roomStatus){
+    //alert(roomId+roomHaoma+roomName+roomStatus+jingliTel);
+    if(roomStatus >1){
+        api.toast({
+            msg: '工作状态，不可修改',
+            duration: 2000,
+            location: 'bottom'
+        });
+    }
+    
+    if(roomStatus == 0){
+        selectRoomId = roomId;
+        selectRoomHaoma = roomName;
+        fnOpenRoomDetail();
+    }
+}
+function creatDingdan(){
+    api.ajax({
+        url: 'ajax_url',
+        method: 'post',
+        timeout: 30,
+        dataType: 'json',
+        data:{
+            'jingliId':myId,
+            'jingliName':myName,
+            'jingliTel':myTel,
+            'jingliTicheng':jingliTicheng
+        },
+        returnAll:false
+    },function(ret,err){
+        if (ret) {
+            var dingdanId = ret.dingdanId;
+            api.sendEvent({
+                name: 'showRoomHaoma',
+                extra: {
+                    'roomHaoma':selectRoomHaoma,
+                    'roomId':selectRoomId,
+                    'dingdanId':dingdanId,
+                    'dingdanBianma':dingdanBianma
+                }
+            });
+        } else {
+            api.alert({
+                msg:('错误码：'+err.code+'；错误信息：'+err.msg+'网络状态码：'+err.statusCode)
+            });
+        };
+    });
+}
+function fnOpenRoomDetail(){
+    api.actionSheet({
+        title: '请针对房间进行操作',
+        buttons: ['开启房间']
+    },function(ret,err){
+        //alert('service_id:'+fuwuDetailId)
+        if(ret.buttonIndex == 1){
+            api.ajax({
+                url: appUrl+'Add/newDingdan',
+                method: 'post',
+                data: {
+                    values: { 
+                        dingdan_type:fanweiId,
+                        dingdan_jingli_id:userId,
+                        dingdan_jingli_name:userName,
+                        dingdan_jingli_tel:userTel,
+                        dingdan_room_id:selectRoomId,
+                        dingdan_room_name:selectRoomHaoma,
+                        dingdan_company_id:companyId,
+                        service_name:fuwuName,
+                        service_price:fuwuJiage,
+                        service_id:fuwuDetailId,
+                        mission_day:missionDay
+                    },
+                    files: { 
+                        file: 'fs://a.gif'
+                    }
+                }
+            },function(ret, err){
+                if (ret) {
+                    var dingdanId = ret.dingdan_id;
+                    var dingdanBianma = ret.dingdan_bianma;
+                    var xiadanTime = ret.xiadan_time;
+                    jingliLiushuiId = ret.jingli_liushui_id;
+                    var todayNum = parseInt($api.getStorage('todayNum'));
+                    todayNum = todayNum + 1;
+                    $api.setStorage('todayNum', todayNum);
+                    if(!$api.getStorage('allNum')){
+                        $api.setStorage('allNum', 1);
+                    }else{
+                        var allNum = parseInt($api.getStorage('allNum'));
+                        allNum = allNum + 1;
+                        $api.setStorage('allNum', allNum);
+                    }
+                    api.sendEvent({
+                        name: 'changeTodayNum',
+                        extra: {
+                        }
+                    });
+                    api.sendEvent({
+                        name: 'showRoomHaoma',
+                        extra: {
+                            'roomHaoma':selectRoomHaoma,
+                            'roomId':selectRoomId,
+                            'dingdanId':dingdanId,
+                            'dingdanBianma':dingdanBianma,
+                            'xiadanTime':xiadanTime,
+                            'jingliLiushuiId':jingliLiushuiId
+                        }
+                    });
+                    api.closeWin();
+                } else {
+                    api.toast({
+                        msg: '网络出错',
+                        duration: 2000,
+                        location: 'bottom'
+                    });
+                    //alert( JSON.stringify( err ) );
+                }
+            });
+            //creatDingdan(back);
+            
+        }
+    });
+}
+function buildPage(roomConfigJson){
+    var roomBox = $api.byId('roomBox');
+    var innerStr = '';
+    for(var i in roomConfigJson){
+        //alert(i);
+        if(i == 0){
+            var str = '<li id="room'+i+'" class="active" tapmod lie="'+roomConfigJson[i].lie+'" hang="'+roomConfigJson[i].hang+'" onclick="changeRoom('+i+')">'+roomConfigJson[i].name+'</li>';
+        }else{
+            var str = '<li id="room'+i+'" tapmod lie="'+roomConfigJson[i].lie+'" hang="'+roomConfigJson[i].hang+'" onclick="changeRoom('+i+')">'+roomConfigJson[i].name+'</li>';
+        }
+        innerStr += str;
+    }
+    $api.html(roomBox, innerStr);
+    changeRoom(0);
+}
+function changeRoom(index){
+    var obj = $api.byId('room'+index);
+    var roomNum = index + 1;
+    var thisLie = $api.attr(obj, 'lie');
+    var thisHang = $api.attr(obj, 'hang');
+    resetButton(index);
+    creatRoom(thisLie,thisHang,roomNum)
+}
+function creatRoom(thisLie,thisHang,roomNum){
+    var lieNumArr = ['A','B','C','D','E','F','G','H'];
+    lie = thisLie;
+    thisAllJson = showRoomJson[roomNum];
+    var roomClass = roomLieClassJson[lie];
+    var innerStr = '';
+    $api.html($api.byId('viewBox'), '<p style="margin-top:10px;" class="aui-text-center">加载数据中......</p>');
+    api.ajax({
+        url: appUrl+'Get/roomStatus',
+        method: 'post',
+        data: {
+            values: { 
+                room_type_code: roomTypeCode,
+                room_type_id:roomNum
+            },
+            files: { 
+                file: 'fs://a.gif'
+            }
+        }
+    },function(ret, err){
+        if (ret) {
+            //alert(JSON.stringify(thisAllJson))
+            var innerStr = '';
+            for(var i = 0; i < thisHang;i++){
+                for(var j = 0;j< thisLie;j++){
+                    var hangNum = i + 1;
+                    var lieNum = lieNumArr[j];
+                    var thisRoomBianma =  lieNum + hangNum;
+                    var thisStatus = ret[thisRoomBianma].room_status;
+                    var roomName;
+                    var clickStr = '';
+                    if(thisAllJson[thisRoomBianma].room_name == ''){
+                        roomName = '空';
+                    }else{
+                        roomName = thisAllJson[thisRoomBianma].room_name;
+                        clickStr = '  tapmode onclick="openRoom('+thisAllJson[thisRoomBianma].id+',\''+roomName+'\','+thisStatus+')"';
+                    }
+                    var str = '<li class="'+roomClass+' aui-text-center aui-bar-'+roomStatusColorJson[thisStatus]+'"'+clickStr+'><p style="color:#FFF">'+roomName+'</p></li>';
+                    innerStr += str;
+                }
+            }
+            var tplStr = $api.html($api.byId('tplBox'));
+            var viewBox = $api.byId('viewBox');
+            $api.html(viewBox, innerStr);
+        } else {
+            api.toast({
+                msg: '网络错误',
+                duration: 2000,
+                location: 'bottom'
+            });
+        }
+    }); 
+}
+function resetButton(index){
+    var roomBox = $api.byId('roomBox');
+    var buttonsObj = $api.domAll(roomBox, 'li');
+    for(var i = 0; i < buttonsObj.length; i++){
+        if(i == index){
+            $api.removeCls(buttonsObj[i], 'active');
+            $api.addCls(buttonsObj[i], 'active');
+        }else{
+            $api.removeCls(buttonsObj[i], 'active');
+        }
+    }
+}
+apiready = function(){
+    api.parseTapmode();
+    fuwuDetailId=api.pageParam.service_id;
+    fanweiId = api.pageParam.fanweiId;
+    fuwuName = api.pageParam.service_name;
+    fuwuJiage = api.pageParam.service_price;
+    missionDay = $api.getStorage('missionDay');
+    //alert(fuwuDetailId + fanweiId + fuwuName + fuwuJiage + missionDay)
+    if(fanweiId == 0){
+        roomTypeCode = 'muzu';
+        roomConfigStr = cacheCompany.room_muzu_config;
+        showRoomJson = cacheRoom.muzu;
+    }
+    if(fanweiId == 1){
+        roomTypeCode = 'anmo';
+        roomConfigStr = cacheCompany.room_anmo_config;
+        showRoomJson = cacheRoom.anmo;
+    }
+    if(fanweiId == 2){
+        roomTypeCode = 'sangna';
+        roomConfigStr = cacheCompany.room_sangna_config;
+        showRoomJson = cacheRoom.sangna;
+    }
+    alert(fanweiId + roomConfigJson)
+    // var roomConfigJson = JSON.parse(roomConfigStr);
+    // //alert(JSON.stringify(showRoomJson[1]));
+    // buildPage(roomConfigJson);
+    // alert(roomConfigJson)
+}
+        
+</script>
+</html>
